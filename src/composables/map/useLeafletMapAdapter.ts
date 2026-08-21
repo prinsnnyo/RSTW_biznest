@@ -44,6 +44,7 @@ export function useLeafletMapAdapter(options: LeafletAdapterOptions) {
   let leafletMappedZonesLayer: LeafletLayerGroup | null = null
   let leafletHazardsLayer: LeafletLayerGroup | null = null
   let leafletDrawPreviewLayer: LeafletLayerGroup | null = null
+  let leafletFocusMarkerLayer: LeafletLayerGroup | null = null
   let mapClickHandler: MapClickHandler | null = null
   let drawPointMoveHandler: DrawPointMoveHandler | null = null
   let leafletClickListener: ((event: LeafletMouseEvent) => void) | null = null
@@ -152,6 +153,13 @@ export function useLeafletMapAdapter(options: LeafletAdapterOptions) {
     }
   }
 
+  function destroyLeafletFocusMarkerLayer(): void {
+    if (leafletFocusMarkerLayer) {
+      leafletFocusMarkerLayer.remove()
+      leafletFocusMarkerLayer = null
+    }
+  }
+
   function clearLeafletClickListener(): void {
     if (leafletMap && leafletClickListener) {
       leafletMap.off('click', leafletClickListener)
@@ -164,6 +172,7 @@ export function useLeafletMapAdapter(options: LeafletAdapterOptions) {
     destroyLeafletMappedZonesLayer()
     destroyLeafletHazardsLayer()
     destroyLeafletDrawPreviewLayer()
+    destroyLeafletFocusMarkerLayer()
     clearLeafletClickListener()
 
     if (leafletBaseTiles) {
@@ -445,6 +454,40 @@ export function useLeafletMapAdapter(options: LeafletAdapterOptions) {
     leafletMap.setView([lat, lng], 16)
   }
 
+  async function showLocationMarker(
+    point: { lat: number; lng: number },
+    label?: string,
+  ): Promise<void> {
+    if (!leafletMap) {
+      return
+    }
+
+    destroyLeafletFocusMarkerLayer()
+
+    const L = await import('leaflet')
+    const layerGroup = L.layerGroup()
+
+    const marker = L.marker([point.lat, point.lng], {
+      icon: L.divIcon({
+        className: '',
+        html: '<span style="display:block;width:22px;height:22px;border-radius:50% 50% 50% 0;background:#2563eb;border:2px solid #ffffff;box-shadow:0 2px 6px rgba(0,0,0,0.35);transform:rotate(-45deg);"></span>',
+        iconSize: [22, 22],
+        iconAnchor: [11, 24],
+        popupAnchor: [0, -26],
+      }),
+    })
+
+    if (label) {
+      marker.bindPopup(`<strong>${label}</strong>`).openPopup()
+    }
+
+    marker.addTo(layerGroup)
+    layerGroup.addTo(leafletMap)
+    leafletFocusMarkerLayer = layerGroup
+
+    leafletMap.flyTo([point.lat, point.lng], 17, { duration: 0.8 })
+  }
+
   return {
     init,
     destroy,
@@ -459,5 +502,6 @@ export function useLeafletMapAdapter(options: LeafletAdapterOptions) {
     setPoisVisible,
     setDrawPointMoveHandler,
     focusOnZone,
+    showLocationMarker,
   }
 }

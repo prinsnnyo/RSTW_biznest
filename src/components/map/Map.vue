@@ -201,6 +201,17 @@ async function focusOnZone(points: MapDrawPoint[]): Promise<void> {
   await googleMapAdapter.focusOnZone(points)
 }
 
+async function focusLocation(
+  point: { lat: number; lng: number },
+  label?: string,
+): Promise<void> {
+  if (props.provider === 'leaflet') {
+    await leafletMapAdapter.showLocationMarker(point, label)
+    return
+  }
+  googleMapAdapter.showLocationMarker(point, label)
+}
+
 function setDrawMode(enabled: boolean): void {
   if (props.provider === 'leaflet') {
     leafletMapAdapter.setDrawMode(enabled)
@@ -256,6 +267,7 @@ defineExpose({
   renderHazards,
   renderDrawPreview,
   focusOnZone,
+  focusLocation,
   setDrawMode,
   setMapClickHandler,
   setDrawPointMoveHandler,
