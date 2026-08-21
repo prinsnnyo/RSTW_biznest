@@ -1,8 +1,8 @@
 # 1. Global fallback: You own everything in the repo by default
 
-* @jetrossgalinato
+* @prinsnnyo
 
 # 2. Maximum Security: Explicitly lock down the GitHub config files
 
-/.github/ @jetrossgalinato
-/.github/CODEOWNERS @jetrossgalinato
+/.github/ @prinsnnyo
+/.github/CODEOWNERS @prinsnnyo
