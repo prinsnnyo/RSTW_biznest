@@ -87,6 +87,35 @@ const ESTABLISHMENT_CATEGORIES: Array<{ label: string; aliases: string[] }> = [
 const containsAny = (text: string, phrases: string[]): boolean =>
   phrases.some((phrase) => text.includes(phrase))
 
+const BUSINESS_PERMIT_PHRASES = ['business permit', 'mayors permit', "mayor's permit", 'mayor permit']
+
+export type PermitApplicationType = 'new' | 'renewal'
+
+const NEW_PERMIT_PATTERN = /\b(new|fresh|first time|first-time|apply|applying|register|registration)\b/
+const RENEWAL_PERMIT_PATTERN = /\b(renew|renewal|renewing|re-apply|reapply|existing)\b/
+
+export function isBusinessPermitQuestion(message: string): boolean {
+  const normalized = message.toLowerCase().trim()
+  return (
+    containsAny(normalized, BUSINESS_PERMIT_PHRASES) ||
+    (normalized.includes('permit') && normalized.includes('business'))
+  )
+}
+
+export function parsePermitApplicationType(message: string): PermitApplicationType | null {
+  const normalized = message.toLowerCase().trim()
+
+  if (RENEWAL_PERMIT_PATTERN.test(normalized)) {
+    return 'renewal'
+  }
+
+  if (NEW_PERMIT_PATTERN.test(normalized)) {
+    return 'new'
+  }
+
+  return null
+}
+
 function matchCatalogEntry(
   text: string,
   catalog: Array<{ label: string; aliases: string[] }>,
