@@ -261,6 +261,17 @@ function setPoisVisible(visible: boolean): void {
   googleMapAdapter.setPoisVisible(visible)
 }
 
+async function renderPinnedLocations(
+  pins: import('@/types/pinned-location.types').MapPinMarker[],
+  onPinClick?: ((pinId: string) => void) | null,
+): Promise<void> {
+  if (props.provider === 'leaflet') {
+    await leafletMapAdapter.renderPinnedLocations(pins, onPinClick)
+    return
+  }
+  googleMapAdapter.renderPinnedLocations(pins, onPinClick)
+}
+
 defineExpose({
   renderBarangayBorders,
   renderMappedZones,
@@ -273,6 +284,7 @@ defineExpose({
   setDrawPointMoveHandler,
   setCenter,
   setPoisVisible,
+  renderPinnedLocations,
 })
 </script>
 
