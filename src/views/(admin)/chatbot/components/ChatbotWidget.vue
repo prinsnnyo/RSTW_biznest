@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { Button } from '@/components/ui/button'
 import { MessageCircle, X } from 'lucide-vue-next'
@@ -24,9 +24,20 @@ interface DragState {
 }
 
 const router = useRouter()
-const { messages, isThinking, sendMessage } = useChatbot()
-
 const isOpen = ref(false)
+
+const { messages, isThinking, sendMessage, reset } = useChatbot({
+  onConversationEnd: () => {
+    isOpen.value = false
+  },
+})
+
+// Closing the chat — manually or automatically — always starts a fresh conversation.
+watch(isOpen, (open) => {
+  if (!open) {
+    reset()
+  }
+})
 
 // null = docked at the default bottom-right corner
 const draggedPosition = ref<{ x: number; y: number } | null>(null)
