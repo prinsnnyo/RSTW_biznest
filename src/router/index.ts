@@ -63,6 +63,10 @@ const router = createRouter({
       children: [
         {
           path: '',
+          redirect: { name: 'admin-map' },
+        },
+        {
+          path: 'dashboard',
           name: 'dashboard',
           component: DashboardView,
           meta: { requiresAuth: true },
@@ -119,13 +123,13 @@ router.beforeEach(async (to) => {
   if (to.meta.requiresAuth && !isAuthenticated) {
     return { name: 'login' }
   }
-  // If the route requires them to be a guest (like the login page) and they ARE logged in -> send to home
+  // If the route requires them to be a guest (like the login page) and they ARE logged in -> send to map
   else if (to.meta.requiresGuest && isAuthenticated) {
-    return { name: 'dashboard' }
+    return { name: 'admin-map' }
   }
-  // If the route requires superadmin and user does not have superadmin role -> send to admin home
+  // If the route requires superadmin and user does not have superadmin role -> send to map
   else if (to.meta.requiresSuperadmin && !authStore.isSuperAdmin) {
-    return { name: 'dashboard' }
+    return { name: 'admin-map' }
   }
   // Otherwise, let them proceed normally
   return true
