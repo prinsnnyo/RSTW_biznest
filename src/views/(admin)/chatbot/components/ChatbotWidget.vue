@@ -32,7 +32,7 @@ function handleViewOnMap(location: { lat: number; lng: number; name: string }): 
     >
       <div
         v-if="isOpen"
-        class="pointer-events-auto h-[min(600px,calc(100svh-7rem))] w-[min(380px,calc(100vw-2.5rem))]"
+        class="pointer-events-auto h-[min(600px,calc(100svh-7rem))] w-[min(440px,calc(100vw-2.5rem))]"
       >
         <ChatbotPanel
           :messages="messages"
