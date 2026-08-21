@@ -8,6 +8,7 @@ import type {
 import type { BarangayFeatureCollection } from '@/types/map.types'
 import type { Hazard } from '@/types/hazard.types'
 import type { MapDrawPoint, MappedZone } from '@/types/zoning.types'
+import type { MapPinMarker } from '@/types/pinned-location.types'
 import {
   getBarangayLabel,
   getBorderColor,
@@ -22,7 +23,14 @@ interface LeafletAdapterOptions {
 
 type MapClickHandler = (point: MapDrawPoint) => void
 type DrawPointMoveHandler = (index: number, point: MapDrawPoint) => void
+type PinClickHandler = (pinId: string) => void
 type MapThemeMode = 'light' | 'dark'
+
+const PIN_ROLE_COLORS: Record<string, string> = {
+  space_owner: '#0ea5e9',
+  entrepreneur: '#f59e0b',
+  supplier: '#10b981',
+}
 
 const LEAFLET_DEFAULT_TILE_URL = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
 const LEAFLET_NO_POI_TILE_URL =
@@ -45,8 +53,10 @@ export function useLeafletMapAdapter(options: LeafletAdapterOptions) {
   let leafletHazardsLayer: LeafletLayerGroup | null = null
   let leafletDrawPreviewLayer: LeafletLayerGroup | null = null
   let leafletFocusMarkerLayer: LeafletLayerGroup | null = null
+  let leafletPinnedLocationsLayer: LeafletLayerGroup | null = null
   let mapClickHandler: MapClickHandler | null = null
   let drawPointMoveHandler: DrawPointMoveHandler | null = null
+  let pinClickHandler: PinClickHandler | null = null
   let leafletClickListener: ((event: LeafletMouseEvent) => void) | null = null
   let isDrawMode = false
   let currentTheme: MapThemeMode = 'light'
@@ -160,6 +170,13 @@ export function useLeafletMapAdapter(options: LeafletAdapterOptions) {
     }
   }
 
+  function destroyLeafletPinnedLocationsLayer(): void {
+    if (leafletPinnedLocationsLayer) {
+      leafletPinnedLocationsLayer.remove()
+      leafletPinnedLocationsLayer = null
+    }
+  }
+
   function clearLeafletClickListener(): void {
     if (leafletMap && leafletClickListener) {
       leafletMap.off('click', leafletClickListener)
@@ -173,6 +190,7 @@ export function useLeafletMapAdapter(options: LeafletAdapterOptions) {
     destroyLeafletHazardsLayer()
     destroyLeafletDrawPreviewLayer()
     destroyLeafletFocusMarkerLayer()
+    destroyLeafletPinnedLocationsLayer()
     clearLeafletClickListener()
 
     if (leafletBaseTiles) {
@@ -488,6 +506,44 @@ export function useLeafletMapAdapter(options: LeafletAdapterOptions) {
     leafletMap.flyTo([point.lat, point.lng], 17, { duration: 0.8 })
   }
 
+  async function renderPinnedLocations(
+    pins: MapPinMarker[],
+    onPinClick?: PinClickHandler | null,
+  ): Promise<void> {
+    if (!leafletMap) {
+      return
+    }
+
+    destroyLeafletPinnedLocationsLayer()
+    pinClickHandler = onPinClick ?? null
+
+    const L = await import('leaflet')
+    const layerGroup = L.layerGroup()
+
+    pins.forEach((pin) => {
+      const color = PIN_ROLE_COLORS[pin.role] ?? '#2563eb'
+      const marker = L.marker([pin.lat, pin.lng], {
+        icon: L.divIcon({
+          className: '',
+          html: `<span style="display:block;width:22px;height:22px;border-radius:50% 50% 50% 0;background:${color};border:2px solid #ffffff;box-shadow:0 2px 6px rgba(0,0,0,0.35);transform:rotate(-45deg);"></span>`,
+          iconSize: [22, 22],
+          iconAnchor: [11, 24],
+          popupAnchor: [0, -26],
+        }),
+        title: pin.title,
+      })
+
+      marker.on('click', () => {
+        pinClickHandler?.(pin.id)
+      })
+
+      marker.addTo(layerGroup)
+    })
+
+    layerGroup.addTo(leafletMap)
+    leafletPinnedLocationsLayer = layerGroup
+  }
+
   return {
     init,
     destroy,
@@ -503,5 +559,6 @@ export function useLeafletMapAdapter(options: LeafletAdapterOptions) {
     setDrawPointMoveHandler,
     focusOnZone,
     showLocationMarker,
+    renderPinnedLocations,
   }
 }
