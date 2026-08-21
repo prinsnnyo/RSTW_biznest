@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useAdminMap } from '@/views/(admin)/map/composables/useAdminMap.ts'
 import Map from '@/components/map/Map.vue'
 import HazardFormModal from '@/views/(admin)/map/components/HazardFormModal.vue'
@@ -84,6 +86,44 @@ const {
   undoLastHazardPoint,
   finishHazardPlacement,
 } = useAdminMap()
+
+// ── Focus map from query params (e.g. chatbot "View on map") ───────────────
+const route = useRoute()
+const router = useRouter()
+const isMapReady = ref(false)
+
+function handleMapReady(): void {
+  isMapReady.value = true
+  onMapReady()
+}
+
+async function applyFocusFromQuery(): Promise<void> {
+  if (!isMapReady.value) {
+    return
+  }
+
+  const lat = Number(route.query.lat)
+  const lng = Number(route.query.lng)
+  const label = typeof route.query.label === 'string' ? route.query.label : undefined
+
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+    return
+  }
+
+  await mapRef.value?.focusLocation({ lat, lng }, label)
+  await router.replace({ query: {} })
+}
+
+watch(isMapReady, () => {
+  void applyFocusFromQuery()
+})
+
+watch(
+  () => route.query,
+  () => {
+    void applyFocusFromQuery()
+  },
+)
 </script>
 
 <template>
@@ -94,7 +134,7 @@ const {
   <div class="relative h-full w-full overflow-hidden">
     <!-- ── Map canvas ────────────────────────────────────────────────── -->
     <div class="relative h-full w-full pr-11">
-      <Map ref="mapRef" :provider="provider" :center="mapCenter" @ready="onMapReady" />
+      <Map ref="mapRef" :provider="provider" :center="mapCenter" @ready="handleMapReady" />
 
       <!-- Floating map-provider selector (top-left over the map) -->
       <div class="absolute left-1/2 top-3 z-900 flex -translate-x-1/2 items-center gap-2">
