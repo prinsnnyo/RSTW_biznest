@@ -64,6 +64,10 @@ export type GoogleMapCtor = new (
     zoom: number
     mapId?: string
     styles?: GoogleMapStyleRule[]
+    zoomControl?: boolean
+    zoomControlOptions?: { position: number }
+    streetViewControl?: boolean
+    streetViewControlOptions?: { position: number }
   },
 ) => GoogleMapInstance
 
@@ -95,6 +99,7 @@ export type LegacyMarkerCtor = new (options: {
 export interface GoogleMapsAPI {
   Map?: GoogleMapCtor
   Marker?: LegacyMarkerCtor
+  ControlPosition?: Record<'TOP_LEFT' | 'TOP_CENTER' | 'TOP_RIGHT' | 'BOTTOM_LEFT' | 'BOTTOM_RIGHT', number>
   Polygon?: new (options: {
     paths: GooglePolygonPath[][]
     strokeColor: string

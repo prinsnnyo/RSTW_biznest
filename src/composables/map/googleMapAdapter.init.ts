@@ -113,10 +113,18 @@ export async function initializeGoogleMapInstance(options: {
     return false
   }
 
+  const controlPosition = googleMaps.ControlPosition?.TOP_LEFT
+
   const map = new MapCtor(options.container, {
     center: options.center,
     zoom: 12,
     mapId: options.mapId,
+    zoomControl: true,
+    zoomControlOptions:
+      controlPosition !== undefined ? { position: controlPosition } : undefined,
+    streetViewControl: true,
+    streetViewControlOptions:
+      controlPosition !== undefined ? { position: controlPosition } : undefined,
   })
 
   options.onMapReady(map)
