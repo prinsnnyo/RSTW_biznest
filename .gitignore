@@ -64,3 +64,5 @@ supabase/migrations/*_local.sql
 # Local Claude notes
 CLAUDE.md
 
+.cursor/
+
