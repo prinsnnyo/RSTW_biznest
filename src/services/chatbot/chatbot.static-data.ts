@@ -2,113 +2,83 @@ import type { Establishment, GeoPoint, RentalSpace, RegistrationTopic, Supplier 
 
 export const CITY_CENTER: GeoPoint = { lat: 8.9475, lng: 125.5406 }
 
+export const NEW_BUSINESS_PERMIT_REQUIREMENTS_ANSWER =
+  'Here are the requirements for a NEW business permit application (online):\n' +
+  '- Locational sketch\n' +
+  '- 1 set of SEC registration (for corporations)\n' +
+  '- Certificate of Registration from the Cooperative Development Authority (if cooperative)\n' +
+  '- Contract of lease (if the space is rented)\n' +
+  '- Scanned copy of tax declaration\n' +
+  '- City ENRO Certificate of Compliance (if the establishment generates noise during operation)\n' +
+  '- Government-issued ID\n' +
+  '- Fire Safety Inspection Certificate for Occupancy (except establishments using indigenous materials)'
+
+export const RENEWAL_BUSINESS_PERMIT_REQUIREMENTS_ANSWER =
+  'Here are the requirements for BUSINESS PERMIT RENEWAL (online):\n' +
+  '- Business Permit Renewal Form (updating of business record)\n' +
+  '- Previous business permit or any proof of payment\n' +
+  '- 1 photocopy of audited financial statement, income tax return, monthly or quarterly value-added returns, or schedule of breakdown per LGU of gross sales/receipts from the consolidated financial statement\n' +
+  '- Contract of lease (if the space is rented)\n' +
+  '- Other requirements from national offices / government agencies / instrumentalities'
+
 const UNSPLASH = (photoId: string): string =>
   `https://images.unsplash.com/${photoId}?auto=format&fit=crop&w=480&h=240&q=60`
 
 export const RENTAL_SPACES: RentalSpace[] = [
   {
-    id: 'rs-1',
-    name: 'Bayanihan Arcade Unit 3B',
-    barangay: 'Bayanihan',
-    address: 'Montilla Blvd., Bayanihan',
-    location: { lat: 8.9492, lng: 125.5432 },
-    monthlyRent: 12000,
-    areaSqm: 24,
+    id: 'rs-intino-1',
+    name: 'RC Intino Building',
+    barangay: 'Obrero',
+    address: 'Montilla Blvd., Obrero',
+    location: { lat: 8.94837, lng: 125.537574 },
     spaceType: 'retail',
     isAvailable: true,
-    suitableFor: ['sari-sari store', 'pharmacy', 'clothing boutique', 'load station'],
-    imageUrl: UNSPLASH('photo-1441986300917-64674bd600d8'),
+    suitableFor: ['office', 'retail', 'commercial business', 'clinic', 'salon'],
+    imageUrl: UNSPLASH('photo-1486406146926-c627a92ad1ab'),
+    description:
+      'Established commercial building along Montilla Boulevard with rentable spaces for offices and businesses.',
   },
   {
-    id: 'rs-2',
-    name: 'Obrero Food Alley Stall 12',
-    barangay: 'Obrero',
-    address: 'J.C. Aquino Ave., Obrero',
-    location: { lat: 8.951, lng: 125.5389 },
-    monthlyRent: 6500,
-    areaSqm: 12,
-    spaceType: 'food-stall',
-    isAvailable: true,
-    suitableFor: ['coffee shop', 'food stall', 'snack house', 'milk tea shop'],
-    imageUrl: UNSPLASH('photo-1555396273-367ea4eb4db5'),
-  },
-  {
-    id: 'rs-3',
-    name: 'Libertad Tech Hub Suite 204',
+    id: 'rs-intino-2',
+    name: 'RC Intino Building 2',
     barangay: 'Libertad',
-    address: 'CDO Rd., Libertad',
-    location: { lat: 8.9568, lng: 125.5371 },
-    monthlyRent: 18000,
-    areaSqm: 40,
+    address: 'North Montilla Boulevard, Libertad',
+    location: { lat: 8.956425, lng: 125.536026 },
     spaceType: 'office',
     isAvailable: true,
-    suitableFor: ['printing services', 'electronics repair', 'tutorial center'],
+    suitableFor: ['office', 'retail', 'commercial business', 'tutorial center', 'printing services'],
     imageUrl: UNSPLASH('photo-1497366216548-37526070297c'),
+    rating: 4.4,
+    contactNumber: '0956 466 5774',
+    description:
+      'Has parking and affordable rental space suitable for offices and businesses.',
   },
   {
-    id: 'rs-4',
-    name: 'San Vicente Corner Storefront',
-    barangay: 'San Vicente',
-    address: 'South Rd., San Vicente',
-    location: { lat: 8.9412, lng: 125.5451 },
-    monthlyRent: 15000,
-    areaSqm: 30,
+    id: 'rs-vcdu',
+    name: 'VCDU Building',
+    barangay: 'Obrero',
+    address: 'Montilla Blvd., Obrero',
+    location: { lat: 8.94504, lng: 125.5367 },
     spaceType: 'retail',
     isAvailable: true,
-    suitableFor: ['grocery', 'hardware', 'bakery', 'water refilling station'],
+    suitableFor: ['retail', 'office', 'sari-sari store', 'pharmacy', 'clothing boutique'],
     imageUrl: UNSPLASH('photo-1441984904996-e0b6ba687e04'),
+    rating: 4.0,
+    description:
+      'Multi-tenant building with multiple businesses occupying individual rental spaces (e.g., Door 2).',
   },
   {
-    id: 'rs-5',
-    name: 'Agusan Pequeño Warehouse Bay 2',
-    barangay: 'Agusan Pequeño',
-    address: 'National Hwy., Agusan Pequeño',
-    location: { lat: 8.9367, lng: 125.5298 },
-    monthlyRent: 22000,
-    areaSqm: 120,
-    spaceType: 'warehouse',
+    id: 'rs-sintrade',
+    name: 'Sintrade Building',
+    barangay: 'Obrero',
+    address: '424 Villanueva Street, Obrero',
+    location: { lat: 8.950299, lng: 125.541976 },
+    spaceType: 'office',
     isAvailable: true,
-    suitableFor: ['distribution', 'storage', 'supplier depot'],
-    imageUrl: UNSPLASH('photo-1553413077-190dd305871c'),
-  },
-  {
-    id: 'rs-6',
-    name: 'Baan Riverside Kiosk 5',
-    barangay: 'Baan',
-    address: 'Riverside Dr., Baan',
-    location: { lat: 8.944, lng: 125.548 },
-    monthlyRent: 5000,
-    areaSqm: 10,
-    spaceType: 'food-stall',
-    isAvailable: true,
-    suitableFor: ['coffee shop', 'snack house', 'flower shop'],
-    imageUrl: UNSPLASH('photo-1521017432531-fbd92d768814'),
-  },
-  {
-    id: 'rs-7',
-    name: 'Ambago Neighborhood Space',
-    barangay: 'Ambago',
-    address: 'Doña Francisca St., Ambago',
-    location: { lat: 8.9601, lng: 125.5467 },
-    monthlyRent: 8000,
-    areaSqm: 18,
-    spaceType: 'retail',
-    isAvailable: true,
-    suitableFor: ['sari-sari store', 'salon', 'pharmacy', 'laundry shop'],
-    imageUrl: UNSPLASH('photo-1560066984-138dadb4c035'),
-  },
-  {
-    id: 'rs-8',
-    name: 'Bonbon Market Row Unit 21',
-    barangay: 'Bonbon',
-    address: 'Market Rd., Bonbon',
-    location: { lat: 8.9545, lng: 125.5523 },
-    monthlyRent: 7000,
-    areaSqm: 15,
-    spaceType: 'retail',
-    isAvailable: true,
-    suitableFor: ['meat shop', 'vegetable stall', 'grocery'],
-    imageUrl: UNSPLASH('photo-1533900298318-6b8da08a523e'),
+    suitableFor: ['office', 'commercial business', 'printing services', 'electronics repair'],
+    imageUrl: UNSPLASH('photo-1441986300917-64674bd600d8'),
+    description:
+      'Multi-tenant commercial/office building along Villanueva Street.',
   },
 ]
 

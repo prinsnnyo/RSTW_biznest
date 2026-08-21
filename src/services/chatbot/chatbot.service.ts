@@ -1,6 +1,14 @@
 import type { Establishment, RentalSpace, Supplier } from '@/types/chatbot.types'
 import { getDistanceKm } from '@/utils/geo.utils'
-import { CITY_CENTER, ESTABLISHMENTS, REGISTRATION_TOPICS, RENTAL_SPACES, SUPPLIERS } from './chatbot.static-data'
+import {
+  CITY_CENTER,
+  ESTABLISHMENTS,
+  NEW_BUSINESS_PERMIT_REQUIREMENTS_ANSWER,
+  REGISTRATION_TOPICS,
+  RENTAL_SPACES,
+  RENEWAL_BUSINESS_PERMIT_REQUIREMENTS_ANSWER,
+  SUPPLIERS,
+} from './chatbot.static-data'
 
 export interface LocationRecommendationResult {
   intro: string
@@ -22,7 +30,9 @@ const tokenize = (value: string): string[] =>
 
 function scoreRentalSpace(space: RentalSpace, businessType: string): number {
   const typeTokens = tokenize(businessType)
-  const suitabilityText = normalize(space.suitableFor.join(' '))
+  const suitabilityText = normalize(
+    [...space.suitableFor, space.name, space.description ?? ''].join(' '),
+  )
 
   const tagScore = space.suitableFor.reduce((score, tag) => {
     const normalizedTag = normalize(tag)
@@ -33,7 +43,8 @@ function scoreRentalSpace(space: RentalSpace, businessType: string): number {
   }, 0)
 
   const textScore = typeTokens.filter((token) => suitabilityText.includes(token)).length
-  const rentScore = space.isAvailable ? Math.max(0, 3 - space.monthlyRent / 10000) : -5
+  const rentScore =
+    space.monthlyRent !== undefined ? Math.max(0, 3 - space.monthlyRent / 10000) : 0
 
   return tagScore * 10 + textScore * 5 + rentScore
 }
@@ -103,6 +114,14 @@ export async function getNearbyEstablishments(
     intro: `The ${places.length} nearest ${category} options from the city center:`,
     places,
   }
+}
+
+export async function getNewBusinessPermitRequirements(): Promise<string> {
+  return NEW_BUSINESS_PERMIT_REQUIREMENTS_ANSWER
+}
+
+export async function getRenewalBusinessPermitRequirements(): Promise<string> {
+  return RENEWAL_BUSINESS_PERMIT_REQUIREMENTS_ANSWER
 }
 
 export async function getRegistrationAnswer(question: string): Promise<string> {

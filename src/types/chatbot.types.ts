@@ -11,12 +11,15 @@ export interface RentalSpace {
   barangay: string
   address: string
   location: GeoPoint
-  monthlyRent: number
-  areaSqm: number
+  monthlyRent?: number
+  areaSqm?: number
   spaceType: RentalSpaceType
   isAvailable: boolean
   suitableFor: string[]
   imageUrl?: string
+  rating?: number
+  contactNumber?: string
+  description?: string
 }
 
 export interface Supplier {
