@@ -252,7 +252,7 @@ export function useRegisterFormSubmit({
         title: 'Account created',
         durationMs: 4500,
       })
-      await router.push('/auth')
+      await router.push('/login')
 
       password.value = ''
       confirmPassword.value = ''

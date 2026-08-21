@@ -37,7 +37,7 @@ import logoImage from '@/assets/images/logo.png'
         </Button>
         <ModeToggle />
         <Button as-child size="sm">
-          <RouterLink to="/auth">Get Started</RouterLink>
+          <RouterLink to="/login">Get Started</RouterLink>
         </Button>
       </div>
     </div>
