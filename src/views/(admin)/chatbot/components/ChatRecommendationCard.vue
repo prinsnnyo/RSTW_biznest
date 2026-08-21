@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { TypographyMuted, TypographySmall } from '@/components/typography'
-import { Building2, ImageOff, MapPin, Store } from 'lucide-vue-next'
+import { Building2, ImageOff, MapPin, Phone, Star, Store } from 'lucide-vue-next'
 
 const props = defineProps<{ recommendation: ChatRecommendation }>()
 
@@ -67,29 +67,56 @@ function handleViewOnMap(): void {
     </div>
 
     <div class="p-3">
-      <div class="flex items-start gap-2">
-        <div class="min-w-0 flex-1">
-          <TypographySmall as="p" class="font-semibold">
-            {{
-              recommendation.kind === 'rental-space'
-                ? recommendation.space.name
-                : recommendation.place.name
-            }}
-          </TypographySmall>
-          <TypographyMuted as="p" class="mt-0.5 text-xs">
-            <MapPin class="mr-1 inline h-3 w-3 align-[-1px]" />
-            {{
-              recommendation.kind === 'rental-space'
-                ? `${recommendation.space.address}, Brgy. ${recommendation.space.barangay}`
-                : `Brgy. ${recommendation.place.barangay}`
-            }}
-          </TypographyMuted>
-        </div>
+      <div class="flex items-start justify-between gap-2">
+        <TypographySmall as="p" class="font-semibold">
+          {{
+            recommendation.kind === 'rental-space'
+              ? recommendation.space.name
+              : recommendation.place.name
+          }}
+        </TypographySmall>
+        <span
+          v-if="recommendation.kind === 'rental-space' && recommendation.space.rating"
+          class="inline-flex shrink-0 items-center gap-1 text-xs font-semibold text-foreground"
+        >
+          <Star class="h-3 w-3 fill-current" />
+          {{ recommendation.space.rating.toFixed(1) }}
+        </span>
       </div>
 
+      <TypographyMuted as="p" class="mt-0.5 text-xs">
+        <MapPin class="mr-1 inline h-3 w-3 align-[-1px]" />
+        {{
+          recommendation.kind === 'rental-space'
+            ? `${recommendation.space.address}, Brgy. ${recommendation.space.barangay}`
+            : `Brgy. ${recommendation.place.barangay}`
+        }}
+      </TypographyMuted>
+
+      <TypographyMuted
+        v-if="recommendation.kind === 'rental-space' && recommendation.space.description"
+        as="p"
+        class="mt-1.5 text-xs leading-relaxed"
+      >
+        {{ recommendation.space.description }}
+      </TypographyMuted>
+
+      <TypographySmall
+        v-if="recommendation.kind === 'rental-space' && recommendation.space.contactNumber"
+        as="p"
+        class="mt-1.5 flex items-center gap-1 text-xs"
+      >
+        <Phone class="h-3 w-3 text-muted-foreground" />
+        {{ recommendation.space.contactNumber }}
+      </TypographySmall>
+
       <div v-if="recommendation.kind === 'rental-space'" class="mt-2 flex flex-wrap gap-1">
-        <Badge variant="secondary" class="text-[11px]">{{ formatRent(recommendation.space.monthlyRent) }}</Badge>
-        <Badge variant="secondary" class="text-[11px]">{{ recommendation.space.areaSqm }} sqm</Badge>
+        <Badge v-if="recommendation.space.monthlyRent !== undefined" variant="secondary" class="text-[11px]">
+          {{ formatRent(recommendation.space.monthlyRent) }}
+        </Badge>
+        <Badge v-if="recommendation.space.areaSqm !== undefined" variant="secondary" class="text-[11px]">
+          {{ recommendation.space.areaSqm }} sqm
+        </Badge>
         <Badge variant="secondary" class="text-[11px] capitalize">
           {{ recommendation.space.spaceType.replace('-', ' ') }}
         </Badge>
