@@ -76,6 +76,8 @@ export function useGoogleMapAdapter(options: GoogleAdapterOptions) {
   let googleDrawPreviewPolygon: GooglePolygonInstance | null = null
   let googleDrawPreviewPolyline: GooglePolylineInstance | null = null
   let googleDrawPreviewVertices: GoogleMarkerInstance[] = []
+  let googleFocusMarker: GoogleMarkerInstance | null = null
+  let googleFocusInfoWindow: GoogleInfoWindowInstance | null = null
   let googleMapClickListener: GoogleMapsEventListener | null = null
   let mapClickHandler: MapClickHandler | null = null
   let drawPointMoveHandler: DrawPointMoveHandler | null = null
@@ -139,6 +141,13 @@ export function useGoogleMapAdapter(options: GoogleAdapterOptions) {
     googleDrawPreviewVertices = []
   }
 
+  function destroyGoogleFocusMarker(): void {
+    googleFocusMarker?.setMap(null)
+    googleFocusMarker = null
+
+    googleFocusInfoWindow?.close()
+  }
+
   function clearGoogleMapClickListener(): void {
     googleMapClickListener?.remove()
     googleMapClickListener = null
@@ -168,6 +177,7 @@ export function useGoogleMapAdapter(options: GoogleAdapterOptions) {
     destroyGoogleMappedZonePolygons()
     destroyGoogleHazards()
     destroyGoogleDrawPreview()
+    destroyGoogleFocusMarker()
     clearGoogleMapClickListener()
 
     if (googleMap) {
@@ -485,6 +495,51 @@ export function useGoogleMapAdapter(options: GoogleAdapterOptions) {
     googleMap.setZoom?.(zoom)
   }
 
+  function showLocationMarker(
+    point: { lat: number; lng: number },
+    label?: string,
+  ): void {
+    if (!googleMap) {
+      return
+    }
+
+    const googleMaps = (window as GoogleWindow).google?.maps
+    const MarkerCtor = googleMaps?.Marker
+
+    destroyGoogleFocusMarker()
+
+    if (MarkerCtor) {
+      googleFocusMarker = new MarkerCtor({
+        position: point,
+        map: googleMap as GoogleMapInstance,
+        title: label,
+        icon: {
+          path: 'M 0,0 C -2,-3 -8,-5 -8,-11 A 8,8 0 1,1 8,-11 C 8,-5 2,-3 0,0 z',
+          fillColor: '#2563eb',
+          fillOpacity: 1,
+          strokeColor: '#ffffff',
+          strokeOpacity: 1,
+          strokeWeight: 2,
+          scale: 1.6,
+        },
+      })
+    }
+
+    if (label) {
+      const InfoWindowCtor = googleMaps?.InfoWindow
+
+      if (InfoWindowCtor) {
+        googleFocusInfoWindow = googleFocusInfoWindow ?? new InfoWindowCtor()
+        googleFocusInfoWindow.setContent(`<strong>${label}</strong>`)
+        googleFocusInfoWindow.setPosition(point)
+        googleFocusInfoWindow.open({ map: googleMap as GoogleMapInstance })
+      }
+    }
+
+    googleMap.setCenter(point)
+    googleMap.setZoom?.(17)
+  }
+
   function loadGoogleMaps(): Promise<void> {
     const resolvedGoogleMapsApiKey = options.getApiKey()
 
@@ -548,5 +603,6 @@ export function useGoogleMapAdapter(options: GoogleAdapterOptions) {
     setPoisVisible,
     setDrawPointMoveHandler,
     focusOnZone,
+    showLocationMarker,
   }
 }

@@ -1,5 +1,8 @@
 <script setup lang="ts">
+import { computed, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useAdminMap } from '@/views/(admin)/map/composables/useAdminMap.ts'
+import { useAuthStore } from '@/stores/auth.store'
 import Map from '@/components/map/Map.vue'
 import HazardFormModal from '@/views/(admin)/map/components/HazardFormModal.vue'
 import AdminMapRightSidebar from '@/views/(admin)/map/components/AdminMapRightSidebar.vue'
@@ -84,6 +87,48 @@ const {
   undoLastHazardPoint,
   finishHazardPlacement,
 } = useAdminMap()
+
+// The right-side tool strip and panels are admin/superadmin only.
+const authStore = useAuthStore()
+const canUseAdminTools = computed(() => authStore.isAdmin)
+
+// ── Focus map from query params (e.g. chatbot "View on map") ───────────────
+const route = useRoute()
+const router = useRouter()
+const isMapReady = ref(false)
+
+function handleMapReady(): void {
+  isMapReady.value = true
+  onMapReady()
+}
+
+async function applyFocusFromQuery(): Promise<void> {
+  if (!isMapReady.value) {
+    return
+  }
+
+  const lat = Number(route.query.lat)
+  const lng = Number(route.query.lng)
+  const label = typeof route.query.label === 'string' ? route.query.label : undefined
+
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+    return
+  }
+
+  await mapRef.value?.focusLocation({ lat, lng }, label)
+  await router.replace({ query: {} })
+}
+
+watch(isMapReady, () => {
+  void applyFocusFromQuery()
+})
+
+watch(
+  () => route.query,
+  () => {
+    void applyFocusFromQuery()
+  },
+)
 </script>
 
 <template>
@@ -93,8 +138,8 @@ const {
   -->
   <div class="relative h-full w-full overflow-hidden">
     <!-- ── Map canvas ────────────────────────────────────────────────── -->
-    <div class="relative h-full w-full pr-11">
-      <Map ref="mapRef" :provider="provider" :center="mapCenter" @ready="onMapReady" />
+    <div class="relative h-full w-full" :class="{ 'pr-11': canUseAdminTools }">
+      <Map ref="mapRef" :provider="provider" :center="mapCenter" @ready="handleMapReady" />
 
       <!-- Floating map-provider selector (top-left over the map) -->
       <div class="absolute left-1/2 top-3 z-900 flex -translate-x-1/2 items-center gap-2">
@@ -228,7 +273,7 @@ const {
     </div>
 
     <!-- ── Hazard panel (inline, left of icon strip) ──────────────── -->
-    <div v-if="isHazardSidebarOpen" class="absolute inset-y-0 right-11 z-1000">
+    <div v-if="canUseAdminTools && isHazardSidebarOpen" class="absolute inset-y-0 right-11 z-1000">
       <AdminMapHazardSidebar
         :hazards="hazards"
         :categories="hazardCategories"
@@ -248,7 +293,7 @@ const {
     </div>
 
     <!-- ── Layer panel (inline, left of icon strip) ───────────────── -->
-    <div v-if="isSidebarOpen" class="absolute inset-y-0 right-11 z-1000">
+    <div v-if="canUseAdminTools && isSidebarOpen" class="absolute inset-y-0 right-11 z-1000">
       <AdminMapRightSidebar
         :layers="zoningLayers"
         :mapped-zones="mappedZones"
@@ -266,8 +311,11 @@ const {
       />
     </div>
 
-    <!-- ── Vertical icon strip (always visible) ───────────────────── -->
-    <div class="absolute inset-y-0 right-0 z-1001 flex w-11 shrink-0 flex-col border-l bg-card">
+    <!-- ── Vertical icon strip (admin/superadmin only) ────────────── -->
+    <div
+      v-if="canUseAdminTools"
+      class="absolute inset-y-0 right-0 z-1001 flex w-11 shrink-0 flex-col border-l bg-card"
+    >
       <TooltipProvider :delay-duration="300">
         <!-- Layers -->
         <Tooltip>

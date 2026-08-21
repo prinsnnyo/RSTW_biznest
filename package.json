@@ -70,5 +70,10 @@
   },
   "engines": {
     "node": "^20.19.0 || >=22.12.0"
+  },
+  "allowScripts": {
+    "esbuild": true,
+    "vue-demi": true,
+    "core-js@3.50.0": true
   }
 }

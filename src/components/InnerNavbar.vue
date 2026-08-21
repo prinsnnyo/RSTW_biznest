@@ -9,7 +9,6 @@ import { useAuthStore } from '@/stores/auth.store'
 import { useAlertContext } from '@/composables/useAlert'
 import ModeToggle from '@/components/ui/ModeToggle.vue'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -94,12 +93,6 @@ const handleLogout = async (): Promise<void> => {
       </RouterLink>
 
       <div class="flex items-center gap-4">
-        <Button as-child variant="ghost" size="sm">
-          <RouterLink to="/">Home</RouterLink>
-        </Button>
-        <Button as-child variant="ghost" size="sm">
-          <RouterLink to="/about">About</RouterLink>
-        </Button>
         <ModeToggle />
         <DropdownMenu>
           <DropdownMenuTrigger as-child>

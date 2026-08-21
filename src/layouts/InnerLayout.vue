@@ -2,6 +2,7 @@
 import { RouterView } from 'vue-router'
 import AdminSidebar from '@/components/AdminSidebar.vue'
 import InnerNavbar from '@/components/InnerNavbar.vue'
+import ChatbotWidget from '@/views/(admin)/chatbot/components/ChatbotWidget.vue'
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
 </script>
 
@@ -14,5 +15,6 @@ import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
         <RouterView />
       </SidebarInset>
     </SidebarProvider>
+    <ChatbotWidget />
   </div>
 </template>
