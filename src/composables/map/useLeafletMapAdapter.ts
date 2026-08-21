@@ -110,7 +110,7 @@ export function useLeafletMapAdapter(options: LeafletAdapterOptions) {
 
     leafletMap.attributionControl.setPrefix(false)
 
-    L.control.zoom({ position: 'bottomright' }).addTo(leafletMap)
+    L.control.zoom({ position: 'topleft' }).addTo(leafletMap)
 
     await applyLeafletTheme()
 
