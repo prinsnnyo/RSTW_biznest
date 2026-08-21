@@ -19,12 +19,6 @@ const emit = defineEmits<{
   'view-on-map': [location: { lat: number; lng: number; name: string }]
 }>()
 
-const SUGGESTIONS = [
-  'Best location for a coffee shop',
-  'Business permit requirements',
-  'Nearest restaurant',
-]
-
 const draft = ref('')
 const messageListRef = ref<HTMLDivElement | null>(null)
 
@@ -95,21 +89,6 @@ watch(
           <span class="h-1.5 w-1.5 animate-pulse rounded-full bg-muted-foreground [animation-delay:300ms]"></span>
         </div>
       </div>
-    </div>
-
-    <!-- Suggestions -->
-    <div class="flex gap-1.5 overflow-x-auto px-3 pb-2">
-      <Button
-        v-for="suggestion in SUGGESTIONS"
-        :key="suggestion"
-        variant="outline"
-        size="sm"
-        class="h-7 shrink-0 rounded-full px-3 text-xs"
-        :disabled="isThinking"
-        @click="emit('send', suggestion)"
-      >
-        {{ suggestion }}
-      </Button>
     </div>
 
     <Separator />
