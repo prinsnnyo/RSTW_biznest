@@ -10,6 +10,8 @@ import { getBarangayLabel, getBorderColor } from '@/utils/map/barangayBorder.uti
 interface MapLibreAdapterOptions {
   containerRef: Ref<HTMLDivElement | null>
   center: { lat: number; lng: number }
+  zoom?: number
+  pitch?: number
   getApiKey?: () => string
   styleUrl?: string
 }
@@ -17,6 +19,7 @@ interface MapLibreAdapterOptions {
 type MapClickHandler = (point: MapDrawPoint) => void
 type DrawPointMoveHandler = (index: number, point: MapDrawPoint) => void
 type PinClickHandler = (pinId: string) => void
+type CameraIdleHandler = (camera: { zoom: number; pitch: number }) => void
 
 const PIN_ROLE_COLORS: Record<string, string> = {
   space_owner: '#0ea5e9',
@@ -64,6 +67,8 @@ export function useMapLibreAdapter(options: MapLibreAdapterOptions) {
   let mapClickHandler: MapClickHandler | null = null
   let drawPointMoveHandler: DrawPointMoveHandler | null = null
   let clickUnsubscribe: (() => void) | null = null
+  let cameraIdleUnsubscribe: (() => void) | null = null
+  let cameraIdleHandler: CameraIdleHandler | null = null
   let barangayHoverCleanup: (() => void) | null = null
   let barangayMoveCleanup: (() => void) | null = null
   let barangayLeaveCleanup: (() => void) | null = null
@@ -100,6 +105,28 @@ export function useMapLibreAdapter(options: MapLibreAdapterOptions) {
   function clearClickListener(): void {
     clickUnsubscribe?.()
     clickUnsubscribe = null
+  }
+
+  function clearCameraIdleListener(): void {
+    cameraIdleUnsubscribe?.()
+    cameraIdleUnsubscribe = null
+  }
+
+  function syncCameraIdleListener(): void {
+    clearCameraIdleListener()
+
+    if (!engine || !cameraIdleHandler) {
+      return
+    }
+
+    cameraIdleUnsubscribe = engine.on('moveend', () => {
+      const zoom = engine?.getZoom()
+      const pitch = engine?.getPitch()
+      if (zoom == null || pitch == null) {
+        return
+      }
+      cameraIdleHandler?.({ zoom, pitch })
+    })
   }
 
   function syncClickListener(): void {
@@ -173,6 +200,8 @@ export function useMapLibreAdapter(options: MapLibreAdapterOptions) {
     engine = new MapLibreEngine({
       container: options.containerRef.value,
       center: options.center,
+      zoom: options.zoom,
+      pitch: options.pitch,
       apiKey: options.getApiKey?.(),
       styleUrl: options.styleUrl,
       theme: currentTheme,
@@ -187,10 +216,17 @@ export function useMapLibreAdapter(options: MapLibreAdapterOptions) {
     cachePoiLayerIds()
     applyPoiVisibility()
     syncClickListener()
+    syncCameraIdleListener()
+  }
+
+  function setCameraIdleHandler(handler: CameraIdleHandler | null): void {
+    cameraIdleHandler = handler
+    syncCameraIdleListener()
   }
 
   function destroy(): void {
     clearClickListener()
+    clearCameraIdleListener()
     removeBarangayLayers()
     removeMappedZonesLayers()
     removeHazardsLayers()
@@ -201,7 +237,7 @@ export function useMapLibreAdapter(options: MapLibreAdapterOptions) {
     engine = null
   }
 
-  function setCenter(center: { lat: number; lng: number }, zoom = 14): void {
+  function setCenter(center: { lat: number; lng: number }, zoom?: number): void {
     engine?.setCenter(center, zoom)
   }
 
@@ -639,6 +675,7 @@ export function useMapLibreAdapter(options: MapLibreAdapterOptions) {
     setTheme,
     setPoisVisible,
     setDrawPointMoveHandler,
+    setCameraIdleHandler,
     focusOnZone,
     showLocationMarker,
     renderPinnedLocations,

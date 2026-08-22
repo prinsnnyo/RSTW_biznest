@@ -26,15 +26,51 @@ const emit = defineEmits<{
   (e: 'ready'): void
 }>()
 
+const CAMERA_STORAGE_KEY = 'biznest:admin-map:camera'
+
+interface StoredCamera {
+  zoom: number
+  pitch: number
+}
+
+function loadStoredCamera(): StoredCamera | null {
+  try {
+    const raw = localStorage.getItem(CAMERA_STORAGE_KEY)
+    if (!raw) {
+      return null
+    }
+
+    const parsed = JSON.parse(raw) as Partial<StoredCamera>
+    if (typeof parsed.zoom !== 'number' || typeof parsed.pitch !== 'number') {
+      return null
+    }
+
+    return { zoom: parsed.zoom, pitch: parsed.pitch }
+  } catch {
+    return null
+  }
+}
+
+function saveStoredCamera(camera: StoredCamera): void {
+  try {
+    localStorage.setItem(CAMERA_STORAGE_KEY, JSON.stringify(camera))
+  } catch {
+    // Storage unavailable (private mode, quota) — persistence is best-effort.
+  }
+}
+
 const mapContainer = ref<HTMLDivElement | null>(null)
 const mapError = ref('')
 let themeObserver: MutationObserver | null = null
 
 const maptilerApiKey = import.meta.env.VITE_MAPTILER_KEY ?? ''
+const storedCamera = loadStoredCamera()
 
 const mapLibreAdapter = useMapLibreAdapter({
   containerRef: mapContainer,
   center: props.center,
+  zoom: storedCamera?.zoom,
+  pitch: storedCamera?.pitch,
   getApiKey: () => maptilerApiKey,
 })
 
@@ -51,6 +87,7 @@ async function initMap(): Promise<void> {
 
   try {
     await mapLibreAdapter.init()
+    mapLibreAdapter.setCameraIdleHandler(saveStoredCamera)
     emit('ready')
   } catch (error) {
     console.warn('MapLibre unavailable', error)
@@ -97,6 +134,7 @@ onBeforeUnmount(() => {
     themeObserver = null
   }
 
+  mapLibreAdapter.setCameraIdleHandler(null)
   mapLibreAdapter.destroy()
 })
 
@@ -143,7 +181,7 @@ function setDrawPointMoveHandler(
   mapLibreAdapter.setDrawPointMoveHandler(handler)
 }
 
-function setCenter(center: { lat: number; lng: number }, zoom = 4): void {
+function setCenter(center: { lat: number; lng: number }, zoom?: number): void {
   mapLibreAdapter.setCenter(center, zoom)
 }
 

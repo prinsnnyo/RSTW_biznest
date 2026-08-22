@@ -243,7 +243,7 @@ export const useAdminMapStore = defineStore('adminMap', () => {
       }
 
       mapCenter.value = { lat: center.lat, lng: center.lng }
-      mapRef.value?.setCenter(mapCenter.value, 14)
+      mapRef.value?.setCenter(mapCenter.value)
     } catch {
       // Keep default map center if city-center lookup data is unavailable.
     }
@@ -712,7 +712,7 @@ export const useAdminMapStore = defineStore('adminMap', () => {
   }
 
   async function onMapReady(): Promise<void> {
-    mapRef.value?.setCenter(mapCenter.value, 14)
+    mapRef.value?.setCenter(mapCenter.value)
     mapRef.value?.setPoisVisible(showMapPoi.value)
     mapRef.value?.setDrawMode(isAnyDrawModeActive.value)
     mapRef.value?.setMapClickHandler(isAnyDrawModeActive.value ? handleMapClick : null)
