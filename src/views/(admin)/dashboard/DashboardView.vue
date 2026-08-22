@@ -110,9 +110,6 @@ onMounted(() => {
             <CardTitle>Recent pins</CardTitle>
             <CardDescription>Latest business locations on the map</CardDescription>
           </div>
-          <Button as-child size="sm" variant="outline">
-            <RouterLink to="/app/map">Open user map</RouterLink>
-          </Button>
         </CardHeader>
         <CardContent>
           <p v-if="isLoading" class="text-sm text-muted-foreground">Loading…</p>
