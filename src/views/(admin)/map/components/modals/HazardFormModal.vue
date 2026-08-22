@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue'
 import { listHazardCategories } from '@/services/hazard/hazard.service'
-import type { HazardCategory } from '@/types/hazard.types'
+import { useAdminMapStore } from '@/stores/admin.map.store'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -13,13 +13,11 @@ import {
 } from '@/components/ui/select'
 import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import type {
-  CreateHazardFormInput,
-  Hazard,
+  HazardCategory,
   HazardGeometry,
   HazardGeometryType,
   HazardSeverity,
   HazardStatus,
-  UpdateHazardInput,
 } from '@/types/hazard.types'
 
 const severityOptions: HazardSeverity[] = ['low', 'moderate', 'high', 'critical']
@@ -31,36 +29,18 @@ const statusOptions: HazardStatus[] = [
   'resolved',
 ]
 const geometryOptions: HazardGeometryType[] = ['point', 'linestring', 'polygon']
-const placementLabels: Record<HazardGeometryType, string> = {
+const placementLabels: Record<string, string> = {
   point: 'Pin',
   linestring: 'Draw Line',
   polygon: 'Draw Polygon',
 }
 
-const props = withDefaults(
-  defineProps<{
-    open: boolean
-    mode: 'add' | 'edit'
-    categories?: HazardCategory[]
-    isSubmitting?: boolean
-    initialValue?: Hazard | null
-    placementType?: HazardGeometryType | null
-    pointCount?: number
-  }>(),
-  {
-    categories: () => [],
-    isSubmitting: false,
-    initialValue: null,
-    placementType: null,
-    pointCount: 0,
-  },
-)
+const adminMapStore = useAdminMapStore()
 
-const emit = defineEmits<{
-  (e: 'close'): void
-  (e: 'submit-create', payload: CreateHazardFormInput): void
-  (e: 'submit-update', payload: UpdateHazardInput): void
-}>()
+const isEditing = computed(() => adminMapStore.editingHazard !== null)
+const open = computed(() => adminMapStore.showHazardFormModal || isEditing.value)
+const modalTitle = computed(() => (isEditing.value ? 'Update Hazard' : 'Add Hazard'))
+const submitLabel = computed(() => (isEditing.value ? 'Update Hazard' : 'Create Hazard'))
 
 const form = reactive({
   name: '',
@@ -70,36 +50,37 @@ const form = reactive({
   location_name: '',
   description: '',
   geometry_type: 'point' as HazardGeometryType,
-  coordinatesText: '[125.5406, 8.9475]',
+  coordinatesText: '',
 })
 
-const parseError = reactive({
-  message: '',
-})
-
-const modalTitle = computed(() => (props.mode === 'add' ? 'Add Hazard' : 'Update Hazard'))
-const submitLabel = computed(() => (props.mode === 'add' ? 'Create Hazard' : 'Update Hazard'))
-const isAddMode = computed(() => props.mode === 'add')
-const canSubmit = computed(() => {
-  return form.name.trim().length > 0 && form.category_id.length > 0 && !props.isSubmitting
-})
+const parseError = ref('')
 
 const fetchedCategories = ref<HazardCategory[]>([])
 const isLoadingCategories = ref(false)
 const categoryFetchError = ref('')
 
 const resolvedCategories = computed(() =>
-  props.categories.length > 0 ? props.categories : fetchedCategories.value,
+  adminMapStore.hazardCategories.length > 0
+    ? adminMapStore.hazardCategories
+    : fetchedCategories.value,
+)
+
+const canSubmit = computed(
+  () => form.name.trim().length > 0 && form.category_id.length > 0 && !adminMapStore.isSavingHazard,
 )
 
 watch(
-  () => props.open,
-  async (open) => {
-    if (!open) {
+  open,
+  async (isOpen) => {
+    if (!isOpen) {
       categoryFetchError.value = ''
       return
     }
-    if (resolvedCategories.value.length > 0) return
+
+    if (resolvedCategories.value.length > 0) {
+      return
+    }
+
     isLoadingCategories.value = true
     categoryFetchError.value = ''
     try {
@@ -110,26 +91,23 @@ watch(
       isLoadingCategories.value = false
     }
   },
+  { immediate: true },
 )
 
 watch(
-  () => [props.open, props.mode, props.initialValue],
-  () => {
-    if (!props.open) {
-      return
-    }
+  () => adminMapStore.editingHazard,
+  (hazard) => {
+    parseError.value = ''
 
-    parseError.message = ''
-
-    if (props.mode === 'edit' && props.initialValue) {
-      form.name = props.initialValue.name
-      form.category_id = props.initialValue.category_id
-      form.severity = props.initialValue.severity
-      form.status = props.initialValue.status
-      form.location_name = props.initialValue.location_name ?? ''
-      form.description = props.initialValue.description ?? ''
-      form.geometry_type = props.initialValue.geometry_type
-      form.coordinatesText = JSON.stringify(props.initialValue.geometry.coordinates)
+    if (hazard) {
+      form.name = hazard.name
+      form.category_id = hazard.category_id
+      form.severity = hazard.severity
+      form.status = hazard.status
+      form.location_name = hazard.location_name ?? ''
+      form.description = hazard.description ?? ''
+      form.geometry_type = hazard.geometry_type
+      form.coordinatesText = JSON.stringify(hazard.geometry.coordinates)
       return
     }
 
@@ -142,7 +120,7 @@ watch(
     form.geometry_type = 'point'
     form.coordinatesText = ''
   },
-  { deep: true, immediate: true },
+  { immediate: true },
 )
 
 function isCoordinatePair(value: unknown): value is [number, number] {
@@ -158,48 +136,47 @@ function isLinearRing(value: unknown): value is [number, number][] {
 }
 
 function buildGeometry(): HazardGeometry | null {
-  parseError.message = ''
+  parseError.value = ''
 
   try {
     const raw = JSON.parse(form.coordinatesText)
 
     if (form.geometry_type === 'point') {
       if (!isCoordinatePair(raw)) {
-        parseError.message = 'Point coordinates must be [lng, lat].'
+        parseError.value = 'Point coordinates must be [lng, lat].'
         return null
       }
 
-      return {
-        type: 'Point',
-        coordinates: raw,
-      }
+      return { type: 'Point', coordinates: raw }
     }
 
     if (form.geometry_type === 'linestring') {
       if (!Array.isArray(raw) || raw.length < 2 || !raw.every(isCoordinatePair)) {
-        parseError.message = 'LineString coordinates must be [[lng, lat], ...].'
+        parseError.value = 'LineString coordinates must be [[lng, lat], ...].'
         return null
       }
 
-      return {
-        type: 'LineString',
-        coordinates: raw,
-      }
+      return { type: 'LineString', coordinates: raw }
     }
 
     if (!Array.isArray(raw) || raw.length === 0 || !raw.every(isLinearRing)) {
-      parseError.message = 'Polygon coordinates must be [[[lng, lat], ...]].'
+      parseError.value = 'Polygon coordinates must be [[[lng, lat], ...]].'
       return null
     }
 
-    return {
-      type: 'Polygon',
-      coordinates: raw,
-    }
+    return { type: 'Polygon', coordinates: raw }
   } catch {
-    parseError.message = 'Coordinates must be valid JSON.'
+    parseError.value = 'Coordinates must be valid JSON.'
     return null
   }
+}
+
+function close(): void {
+  if (isEditing.value) {
+    adminMapStore.closeEditHazardModal()
+    return
+  }
+  adminMapStore.cancelHazardPlacement()
 }
 
 function submit(): void {
@@ -216,21 +193,25 @@ function submit(): void {
     description: form.description.trim() || null,
   }
 
-  if (props.mode === 'add') {
-    emit('submit-create', basePayload)
+  if (isEditing.value) {
+    const hazard = adminMapStore.editingHazard
+    if (!hazard) {
+      return
+    }
+
+    const geometry = buildGeometry()
+    if (!geometry) {
+      return
+    }
+
+    void adminMapStore.handleUpdateHazard({
+      hazardId: hazard.id,
+      input: { ...basePayload, geometry, geometry_type: form.geometry_type },
+    })
     return
   }
 
-  const geometry = buildGeometry()
-  if (!geometry) {
-    return
-  }
-
-  emit('submit-update', {
-    ...basePayload,
-    geometry,
-    geometry_type: form.geometry_type,
-  })
+  void adminMapStore.handleSaveHazard(basePayload)
 }
 </script>
 
@@ -239,7 +220,7 @@ function submit(): void {
     :open="open"
     @update:open="
       (val) => {
-        if (!val) emit('close')
+        if (!val) close()
       }
     "
   >
@@ -308,23 +289,28 @@ function submit(): void {
             </Select>
           </div>
 
-          <div v-if="isAddMode" class="col-span-2 rounded-md border bg-muted/30 p-3">
+          <div v-if="!isEditing" class="col-span-2 rounded-md border bg-muted/30 p-3">
             <div class="space-y-1">
               <label class="text-xs font-medium">Placement Type</label>
               <p class="text-sm font-medium">
-                {{ placementType ? placementLabels[placementType] : 'No placement selected' }}
+                {{
+                  adminMapStore.hazardPlacementType
+                    ? placementLabels[adminMapStore.hazardPlacementType]
+                    : 'No placement selected'
+                }}
               </p>
               <p class="text-xs text-muted-foreground">
                 {{
-                  placementType === 'point'
+                  adminMapStore.hazardPlacementType === 'point'
                     ? 'Click the map once to place the hazard pin.'
-                    : placementType === 'linestring'
+                    : adminMapStore.hazardPlacementType === 'linestring'
                       ? 'Draw the hazard line on the map, then finish to continue.'
                       : 'Draw the hazard polygon on the map, then finish to continue.'
                 }}
               </p>
               <p class="text-xs text-muted-foreground">
-                Captured points: <span class="font-medium">{{ pointCount }}</span>
+                Captured points:
+                <span class="font-medium">{{ adminMapStore.hazardDrawPoints.length }}</span>
               </p>
             </div>
           </div>
@@ -353,7 +339,7 @@ function submit(): void {
             />
           </div>
 
-          <div v-if="!isAddMode" class="col-span-2 space-y-1">
+          <div v-if="isEditing" class="col-span-2 space-y-1">
             <label class="text-xs font-medium">Coordinates (JSON)</label>
             <textarea
               v-model="form.coordinatesText"
@@ -367,15 +353,15 @@ function submit(): void {
                     : '[[[125.54, 8.94], [125.55, 8.94], [125.55, 8.95], [125.54, 8.94]]]'
               "
             />
-            <p v-if="parseError.message" class="text-xs text-destructive">
-              {{ parseError.message }}
+            <p v-if="parseError" class="text-xs text-destructive">
+              {{ parseError }}
             </p>
           </div>
         </div>
       </div>
 
       <SheetFooter class="shrink-0 border-t bg-background/95 px-5 py-4">
-        <Button variant="outline" @click="emit('close')">Cancel</Button>
+        <Button variant="outline" @click="close">Cancel</Button>
         <Button :disabled="!canSubmit" @click="submit">{{ submitLabel }}</Button>
       </SheetFooter>
     </SheetContent>

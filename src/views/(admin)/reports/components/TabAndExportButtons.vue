@@ -33,6 +33,7 @@ const emit = defineEmits<{
     </div>
 
     <Button
+      v-if="!hideExport"
       type="button"
       size="sm"
       @click="emit('export')"

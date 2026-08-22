@@ -88,6 +88,39 @@ function toMappedZone(row: MappedZoneRpcRow): MappedZone {
   }
 }
 
+// The "year" column is a Postgres `date` (there is no real year type), stored
+// as Jan 1 of that year — convert at the service boundary so the rest of the
+// app only ever deals with a plain number.
+function yearToDateString(year: number): string {
+  return `${year}-01-01`
+}
+
+function dateToYear(value: unknown): number {
+  if (typeof value === 'number') {
+    return value
+  }
+  if (typeof value === 'string') {
+    const parsed = Number(value.slice(0, 4))
+    if (Number.isFinite(parsed)) {
+      return parsed
+    }
+  }
+  return new Date().getFullYear()
+}
+
+function toZoningLayer(row: Record<string, unknown>): ZoningLayer {
+  return {
+    id: String(row.id),
+    title: String(row.title),
+    color: String(row.color),
+    description: (row.description as string | null) ?? null,
+    year: dateToYear(row.year),
+    is_active: Boolean(row.is_active),
+    created_at: String(row.created_at),
+    updated_at: String(row.updated_at),
+  }
+}
+
 function toGeoJsonGeometry(value: unknown): { type?: string; coordinates?: unknown } | null {
   if (!value) {
     return null
@@ -116,7 +149,7 @@ export async function listCityZoningLayers(): Promise<ZoningLayer[]> {
 
   const { data, error } = await supabase
     .from(ZONING_LAYERS_TABLE)
-    .select('id, title, color, description, is_active, created_at, updated_at')
+    .select('id, title, color, description, year, is_active, created_at, updated_at')
     .eq('city_id', cityId)
     .order('created_at', { ascending: false })
 
@@ -124,7 +157,7 @@ export async function listCityZoningLayers(): Promise<ZoningLayer[]> {
     throw new Error(error.message)
   }
 
-  return (data ?? []) as ZoningLayer[]
+  return (data ?? []).map((row) => toZoningLayer(row as Record<string, unknown>))
 }
 
 export const listMyZoningLayers = listCityZoningLayers
@@ -136,19 +169,20 @@ export async function createZoningLayer(input: CreateZoningLayerInput): Promise<
     title: input.title.trim(),
     color: input.color,
     description: input.description.trim() || null,
+    year: yearToDateString(input.year),
   }
 
   const { data, error } = await supabase
     .from(ZONING_LAYERS_TABLE)
     .insert(payload)
-    .select('id, title, color, description, is_active, created_at, updated_at')
+    .select('id, title, color, description, year, is_active, created_at, updated_at')
     .single()
 
   if (error) {
     throw new Error(error.message)
   }
 
-  return data as ZoningLayer
+  return toZoningLayer(data as Record<string, unknown>)
 }
 
 export async function updateZoningLayer(
@@ -161,6 +195,7 @@ export async function updateZoningLayer(
     title: input.title.trim(),
     color: input.color,
     description: input.description.trim() || null,
+    year: yearToDateString(input.year),
   }
 
   const { data, error } = await supabase
@@ -168,14 +203,14 @@ export async function updateZoningLayer(
     .update(payload)
     .eq('id', layerId)
     .eq('city_id', cityId)
-    .select('id, title, color, description, is_active, created_at, updated_at')
+    .select('id, title, color, description, year, is_active, created_at, updated_at')
     .single()
 
   if (error) {
     throw new Error(error.message)
   }
 
-  return data as ZoningLayer
+  return toZoningLayer(data as Record<string, unknown>)
 }
 
 export async function deleteZoningLayer(layerId: string): Promise<void> {
@@ -204,14 +239,14 @@ export async function setZoningLayerActive(
     .update({ is_active: isActive })
     .eq('id', layerId)
     .eq('city_id', cityId)
-    .select('id, title, color, description, is_active, created_at, updated_at')
+    .select('id, title, color, description, year, is_active, created_at, updated_at')
     .single()
 
   if (error) {
     throw new Error(error.message)
   }
 
-  return data as ZoningLayer
+  return toZoningLayer(data as Record<string, unknown>)
 }
 
 export async function listCityMappedZones(): Promise<MappedZone[]> {

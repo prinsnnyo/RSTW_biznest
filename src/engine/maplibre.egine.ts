@@ -33,6 +33,7 @@ export interface MapLibreEngineOptions {
   container: HTMLElement | string
   center?: LatLng
   zoom?: number
+  pitch?: number
   apiKey?: string
   styleUrl?: string
   theme?: MapLibreTheme
@@ -44,6 +45,7 @@ export interface MapLibreInitOverrides {
   styleUrl?: string
   center?: LatLng
   zoom?: number
+  pitch?: number
 }
 
 const MAPTILER_STYLE_BASE_URL = 'https://api.maptiler.com/maps'
@@ -51,6 +53,7 @@ const MAPTILER_LIGHT_STYLE = 'streets-v2'
 const MAPTILER_DARK_STYLE = 'streets-v2-dark'
 const DEFAULT_CENTER: LatLng = { lat: 8.9475, lng: 125.5406 }
 const DEFAULT_ZOOM = 14
+const DEFAULT_PITCH = 0
 
 export function buildMaptilerStyleUrl(styleId: string, apiKey: string): string {
   return `${MAPTILER_STYLE_BASE_URL}/${styleId}/style.json?key=${apiKey}`
@@ -114,12 +117,14 @@ export class MapLibreEngine {
 
     const center = overrides?.center ?? this.options.center ?? DEFAULT_CENTER
     const zoom = overrides?.zoom ?? this.options.zoom ?? DEFAULT_ZOOM
+    const pitch = overrides?.pitch ?? this.options.pitch ?? DEFAULT_PITCH
 
     this.map = new MapLibreMap({
       container: this.options.container,
       style: this.resolveStyle(overrides),
       center: toLngLat(center),
       zoom,
+      pitch,
       interactive: this.options.interactive ?? true,
       attributionControl: false,
     })
@@ -202,6 +207,14 @@ export class MapLibreEngine {
 
   setZoom(zoom: number): void {
     this.map?.setZoom(zoom)
+  }
+
+  getPitch(): number | null {
+    return this.map?.getPitch() ?? null
+  }
+
+  setPitch(pitch: number): void {
+    this.map?.setPitch(pitch)
   }
 
   getBounds(): LngLatBoundsLike | null {

@@ -37,6 +37,7 @@ export interface TabAndExportButtonsProps {
   tabs: Tab[]
   value: number
   canExport: boolean
+  hideExport?: boolean
 }
 
 export interface ReportProps {
