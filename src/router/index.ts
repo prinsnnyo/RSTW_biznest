@@ -51,13 +51,12 @@ const router = createRouter({
       ],
     },
     {
-      path: '/login',
       path: '/sites/:id',
       name: 'public-site',
       component: SiteView,
     },
     {
-      path: '/auth',
+      path: '/login',
       component: AuthLayout,
       children: [
         {
