@@ -84,6 +84,7 @@ function toggleExpand(role: BusinessRole): void {
 }
 
 function close(): void {
+  adminMapStore.clearSelectedLocalBusiness()
   adminMapStore.activePanel = null
 }
 </script>
@@ -207,7 +208,6 @@ function close(): void {
                 >
                   {{ group.label }}
                 </TypographySmall>
-                <Badge variant="secondary" class="shrink-0">{{ group.pins.length }}</Badge>
                 <ChevronRight
                   class="h-3.5 w-3.5 shrink-0 transition-transform"
                   :class="isExpanded(group.role) ? 'rotate-90' : ''"

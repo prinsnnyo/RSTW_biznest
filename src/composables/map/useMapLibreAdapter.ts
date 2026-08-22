@@ -18,8 +18,13 @@ interface MapLibreAdapterOptions {
 
 type MapClickHandler = (point: MapDrawPoint) => void
 type DrawPointMoveHandler = (index: number, point: MapDrawPoint) => void
+type FreehandPointHandler = (point: MapDrawPoint) => void
 type PinClickHandler = (pinId: string) => void
-type CameraIdleHandler = (camera: { zoom: number; pitch: number }) => void
+type CameraIdleHandler = (camera: {
+  zoom: number
+  pitch: number
+  center: { lat: number; lng: number }
+}) => void
 
 const PIN_ROLE_COLORS: Record<string, string> = {
   space_owner: '#0ea5e9',
@@ -29,6 +34,11 @@ const PIN_ROLE_COLORS: Record<string, string> = {
 
 const DRAW_MODE_CURSOR =
   "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M4 20l4-1 9.5-9.5-3-3L5 16z' fill='%231f2937'/%3E%3Cpath d='M14.5 6.5l3 3 1-1a1.6 1.6 0 000-2.2l-.8-.8a1.6 1.6 0 00-2.2 0z' fill='%230f172a'/%3E%3C/svg%3E\") 2 20, crosshair"
+
+// Sample a new freehand vertex only after the cursor has moved this many
+// screen pixels from the last sampled point — lat/lng distance isn't
+// uniform across zoom levels, so the threshold has to be in screen space.
+const FREEHAND_MIN_PIXEL_DISTANCE = 8
 
 const BARANGAY_SOURCE_ID = 'ml-barangay-borders'
 const BARANGAY_FILL_LAYER_ID = 'ml-barangay-borders-fill'
@@ -66,7 +76,11 @@ export function useMapLibreAdapter(options: MapLibreAdapterOptions) {
   let engine: MapLibreEngine | null = null
   let mapClickHandler: MapClickHandler | null = null
   let drawPointMoveHandler: DrawPointMoveHandler | null = null
+  let freehandPointHandler: FreehandPointHandler | null = null
   let clickUnsubscribe: (() => void) | null = null
+  let freehandUnsubscribes: Array<() => void> = []
+  let isFreehandDragging = false
+  let lastFreehandScreenPoint: { x: number; y: number } | null = null
   let cameraIdleUnsubscribe: (() => void) | null = null
   let cameraIdleHandler: CameraIdleHandler | null = null
   let barangayHoverCleanup: (() => void) | null = null
@@ -79,7 +93,7 @@ export function useMapLibreAdapter(options: MapLibreAdapterOptions) {
   let poiLayerIds: string[] = []
   let isDrawMode = false
   let currentTheme: MapLibreTheme = 'light'
-  let showPoi = false
+  const hiddenPoiTypes = new Set<string>()
 
   let lastBarangayArgs: [boolean, BarangayFeatureCollection | null] | null = null
   let lastMappedZones: MappedZone[] | null = null
@@ -94,12 +108,25 @@ export function useMapLibreAdapter(options: MapLibreAdapterOptions) {
   function cachePoiLayerIds(): void {
     const styleLayers = engine?.getMap()?.getStyle()?.layers ?? []
     poiLayerIds = styleLayers
-      .filter((layer) => /poi|transit/i.test(layer.id))
+      .filter((layer) => 'source-layer' in layer && layer['source-layer'] === 'poi')
       .map((layer) => layer.id)
   }
 
+  function getPoiTypes(): string[] {
+    return [...poiLayerIds]
+  }
+
   function applyPoiVisibility(): void {
-    poiLayerIds.forEach((id) => engine?.setLayerVisibility(id, showPoi))
+    poiLayerIds.forEach((id) => engine?.setLayerVisibility(id, !hiddenPoiTypes.has(id)))
+  }
+
+  function setPoiTypeVisible(type: string, visible: boolean): void {
+    if (visible) {
+      hiddenPoiTypes.delete(type)
+    } else {
+      hiddenPoiTypes.add(type)
+    }
+    engine?.setLayerVisibility(type, visible)
   }
 
   function clearClickListener(): void {
@@ -122,10 +149,11 @@ export function useMapLibreAdapter(options: MapLibreAdapterOptions) {
     cameraIdleUnsubscribe = engine.on('moveend', () => {
       const zoom = engine?.getZoom()
       const pitch = engine?.getPitch()
-      if (zoom == null || pitch == null) {
+      const center = engine?.getCenter()
+      if (zoom == null || pitch == null || center == null) {
         return
       }
-      cameraIdleHandler?.({ zoom, pitch })
+      cameraIdleHandler?.({ zoom, pitch, center })
     })
   }
 
@@ -139,6 +167,65 @@ export function useMapLibreAdapter(options: MapLibreAdapterOptions) {
     clickUnsubscribe = engine.on('click', (event) => {
       mapClickHandler?.({ lat: event.lngLat.lat, lng: event.lngLat.lng })
     })
+  }
+
+  function clearFreehandListeners(): void {
+    freehandUnsubscribes.forEach((unsubscribe) => unsubscribe())
+    freehandUnsubscribes = []
+
+    // Force-restore interactivity if this teardown happens mid-drag
+    // (e.g. mode switched back to manual while the mouse button is down).
+    if (isFreehandDragging) {
+      engine?.setInteractive(true)
+    }
+    isFreehandDragging = false
+    lastFreehandScreenPoint = null
+  }
+
+  function syncFreehandDrawHandler(): void {
+    clearFreehandListeners()
+
+    if (!engine || !freehandPointHandler) {
+      return
+    }
+
+    const onMouseDown = engine.on('mousedown', (event) => {
+      isFreehandDragging = true
+      lastFreehandScreenPoint = { x: event.point.x, y: event.point.y }
+      engine?.setInteractive(false)
+      freehandPointHandler?.({ lat: event.lngLat.lat, lng: event.lngLat.lng })
+    })
+
+    const onMouseMove = engine.on('mousemove', (event) => {
+      if (!isFreehandDragging) {
+        return
+      }
+
+      const { x, y } = event.point
+      if (lastFreehandScreenPoint) {
+        const dx = x - lastFreehandScreenPoint.x
+        const dy = y - lastFreehandScreenPoint.y
+        if (Math.hypot(dx, dy) < FREEHAND_MIN_PIXEL_DISTANCE) {
+          return
+        }
+      }
+
+      lastFreehandScreenPoint = { x, y }
+      freehandPointHandler?.({ lat: event.lngLat.lat, lng: event.lngLat.lng })
+    })
+
+    const onMouseUp = engine.on('mouseup', () => {
+      isFreehandDragging = false
+      lastFreehandScreenPoint = null
+      engine?.setInteractive(true)
+    })
+
+    freehandUnsubscribes = [onMouseDown, onMouseMove, onMouseUp]
+  }
+
+  function setFreehandDrawHandler(handler: FreehandPointHandler | null): void {
+    freehandPointHandler = handler
+    syncFreehandDrawHandler()
   }
 
   function removeBarangayLayers(): void {
@@ -226,6 +313,7 @@ export function useMapLibreAdapter(options: MapLibreAdapterOptions) {
 
   function destroy(): void {
     clearClickListener()
+    clearFreehandListeners()
     clearCameraIdleListener()
     removeBarangayLayers()
     removeMappedZonesLayers()
@@ -259,11 +347,6 @@ export function useMapLibreAdapter(options: MapLibreAdapterOptions) {
       applyPoiVisibility()
       reapplyOverlays()
     })
-  }
-
-  function setPoisVisible(visible: boolean): void {
-    showPoi = visible
-    applyPoiVisibility()
   }
 
   function setMapClickHandler(handler: MapClickHandler | null): void {
@@ -671,13 +754,16 @@ export function useMapLibreAdapter(options: MapLibreAdapterOptions) {
     renderHazards,
     renderDrawPreview,
     setMapClickHandler,
+    setFreehandDrawHandler,
     setDrawMode,
     setTheme,
-    setPoisVisible,
+    getPoiTypes,
+    setPoiTypeVisible,
     setDrawPointMoveHandler,
     setCameraIdleHandler,
     focusOnZone,
     showLocationMarker,
+    clearFocusMarker: destroyFocusMarker,
     renderPinnedLocations,
   }
 }

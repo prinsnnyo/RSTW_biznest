@@ -1,7 +1,7 @@
 <!-- Maplibre.vue -->
 <!-- eslint-disable vue/multi-word-component-names -->
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { onBeforeUnmount, onMounted, ref } from 'vue'
 import type { BarangayFeatureCollection } from '@/types/map.types'
 import type { Hazard } from '@/types/hazard.types'
 import type { MapDrawPoint, MappedZone } from '@/types/zoning.types'
@@ -24,6 +24,7 @@ const props = withDefaults(
 
 const emit = defineEmits<{
   (e: 'ready'): void
+  (e: 'camera-idle', center: { lat: number; lng: number }): void
 }>()
 
 const CAMERA_STORAGE_KEY = 'biznest:admin-map:camera'
@@ -87,7 +88,10 @@ async function initMap(): Promise<void> {
 
   try {
     await mapLibreAdapter.init()
-    mapLibreAdapter.setCameraIdleHandler(saveStoredCamera)
+    mapLibreAdapter.setCameraIdleHandler((camera) => {
+      saveStoredCamera({ zoom: camera.zoom, pitch: camera.pitch })
+      emit('camera-idle', camera.center)
+    })
     emit('ready')
   } catch (error) {
     console.warn('MapLibre unavailable', error)
@@ -115,18 +119,6 @@ onMounted(async () => {
 
   await initMap()
 })
-
-watch(
-  () => props.center,
-  (center) => {
-    if (!center) {
-      return
-    }
-
-    mapLibreAdapter.setCenter(center)
-  },
-  { deep: true },
-)
 
 onBeforeUnmount(() => {
   if (themeObserver) {
@@ -167,6 +159,10 @@ async function focusLocation(point: { lat: number; lng: number }, label?: string
   await mapLibreAdapter.showLocationMarker(point, label)
 }
 
+function clearFocusMarker(): void {
+  mapLibreAdapter.clearFocusMarker()
+}
+
 function setDrawMode(enabled: boolean): void {
   mapLibreAdapter.setDrawMode(enabled)
 }
@@ -181,12 +177,20 @@ function setDrawPointMoveHandler(
   mapLibreAdapter.setDrawPointMoveHandler(handler)
 }
 
+function setFreehandDrawHandler(handler: ((point: MapDrawPoint) => void) | null): void {
+  mapLibreAdapter.setFreehandDrawHandler(handler)
+}
+
 function setCenter(center: { lat: number; lng: number }, zoom?: number): void {
   mapLibreAdapter.setCenter(center, zoom)
 }
 
-function setPoisVisible(visible: boolean): void {
-  mapLibreAdapter.setPoisVisible(visible)
+function getPoiTypes(): string[] {
+  return mapLibreAdapter.getPoiTypes()
+}
+
+function setPoiTypeVisible(type: string, visible: boolean): void {
+  mapLibreAdapter.setPoiTypeVisible(type, visible)
 }
 
 async function renderPinnedLocations(
@@ -203,11 +207,14 @@ defineExpose({
   renderDrawPreview,
   focusOnZone,
   focusLocation,
+  clearFocusMarker,
   setDrawMode,
   setMapClickHandler,
   setDrawPointMoveHandler,
+  setFreehandDrawHandler,
   setCenter,
-  setPoisVisible,
+  getPoiTypes,
+  setPoiTypeVisible,
   renderPinnedLocations,
 })
 </script>

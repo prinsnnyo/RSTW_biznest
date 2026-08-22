@@ -30,6 +30,10 @@ function handleMapReady(): void {
   void adminMapStore.onMapReady()
 }
 
+function handleCameraIdle(center: { lat: number; lng: number }): void {
+  adminMapStore.setMapCenter(center)
+}
+
 async function applyFocusFromQuery(): Promise<void> {
   if (!isMapReady.value) {
     return
@@ -75,7 +79,12 @@ onBeforeUnmount(() => {
   <div class="relative h-full w-full overflow-hidden">
     <!-- ── Map canvas ────────────────────────────────────────────────── -->
     <div class="relative h-full w-full" :class="{ 'pr-11': canUseAdminTools }">
-      <Maplibre :ref="bindMapRef" :center="adminMapStore.mapCenter" @ready="handleMapReady" />
+      <Maplibre
+        :ref="bindMapRef"
+        :center="adminMapStore.mapCenter"
+        @ready="handleMapReady"
+        @camera-idle="handleCameraIdle"
+      />
 
       <!-- Barangay-border load status (top-left over the map) -->
       <div
@@ -111,6 +120,22 @@ onBeforeUnmount(() => {
               : `Captured ${adminMapStore.hazardDrawPoints.length} points`
           }}
         </TypographyMuted>
+        <div v-if="adminMapStore.hazardPlacementType !== 'point'" class="mt-2 flex gap-1">
+          <Button
+            size="sm"
+            :variant="adminMapStore.drawMode === 'manual' ? 'default' : 'outline'"
+            @click="adminMapStore.setDrawInteractionMode('manual')"
+          >
+            <TypographySmall as="span">Manual</TypographySmall>
+          </Button>
+          <Button
+            size="sm"
+            :variant="adminMapStore.drawMode === 'freehand' ? 'default' : 'outline'"
+            @click="adminMapStore.setDrawInteractionMode('freehand')"
+          >
+            <TypographySmall as="span">Freehand</TypographySmall>
+          </Button>
+        </div>
         <div class="mt-2 flex gap-2">
           <Button
             v-if="adminMapStore.hazardPlacementType !== 'point'"
@@ -155,6 +180,22 @@ onBeforeUnmount(() => {
         <TypographyMuted as="p" class="text-xs"
           >{{ adminMapStore.drawPoints.length }} points</TypographyMuted
         >
+        <div class="mt-2 flex gap-1">
+          <Button
+            size="sm"
+            :variant="adminMapStore.drawMode === 'manual' ? 'default' : 'outline'"
+            @click="adminMapStore.setDrawInteractionMode('manual')"
+          >
+            <TypographySmall as="span">Manual</TypographySmall>
+          </Button>
+          <Button
+            size="sm"
+            :variant="adminMapStore.drawMode === 'freehand' ? 'default' : 'outline'"
+            @click="adminMapStore.setDrawInteractionMode('freehand')"
+          >
+            <TypographySmall as="span">Freehand</TypographySmall>
+          </Button>
+        </div>
         <div class="mt-2 flex gap-2">
           <Button
             size="sm"
