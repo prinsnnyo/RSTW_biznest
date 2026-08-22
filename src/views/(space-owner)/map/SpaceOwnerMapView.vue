@@ -210,13 +210,10 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="space-y-4">
-    <div class="flex flex-wrap items-end justify-between gap-3">
-      <div>
-        <h1 class="text-foreground text-3xl font-semibold">Explore Butuan</h1>
-        <p class="text-muted-foreground mt-1 text-sm">
-          Browse pinned spaces, businesses, and suppliers. Click a marker for details.
-        </p>
+  <div class="relative h-full min-h-0 w-full overflow-hidden">
+    <div class="absolute inset-x-0 top-3 z-20 mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-2 px-4">
+      <div class="bg-card/90 rounded-full px-4 py-2 shadow-sm backdrop-blur">
+        <p class="text-foreground text-sm font-semibold">Explore Butuan</p>
       </div>
       <div class="flex flex-wrap gap-2">
         <Button v-if="canPin && !pinMode" @click="startPinMode">
@@ -231,7 +228,7 @@ onMounted(() => {
 
     <div
       v-if="pinMode"
-      class="border-border bg-card grid gap-3 rounded-2xl border p-4 md:grid-cols-2"
+      class="border-border bg-card/95 absolute inset-x-4 top-16 z-20 mx-auto grid max-w-4xl gap-3 rounded-2xl border p-4 shadow-lg backdrop-blur md:grid-cols-2"
     >
       <div class="space-y-2">
         <Label for="pin-title">Title</Label>
@@ -298,7 +295,7 @@ onMounted(() => {
       </p>
     </div>
 
-    <div class="border-border relative h-[68vh] overflow-hidden rounded-3xl border shadow-sm">
+    <div class="absolute inset-0">
       <MapCanvas
         ref="mapRef"
         :provider="mapProvider"
