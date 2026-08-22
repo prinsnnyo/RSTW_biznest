@@ -123,7 +123,6 @@ function close(): void {
           <div class="flex items-center gap-2">
             <AlertTriangle class="h-4 w-4 text-amber-500" />
             <TypographyP as="span" class="m-0 leading-none">Hazards</TypographyP>
-            <Badge variant="secondary">{{ adminMapStore.hazards.length }}</Badge>
           </div>
 
           <div class="flex items-center gap-1">
@@ -210,7 +209,6 @@ function close(): void {
                 >
                   {{ group.label }}
                 </TypographySmall>
-                <Badge variant="secondary" class="shrink-0">{{ group.hazards.length }}</Badge>
                 <ChevronRight
                   class="h-3.5 w-3.5 shrink-0 transition-transform"
                   :class="isExpanded(group.categoryId) ? 'rotate-90' : ''"

@@ -18,6 +18,7 @@ const props = withDefaults(
       title: '',
       color: '#65a30d',
       description: '',
+      year: new Date().getFullYear(),
     }),
   },
 )
@@ -31,13 +32,16 @@ const form = reactive<UpdateZoningLayerInput>({
   title: '',
   color: '#65a30d',
   description: '',
+  year: new Date().getFullYear(),
 })
 
 const modalTitle = computed(() =>
   props.mode === 'add' ? 'Add Zoning Layer' : 'Update Zoning Layer',
 )
 const submitLabel = computed(() => (props.mode === 'add' ? 'Save Layer' : 'Update Layer'))
-const canSubmit = computed(() => form.title.trim().length > 0 && !props.isSubmitting)
+const canSubmit = computed(
+  () => form.title.trim().length > 0 && Number.isFinite(form.year) && !props.isSubmitting,
+)
 
 watch(
   () => [props.open, props.initialValue, props.mode],
@@ -49,6 +53,7 @@ watch(
     form.title = props.initialValue.title
     form.color = props.initialValue.color
     form.description = props.initialValue.description
+    form.year = props.initialValue.year
   },
   { immediate: true, deep: true },
 )
@@ -62,6 +67,7 @@ function submitForm(): void {
     title: form.title.trim(),
     color: form.color,
     description: form.description.trim(),
+    year: form.year,
   })
 }
 </script>
@@ -81,6 +87,11 @@ function submitForm(): void {
         <div class="space-y-1">
           <label class="text-xs font-medium">Color</label>
           <Input v-model="form.color" type="color" class="h-10 w-14 p-1" />
+        </div>
+
+        <div class="space-y-1">
+          <label class="text-xs font-medium">Year</label>
+          <Input v-model.number="form.year" type="number" placeholder="e.g. 2024" />
         </div>
 
         <div class="space-y-1">

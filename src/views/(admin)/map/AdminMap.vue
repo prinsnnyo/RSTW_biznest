@@ -78,7 +78,10 @@ onBeforeUnmount(() => {
       <Maplibre :ref="bindMapRef" :center="adminMapStore.mapCenter" @ready="handleMapReady" />
 
       <!-- Barangay-border load status (top-left over the map) -->
-      <div v-if="adminMapStore.isLoading || adminMapStore.errorMessage" class="absolute left-3 top-3 z-900">
+      <div
+        v-if="adminMapStore.isLoading || adminMapStore.errorMessage"
+        class="absolute left-3 top-3 z-900 flex items-center gap-2"
+      >
         <span
           v-if="adminMapStore.isLoading"
           class="rounded-md bg-card/90 px-2 py-1 text-xs text-muted-foreground shadow backdrop-blur-sm"
@@ -86,7 +89,7 @@ onBeforeUnmount(() => {
           Loading borders…
         </span>
         <span
-          v-else
+          v-else-if="adminMapStore.errorMessage"
           class="rounded-md bg-card/90 px-2 py-1 text-xs text-destructive shadow backdrop-blur-sm"
         >
           {{ adminMapStore.errorMessage }}

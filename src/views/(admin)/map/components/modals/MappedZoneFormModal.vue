@@ -25,6 +25,14 @@ const form = reactive({
   description: '',
 })
 
+function resolveDefaultLayerId(): string {
+  const pendingId = adminMapStore.pendingZoneLayerId
+  if (pendingId && adminMapStore.visibleZoningLayers.some((layer) => layer.id === pendingId)) {
+    return pendingId
+  }
+  return adminMapStore.visibleZoningLayers[0]?.id ?? ''
+}
+
 const canSubmit = computed(
   () =>
     form.name.trim().length > 0 &&
@@ -48,7 +56,7 @@ watch(
 
     form.name = ''
     form.description = ''
-    form.zoningLayerId = adminMapStore.zoningLayers[0]?.id ?? ''
+    form.zoningLayerId = resolveDefaultLayerId()
   },
   { immediate: true },
 )
@@ -62,12 +70,12 @@ watch(
 
     form.name = ''
     form.description = ''
-    form.zoningLayerId = adminMapStore.zoningLayers[0]?.id ?? ''
+    form.zoningLayerId = resolveDefaultLayerId()
   },
 )
 
 watch(
-  () => adminMapStore.zoningLayers,
+  () => adminMapStore.visibleZoningLayers,
   (layers) => {
     if (!open.value) {
       return
@@ -138,7 +146,7 @@ function submit(): void {
             </SelectTrigger>
             <SelectContent class="z-10002">
               <SelectItem
-                v-for="layer in adminMapStore.zoningLayers"
+                v-for="layer in adminMapStore.visibleZoningLayers"
                 :key="layer.id"
                 :value="layer.id"
               >

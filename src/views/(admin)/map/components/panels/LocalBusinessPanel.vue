@@ -96,7 +96,6 @@ function close(): void {
           <div class="flex items-center gap-2">
             <Building2 class="h-4 w-4 text-emerald-500" />
             <TypographyP as="span" class="m-0 leading-none">Local Business</TypographyP>
-            <Badge variant="secondary">{{ adminMapStore.localBusinesses.length }}</Badge>
           </div>
 
           <div class="flex items-center gap-1">

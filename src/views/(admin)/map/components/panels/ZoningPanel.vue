@@ -1,9 +1,31 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { ChevronRight, Eye, EyeOff, Pencil, Plus, Trash2, X } from 'lucide-vue-next'
-import { Badge } from '@/components/ui/badge'
+import {
+  ChevronRight,
+  Eye,
+  EyeOff,
+  MapPinPlus,
+  MoreVertical,
+  Pencil,
+  Plus,
+  Trash2,
+  X,
+} from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { TypographyP, TypographySmall } from '@/components/typography'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { useAdminMapStore } from '@/stores/admin.map.store'
@@ -14,6 +36,18 @@ import type { UpdateZoningLayerInput, ZoningLayer } from '@/types/zoning.types'
 
 const adminMapStore = useAdminMapStore()
 
+// ── Zoning year filter (this panel is the only place it applies) ───────────
+const ALL_YEARS_VALUE = 'all'
+const selectedZoningYearValue = computed<string>({
+  get: () =>
+    adminMapStore.selectedZoningYear === null
+      ? ALL_YEARS_VALUE
+      : String(adminMapStore.selectedZoningYear),
+  set: (value) => {
+    adminMapStore.setSelectedZoningYear(value === ALL_YEARS_VALUE ? null : Number(value))
+  },
+})
+
 const expandedLayerIds = ref<Set<string>>(new Set())
 const showAddLayerModal = ref(false)
 const showEditLayerModal = ref(false)
@@ -21,39 +55,31 @@ const editingLayerId = ref<string | null>(null)
 const deletingLayerId = ref<string | null>(null)
 const deletingMappedZoneId = ref<string | null>(null)
 
-const DEFAULT_LAYER_FORM_VALUE: UpdateZoningLayerInput = {
-  title: '',
-  color: '#65a30d',
-  description: '',
+function defaultLayerFormValue(): UpdateZoningLayerInput {
+  return {
+    title: '',
+    color: '#65a30d',
+    description: '',
+    year: adminMapStore.selectedZoningYear ?? new Date().getFullYear(),
+  }
 }
 
-const addLayerInitialValue = computed<UpdateZoningLayerInput>(() => DEFAULT_LAYER_FORM_VALUE)
+const addLayerInitialValue = computed<UpdateZoningLayerInput>(() => defaultLayerFormValue())
 
 const editLayerInitialValue = computed<UpdateZoningLayerInput>(() => {
   const activeLayer = adminMapStore.zoningLayers.find((layer) => layer.id === editingLayerId.value)
 
   if (!activeLayer) {
-    return DEFAULT_LAYER_FORM_VALUE
+    return defaultLayerFormValue()
   }
 
   return {
     title: activeLayer.title,
     color: activeLayer.color,
     description: activeLayer.description ?? '',
+    year: activeLayer.year,
   }
 })
-
-const mappedZoneCountByLayerId = computed<Record<string, number>>(() => {
-  return adminMapStore.mappedZones.reduce<Record<string, number>>((acc, zone) => {
-    const current = acc[zone.zoning_layer_id] ?? 0
-    acc[zone.zoning_layer_id] = current + 1
-    return acc
-  }, {})
-})
-
-const canStartDrawZone = computed(
-  () => adminMapStore.zoningLayers.length > 0 && !adminMapStore.isSidebarSubmitting,
-)
 
 function toggleLayerExpanded(layerId: string): void {
   const next = new Set(expandedLayerIds.value)
@@ -71,12 +97,12 @@ function isLayerExpanded(layerId: string): boolean {
   return expandedLayerIds.value.has(layerId)
 }
 
-function handleStartDrawZone(): void {
-  if (!canStartDrawZone.value) {
+function handleCreateZoneForLayer(layer: ZoningLayer): void {
+  if (adminMapStore.isSidebarSubmitting) {
     return
   }
 
-  adminMapStore.startDrawZoneMode()
+  adminMapStore.startDrawZoneMode(layer.id)
 }
 
 function openAddLayerModal(): void {
@@ -175,8 +201,6 @@ function close(): void {
           </div>
 
           <div class="ml-3 flex items-center gap-1">
-            <Badge variant="secondary">{{ adminMapStore.zoningLayers.length }}</Badge>
-
             <TooltipProvider :delay-duration="200">
               <Tooltip>
                 <TooltipTrigger as-child>
@@ -199,46 +223,24 @@ function close(): void {
             </Button>
           </div>
         </CardTitle>
+
+        <Select v-model="selectedZoningYearValue">
+          <SelectTrigger size="sm" class="w-full">
+            <SelectValue placeholder="Zoning year" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem :value="ALL_YEARS_VALUE">All Years</SelectItem>
+            <SelectItem v-for="year in adminMapStore.zoningYears" :key="year" :value="String(year)">
+              {{ year }}
+            </SelectItem>
+          </SelectContent>
+        </Select>
       </CardHeader>
 
       <CardContent class="flex-1 space-y-4 overflow-y-auto p-4">
-        <div class="flex justify-end">
-          <TooltipProvider :delay-duration="200">
-            <Tooltip>
-              <TooltipTrigger as-child>
-                <span
-                  role="button"
-                  tabindex="0"
-                  class="group inline-flex items-center gap-1.5 text-sm font-bold transition-colors"
-                  :class="
-                    canStartDrawZone
-                      ? 'cursor-pointer text-muted-foreground hover:text-foreground'
-                      : 'cursor-not-allowed text-muted-foreground/60'
-                  "
-                  :aria-disabled="!canStartDrawZone"
-                  @click="handleStartDrawZone"
-                  @keydown.enter.prevent="handleStartDrawZone"
-                  @keydown.space.prevent="handleStartDrawZone"
-                >
-                  <span
-                    class="text-lg font-bold leading-none transition-transform group-hover:-translate-y-px"
-                    >+</span
-                  >
-                  <span class="transition-colors group-hover:underline">Add Mapped Zone</span>
-                </span>
-              </TooltipTrigger>
-              <TooltipContent side="left">
-                Add a new mapped zone by drawing on the map.<br />
-                <span class="font-semibold"
-                  >Make sure to add a zone layer first before adding a mapped zone.</span
-                >
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        </div>
         <section class="space-y-2">
           <div class="space-y-2">
-            <div v-for="layer in adminMapStore.zoningLayers" :key="layer.id" class="rounded-md">
+            <div v-for="layer in adminMapStore.visibleZoningLayers" :key="layer.id" class="rounded-md">
               <div class="w-full">
                 <div class="w-full h-px bg-border/80" />
                 <div
@@ -258,40 +260,45 @@ function close(): void {
                     <TypographySmall as="span" class="flex-1 truncate text-sm font-medium">{{
                       layer.title
                     }}</TypographySmall>
-                    <Badge variant="secondary">{{ mappedZoneCountByLayerId[layer.id] ?? 0 }}</Badge>
                     <ChevronRight
                       class="h-3.5 w-3.5 transition-transform"
                       :class="isLayerExpanded(layer.id) ? 'rotate-90' : ''"
                     />
                   </button>
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    title="Update layer"
-                    :disabled="adminMapStore.isSidebarSubmitting"
-                    @click="openEditLayerModal(layer)"
-                  >
-                    <Pencil class="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    title="Delete layer"
-                    :disabled="adminMapStore.isSidebarSubmitting"
-                    @click="openDeleteDialog(layer.id)"
-                  >
-                    <Trash2 class="h-4 w-4 text-destructive" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    :title="layer.is_active ? 'Hide layer zones' : 'Show layer zones'"
-                    :disabled="adminMapStore.isSidebarSubmitting"
-                    @click="toggleLayerVisibility(layer)"
-                  >
-                    <Eye v-if="layer.is_active" class="h-4 w-4" />
-                    <EyeOff v-else class="h-4 w-4" />
-                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger as-child>
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        title="Layer actions"
+                        :disabled="adminMapStore.isSidebarSubmitting"
+                      >
+                        <MoreVertical class="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" class="z-10002">
+                      <DropdownMenuItem @click="handleCreateZoneForLayer(layer)">
+                        <MapPinPlus class="h-4 w-4" />
+                        Create Zone
+                      </DropdownMenuItem>
+                      <DropdownMenuItem @click="openEditLayerModal(layer)">
+                        <Pencil class="h-4 w-4" />
+                        Edit Layer
+                      </DropdownMenuItem>
+                      <DropdownMenuItem @click="toggleLayerVisibility(layer)">
+                        <Eye v-if="!layer.is_active" class="h-4 w-4" />
+                        <EyeOff v-else class="h-4 w-4" />
+                        {{ layer.is_active ? 'Hide Zones' : 'Show Zones' }}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        class="text-destructive focus:text-destructive"
+                        @click="openDeleteDialog(layer.id)"
+                      >
+                        <Trash2 class="h-4 w-4" />
+                        Delete Layer
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
                 <div class="w-full h-px bg-border/80" />
               </div>
@@ -309,11 +316,11 @@ function close(): void {
               />
             </div>
             <TypographySmall
-              v-if="adminMapStore.zoningLayers.length === 0"
+              v-if="adminMapStore.visibleZoningLayers.length === 0"
               as="p"
               class="text-xs text-muted-foreground"
             >
-              No zoning layers yet. Click Add Zoning Layer.
+              No zoning layers for this year yet. Click Add Zoning Layer.
             </TypographySmall>
           </div>
         </section>

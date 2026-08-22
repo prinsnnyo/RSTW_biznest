@@ -69,6 +69,7 @@ export const useAdminMapStore = defineStore('adminMap', () => {
   const zoningError = ref('')
   const zoningLayers = ref<ZoningLayer[]>([])
   const mappedZones = ref<MappedZone[]>([])
+  const selectedZoningYear = ref<number | null>(null)
 
   // Draw mode
   const isDrawMode = ref(false)
@@ -77,6 +78,7 @@ export const useAdminMapStore = defineStore('adminMap', () => {
   const selectedMappedZoneId = ref<string | null>(null)
   const editingMappedZoneGeometryId = ref<string | null>(null)
   const editingMappedZone = ref<MappedZone | null>(null)
+  const pendingZoneLayerId = ref<string | null>(null)
 
   // Hazards
   const cityId = ref<string | null>(null)
@@ -110,9 +112,21 @@ export const useAdminMapStore = defineStore('adminMap', () => {
 
   const isSidebarSubmitting = computed(() => isSavingLayer.value || isSavingMappedZone.value)
 
+  const zoningYears = computed(() => {
+    const years = new Set(zoningLayers.value.map((layer) => layer.year))
+    return [...years].sort((a, b) => b - a)
+  })
+
+  const visibleZoningLayers = computed(() => {
+    if (selectedZoningYear.value === null) {
+      return zoningLayers.value
+    }
+    return zoningLayers.value.filter((layer) => layer.year === selectedZoningYear.value)
+  })
+
   const visibleMappedZones = computed(() => {
     const activeLayerIds = new Set(
-      zoningLayers.value.filter((layer) => layer.is_active).map((layer) => layer.id),
+      visibleZoningLayers.value.filter((layer) => layer.is_active).map((layer) => layer.id),
     )
     return mappedZones.value.filter(
       (zone) => zone.is_visible && activeLayerIds.has(zone.zoning_layer_id),
@@ -183,6 +197,10 @@ export const useAdminMapStore = defineStore('adminMap', () => {
         ].join('|')
       })
       .join('||')
+  }
+
+  function setSelectedZoningYear(year: number | null): void {
+    selectedZoningYear.value = year
   }
 
   // Barangay borders
@@ -405,17 +423,18 @@ export const useAdminMapStore = defineStore('adminMap', () => {
   }
 
   // Draw zone mode
-  function startDrawZoneMode(): void {
+  function startDrawZoneMode(layerId?: string): void {
     if (isHazardPlacementActive.value) {
       cancelHazardPlacement()
     }
-    if (zoningLayers.value.length === 0) {
+    if (visibleZoningLayers.value.length === 0) {
       zoningError.value = 'Please add at least one zoning layer before drawing a zone.'
       return
     }
     zoningError.value = ''
     drawPoints.value = []
     editingMappedZoneGeometryId.value = null
+    pendingZoneLayerId.value = layerId ?? null
     isDrawMode.value = true
   }
 
@@ -447,6 +466,7 @@ export const useAdminMapStore = defineStore('adminMap', () => {
     drawPoints.value = []
     showMappedZoneModal.value = false
     editingMappedZoneGeometryId.value = null
+    pendingZoneLayerId.value = null
   }
 
   async function finishDrawZoneMode(): Promise<void> {
@@ -962,6 +982,10 @@ export const useAdminMapStore = defineStore('adminMap', () => {
     zoningLayers,
     mappedZones,
     visibleMappedZones,
+    selectedZoningYear,
+    zoningYears,
+    visibleZoningLayers,
+    setSelectedZoningYear,
     handleCreateLayer,
     handleUpdateLayer,
     handleDeleteLayer,
@@ -971,6 +995,7 @@ export const useAdminMapStore = defineStore('adminMap', () => {
     drawPoints,
     showMappedZoneModal,
     selectedMappedZoneId,
+    pendingZoneLayerId,
     isEditingMappedZoneGeometry,
     editingMappedZoneGeometryName,
     isAnyDrawModeActive,
