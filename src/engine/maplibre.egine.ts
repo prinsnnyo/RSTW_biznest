@@ -72,7 +72,10 @@ export class MapLibreEngine {
     this.currentTheme = options.theme ?? 'light'
   }
 
-  private resolveStyle(overrides?: MapLibreInitOverrides, theme: MapLibreTheme = this.currentTheme): string {
+  private resolveStyle(
+    overrides?: MapLibreInitOverrides,
+    theme: MapLibreTheme = this.currentTheme,
+  ): string {
     const styleUrl = overrides?.styleUrl ?? this.options.styleUrl
     if (styleUrl) {
       return styleUrl
@@ -83,7 +86,10 @@ export class MapLibreEngine {
       throw new Error('MapLibreEngine: missing MapTiler apiKey or styleUrl')
     }
 
-    return buildMaptilerStyleUrl(theme === 'dark' ? MAPTILER_DARK_STYLE : MAPTILER_LIGHT_STYLE, apiKey)
+    return buildMaptilerStyleUrl(
+      theme === 'dark' ? MAPTILER_DARK_STYLE : MAPTILER_LIGHT_STYLE,
+      apiKey,
+    )
   }
 
   private requireMap(): MapLibreMap {
@@ -120,7 +126,9 @@ export class MapLibreEngine {
 
     await new Promise<void>((resolve, reject) => {
       this.map?.once('load', () => resolve())
-      this.map?.once('error', (event) => reject(event.error ?? new Error('MapLibre failed to load')))
+      this.map?.once('error', (event) =>
+        reject(event.error ?? new Error('MapLibre failed to load')),
+      )
     })
   }
 
