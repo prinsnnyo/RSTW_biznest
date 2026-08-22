@@ -6,11 +6,21 @@ import type { BusinessRole } from '@/types/pinned-location.types'
 
 const BUSINESS_ROLES: BusinessRole[] = ['space_owner', 'entrepreneur', 'supplier']
 
-const parseBusinessRole = (value: unknown): BusinessRole | null => {
+// Role titles are authored by hand in the `roles` table, so "Space Owner",
+// "space-owner" and "space_owner" all have to resolve to the same key.
+const toRoleKey = (value: unknown): string => {
   if (typeof value !== 'string') {
-    return null
+    return ''
   }
-  return BUSINESS_ROLES.includes(value as BusinessRole) ? (value as BusinessRole) : null
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[\s-]+/g, '_')
+}
+
+const parseBusinessRole = (value: unknown): BusinessRole | null => {
+  const key = toRoleKey(value)
+  return BUSINESS_ROLES.includes(key as BusinessRole) ? (key as BusinessRole) : null
 }
 
 export const useAuthStore = defineStore('auth', () => {
@@ -21,12 +31,21 @@ export const useAuthStore = defineStore('auth', () => {
 
   // 2. Getters
   const isLoggedIn = computed(() => !!session.value)
-  const isSuperAdmin = computed(() => user.value?.user_metadata?.role === 'superadmin')
-  const isAdmin = computed(() => {
-    const role = user.value?.user_metadata?.role
-    return role === 'admin' || role === 'superadmin'
-  })
-  const businessRole = computed(() => parseBusinessRole(user.value?.user_metadata?.business_role))
+  // Separators are dropped here so "Super Admin" and "superadmin" match.
+  const compactRoleKey = computed(() =>
+    toRoleKey(user.value?.user_metadata?.role).replace(/_/g, ''),
+  )
+  const isSuperAdmin = computed(() => compactRoleKey.value === 'superadmin')
+  const isAdmin = computed(
+    () => compactRoleKey.value === 'admin' || compactRoleKey.value === 'superadmin',
+  )
+  // Users Management edits `role` only, so it doubles as a source for the
+  // business role that registration writes to `business_role`.
+  const businessRole = computed(
+    () =>
+      parseBusinessRole(user.value?.user_metadata?.business_role) ??
+      parseBusinessRole(user.value?.user_metadata?.role),
+  )
   const isBusinessUser = computed(() => businessRole.value !== null)
   const homeRouteName = computed(() => {
     if (isAdmin.value) {
