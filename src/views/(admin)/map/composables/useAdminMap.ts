@@ -111,8 +111,8 @@ export function useAdminMap() {
     isHazardPlacementActive.value ? hazardDrawPoints.value : drawPoints.value,
   )
   const isAnyDrawModeActive = computed(() => isDrawMode.value || isHazardPlacementActive.value)
-  const editingMappedZoneGeometry = computed(() =>
-    mappedZones.value.find((zone) => zone.id === editingMappedZoneGeometryId.value) ?? null,
+  const editingMappedZoneGeometry = computed(
+    () => mappedZones.value.find((zone) => zone.id === editingMappedZoneGeometryId.value) ?? null,
   )
   const isEditingMappedZoneGeometry = computed(() => editingMappedZoneGeometryId.value !== null)
   const editingMappedZoneGeometryName = computed(() => editingMappedZoneGeometry.value?.name ?? '')
@@ -402,9 +402,9 @@ export function useAdminMap() {
     }
 
     if (editingMappedZoneGeometryId.value !== null) {
-       await handleSaveEditedMappedZoneGeometry()
-       return
-     }
+      await handleSaveEditedMappedZoneGeometry()
+      return
+    }
 
     showMappedZoneModal.value = true
   }
@@ -430,7 +430,8 @@ export function useAdminMap() {
       cancelDrawZoneMode()
       selectedMappedZoneId.value = targetZone.id
     } catch (error) {
-      zoningError.value = error instanceof Error ? error.message : 'Failed to update mapped zone geometry.'
+      zoningError.value =
+        error instanceof Error ? error.message : 'Failed to update mapped zone geometry.'
     } finally {
       isSavingMappedZone.value = false
     }

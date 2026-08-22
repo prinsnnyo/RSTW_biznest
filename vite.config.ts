@@ -6,7 +6,7 @@ import path from 'node:path'
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [tailwindcss(), vue(), vueDevTools()],
+  plugins: [tailwindcss(), vue(), vueDevTools({ launchEditor: 'webstorm' })],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
