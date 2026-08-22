@@ -60,7 +60,7 @@ const handleLogout = async (): Promise<void> => {
     showSuccess('You have been signed out from your BizNest account.', {
       title: 'Logged out',
     })
-    await router.push('/auth')
+    await router.push('/login')
   } catch (error) {
     showAlert({
       title: 'Logout failed',

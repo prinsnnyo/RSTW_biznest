@@ -10,7 +10,7 @@ export const footerBrandDescription =
 export const footerQuickLinks: FooterQuickLink[] = [
   { label: 'Home', to: '/' },
   { label: 'About', to: '/about' },
-  { label: 'Get Started', to: '/auth' },
+  { label: 'Get Started', to: '/login' },
 ]
 
 export const footerLegalLinks: FooterLegalLink[] = [
