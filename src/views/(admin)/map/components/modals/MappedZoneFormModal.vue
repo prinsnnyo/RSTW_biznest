@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, reactive, watch } from 'vue'
+import { useAdminMapStore } from '@/stores/admin.map.store'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -10,37 +11,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import type {
-  CreateMappedZoneInput,
-  UpdateMappedZoneInput,
-  ZoningLayer,
-} from '@/types/zoning.types'
 
-const props = withDefaults(
-  defineProps<{
-    open: boolean
-    mode?: 'add' | 'edit'
-    layers: ZoningLayer[]
-    isSubmitting?: boolean
-    pointCount?: number
-    initialValue?: UpdateMappedZoneInput
-  }>(),
-  {
-    mode: 'add',
-    isSubmitting: false,
-    pointCount: 0,
-    initialValue: () => ({
-      zoningLayerId: '',
-      name: '',
-      description: '',
-    }),
-  },
-)
-
-const emit = defineEmits<{
-  (e: 'close'): void
-  (e: 'submit', payload: Omit<CreateMappedZoneInput, 'points'>): void
-}>()
+const adminMapStore = useAdminMapStore()
 
 const form = reactive({
   name: '',
@@ -48,41 +20,31 @@ const form = reactive({
   description: '',
 })
 
-const canSubmit = computed(() => {
-  return form.name.trim().length > 0 && form.zoningLayerId.trim().length > 0 && !props.isSubmitting
-})
-
-const modalTitle = computed(() =>
-  props.mode === 'add' ? 'Save Mapped Zone' : 'Update Mapped Zone',
+const canSubmit = computed(
+  () =>
+    form.name.trim().length > 0 &&
+    form.zoningLayerId.trim().length > 0 &&
+    !adminMapStore.isSavingMappedZone,
 )
-const submitLabel = computed(() => (props.mode === 'add' ? 'Save Zone' : 'Update Zone'))
 
 watch(
-  () => [props.open, props.mode, props.initialValue],
-  () => {
-    const isOpen = props.open
-    if (!isOpen) {
-      return
-    }
-
-    if (props.mode === 'edit') {
-      form.name = props.initialValue.name
-      form.description = props.initialValue.description
-      form.zoningLayerId = props.initialValue.zoningLayerId || props.layers[0]?.id || ''
+  () => adminMapStore.showMappedZoneModal,
+  (open) => {
+    if (!open) {
       return
     }
 
     form.name = ''
     form.description = ''
-    form.zoningLayerId = props.layers[0]?.id ?? ''
+    form.zoningLayerId = adminMapStore.zoningLayers[0]?.id ?? ''
   },
-  { immediate: true, deep: true },
+  { immediate: true },
 )
 
 watch(
-  () => props.layers,
+  () => adminMapStore.zoningLayers,
   (layers) => {
-    if (!props.open) {
+    if (!adminMapStore.showMappedZoneModal) {
       return
     }
 
@@ -94,12 +56,16 @@ watch(
   { deep: true },
 )
 
+function close(): void {
+  adminMapStore.showMappedZoneModal = false
+}
+
 function submit(): void {
   if (!canSubmit.value) {
     return
   }
 
-  emit('submit', {
+  void adminMapStore.handleSaveMappedZone({
     name: form.name.trim(),
     zoningLayerId: form.zoningLayerId,
     description: form.description.trim(),
@@ -108,14 +74,17 @@ function submit(): void {
 </script>
 
 <template>
-  <div v-if="open" class="fixed inset-0 z-10000 flex items-center justify-center bg-black/40 p-4">
+  <div
+    v-if="adminMapStore.showMappedZoneModal"
+    class="fixed inset-0 z-10000 flex items-center justify-center bg-black/40 p-4"
+  >
     <Card class="w-full max-w-md py-0">
       <CardHeader class="border-b py-4">
-        <CardTitle class="text-base">{{ modalTitle }}</CardTitle>
+        <CardTitle class="text-base">Save Mapped Zone</CardTitle>
       </CardHeader>
       <CardContent class="space-y-3 p-4">
-        <p v-if="mode === 'add'" class="text-xs text-muted-foreground">
-          {{ pointCount }} polygon points captured.
+        <p class="text-xs text-muted-foreground">
+          {{ adminMapStore.drawPoints.length }} polygon points captured.
         </p>
 
         <div class="space-y-1">
@@ -130,7 +99,11 @@ function submit(): void {
               <SelectValue placeholder="Select zoning layer" />
             </SelectTrigger>
             <SelectContent class="z-10002">
-              <SelectItem v-for="layer in layers" :key="layer.id" :value="layer.id">
+              <SelectItem
+                v-for="layer in adminMapStore.zoningLayers"
+                :key="layer.id"
+                :value="layer.id"
+              >
                 {{ layer.title }}
               </SelectItem>
             </SelectContent>
@@ -148,8 +121,8 @@ function submit(): void {
         </div>
 
         <div class="flex justify-end gap-2">
-          <Button variant="outline" @click="emit('close')">Cancel</Button>
-          <Button :disabled="!canSubmit" @click="submit">{{ submitLabel }}</Button>
+          <Button variant="outline" @click="close">Cancel</Button>
+          <Button :disabled="!canSubmit" @click="submit">Save Zone</Button>
         </div>
       </CardContent>
     </Card>

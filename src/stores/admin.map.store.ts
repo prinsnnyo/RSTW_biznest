@@ -1,4 +1,5 @@
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
+import { defineStore } from 'pinia'
 import { useBarangayBorders } from '@/composables/map/useBarangayBorders.ts'
 import {
   createHazard,
@@ -39,40 +40,41 @@ import type {
   UpdateZoningLayerInput,
   ZoningLayer,
 } from '@/types/zoning.types.ts'
-import type Map from '@/components/map/Map.vue'
+import type Maplibre from '@/views/(admin)/map/components/Maplibre.vue'
 
-export function useAdminMap() {
-  // ── Map state ──────────────────────────────────────────────────────────────
-  const provider = ref<'google' | 'leaflet'>('google')
-  const mapRef = ref<InstanceType<typeof Map> | null>(null)
+export const useAdminMapStore = defineStore('adminMap', () => {
+  // ── 1. State ────────────────────────────────────────────────────────────────
+
+  // Map
+  const mapRef = ref<InstanceType<typeof Maplibre> | null>(null)
   const mapCenter = ref({ lat: 8.9475, lng: 125.5406 })
 
-  // ── Barangay borders ───────────────────────────────────────────────────────
+  // Barangay borders
   const { barangayBorders, isLoading, errorMessage, loadBarangayBorders } = useBarangayBorders()
   const showBarangayBorders = ref(false)
 
-  // ── Sidebar UI state ───────────────────────────────────────────────────────
+  // Sidebar UI
   const isSidebarOpen = ref(false)
   const isHazardSidebarOpen = ref(false)
 
-  // ── Map display state ──────────────────────────────────────────────────────
+  // Map display
   const showMapPoi = ref(true)
 
-  // ── Zoning state ───────────────────────────────────────────────────────────
+  // Zoning
   const isSavingLayer = ref(false)
   const isSavingMappedZone = ref(false)
   const zoningError = ref('')
   const zoningLayers = ref<ZoningLayer[]>([])
   const mappedZones = ref<MappedZone[]>([])
 
-  // ── Draw mode state ────────────────────────────────────────────────────────
+  // Draw mode
   const isDrawMode = ref(false)
   const drawPoints = ref<MapDrawPoint[]>([])
   const showMappedZoneModal = ref(false)
   const selectedMappedZoneId = ref<string | null>(null)
   const editingMappedZoneGeometryId = ref<string | null>(null)
 
-  // ── Hazard state ───────────────────────────────────────────────────────────
+  // Hazards
   const cityId = ref<string | null>(null)
   const hazardCategories = ref<HazardCategory[]>([])
   const hazards = ref<Hazard[]>([])
@@ -85,10 +87,14 @@ export function useAdminMap() {
   const hazardPlacementType = ref<HazardGeometryType | null>(null)
   const hazardDrawPoints = ref<MapDrawPoint[]>([])
   const showHazardFormModal = ref(false)
+
+  // Internal-only (not reactive UI state, no need to expose)
   let cityScopedSyncTimer: ReturnType<typeof setInterval> | null = null
   let cityScopedSyncInFlight = false
+  let isInitialized = false
 
-  // ── Computed ───────────────────────────────────────────────────────────────
+  // ── 2. Getters ──────────────────────────────────────────────────────────────
+
   const isSidebarSubmitting = computed(() => isSavingLayer.value || isSavingMappedZone.value)
 
   const visibleMappedZones = computed(() => {
@@ -117,6 +123,12 @@ export function useAdminMap() {
   const isEditingMappedZoneGeometry = computed(() => editingMappedZoneGeometryId.value !== null)
   const editingMappedZoneGeometryName = computed(() => editingMappedZoneGeometry.value?.name ?? '')
 
+  // ── 3. Actions ──────────────────────────────────────────────────────────────
+
+  function setMapRef(instance: InstanceType<typeof Maplibre> | null): void {
+    mapRef.value = instance
+  }
+
   function buildZoningLayersSignature(layers: ZoningLayer[]): string {
     return layers.map((layer) => `${layer.id}|${layer.is_active}|${layer.updated_at}`).join('||')
   }
@@ -140,7 +152,7 @@ export function useAdminMap() {
       .join('||')
   }
 
-  // ── Barangay borders ───────────────────────────────────────────────────────
+  // Barangay borders
   async function toggleBarangayBorders(): Promise<void> {
     if (!showBarangayBorders.value) {
       await loadBarangayBorders()
@@ -148,7 +160,7 @@ export function useAdminMap() {
     showBarangayBorders.value = !showBarangayBorders.value
   }
 
-  // ── Zoning layers ──────────────────────────────────────────────────────────
+  // Zoning layers
   async function loadZoningLayers(): Promise<void> {
     zoningError.value = ''
     try {
@@ -300,7 +312,7 @@ export function useAdminMap() {
     }
   }
 
-  // ── Mapped zones ───────────────────────────────────────────────────────────
+  // Mapped zones
   async function handleSaveMappedZone(
     payload: Omit<CreateMappedZoneInput, 'points'>,
   ): Promise<void> {
@@ -350,7 +362,7 @@ export function useAdminMap() {
     selectedMappedZoneId.value = zoneId
   }
 
-  // ── Draw zone mode ─────────────────────────────────────────────────────────
+  // Draw zone mode
   function startDrawZoneMode(): void {
     if (isHazardPlacementActive.value) {
       cancelHazardPlacement()
@@ -437,7 +449,7 @@ export function useAdminMap() {
     }
   }
 
-  // ── Hazard placement ───────────────────────────────────────────────────────
+  // Hazard placement
   async function loadHazardCategories(): Promise<void> {
     try {
       hazardCategories.value = await listHazardCategories()
@@ -631,7 +643,7 @@ export function useAdminMap() {
     }
   }
 
-  // ── Map event handlers ─────────────────────────────────────────────────────
+  // Map event handlers
   function handleMapClick(point: MapDrawPoint): void {
     if (isHazardPlacementActive.value) {
       appendHazardPoint(point)
@@ -680,7 +692,7 @@ export function useAdminMap() {
     undoLastDrawPoint()
   }
 
-  // ── Map ref helpers ────────────────────────────────────────────────────────
+  // Map ref helpers
   function getHazardFocusPoints(hazard: Hazard): MapDrawPoint[] {
     if (hazard.geometry.type === 'Point') {
       const [lng, lat] = hazard.geometry.coordinates
@@ -716,7 +728,7 @@ export function useAdminMap() {
     ])
   }
 
-  // ── Panel toggle helpers (mutually exclusive) ──────────────────────────────
+  // Panel toggle helpers (mutually exclusive)
   function toggleLayerSidebar(): void {
     isSidebarOpen.value = !isSidebarOpen.value
     if (isSidebarOpen.value) {
@@ -731,7 +743,7 @@ export function useAdminMap() {
     }
   }
 
-  // ── Watchers ───────────────────────────────────────────────────────────────
+  // ── Watchers ────────────────────────────────────────────────────────────────
   watch(
     [showBarangayBorders, barangayBorders],
     () => {
@@ -802,12 +814,18 @@ export function useAdminMap() {
     await mapRef.value?.renderDrawPreview(activeDrawPoints.value)
   })
 
-  // ── Lifecycle ──────────────────────────────────────────────────────────────
+  // ── Lifecycle (driven by the view, not Vue's onMounted/onBeforeUnmount —
+  //    this store outlives the component that first creates it) ──────────────
   const handleWindowFocusSync = (): void => {
     void refreshCityScopedMapData()
   }
 
-  onMounted(async () => {
+  async function initialize(): Promise<void> {
+    if (isInitialized) {
+      return
+    }
+    isInitialized = true
+
     window.addEventListener('keydown', handleDrawUndoShortcut)
     window.addEventListener('focus', handleWindowFocusSync)
     startCityScopedSync()
@@ -818,19 +836,25 @@ export function useAdminMap() {
       loadHazardCategories(),
       loadHazards(),
     ])
-  })
+  }
 
-  onBeforeUnmount(() => {
+  function dispose(): void {
+    if (!isInitialized) {
+      return
+    }
+    isInitialized = false
+
     window.removeEventListener('keydown', handleDrawUndoShortcut)
     window.removeEventListener('focus', handleWindowFocusSync)
     stopCityScopedSync()
-  })
+    mapRef.value = null
+  }
 
   return {
     // Map
-    provider,
     mapRef,
     mapCenter,
+    setMapRef,
     onMapReady,
     // Barangay borders
     barangayBorders,
@@ -898,5 +922,8 @@ export function useAdminMap() {
     undoLastDrawPoint,
     undoLastHazardPoint,
     finishHazardPlacement,
+    // Lifecycle
+    initialize,
+    dispose,
   }
-}
+})
