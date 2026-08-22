@@ -21,7 +21,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { TypographyMuted } from '@/components/typography'
 import type { UserRow } from '@/views/(admin)/users/types/users-table.types'
-import { getRoleBadgeVariant } from '@/utils/roles.utils'
+import { formatRoleLabel, getRoleBadgeVariant } from '@/utils/roles.utils'
 import { Loader2, Pencil, Trash2 } from 'lucide-vue-next'
 import EditModal from './EditModal.vue'
 import ConfirmDeleteModal from '@/components/ConfirmDeleteModal.vue'
@@ -163,7 +163,9 @@ const onUserUpdated = (user: UserRow) => {
             <TableCell class="px-4 py-3 text-muted-foreground">{{ row.email }}</TableCell>
             <TableCell class="px-4 py-3">{{ row.city }}</TableCell>
             <TableCell class="px-4 py-3">
-              <Badge :variant="getRoleBadgeVariant(row.role)">{{ row.role }}</Badge>
+              <Badge :variant="getRoleBadgeVariant(row.role)">{{
+                formatRoleLabel(row.role)
+              }}</Badge>
             </TableCell>
             <TableCell class="px-4 py-3">
               <div class="flex items-center justify-end gap-2">
