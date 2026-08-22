@@ -23,6 +23,7 @@
     "@tanstack/vue-table": "^8.21.3",
     "@vue-leaflet/vue-leaflet": "^0.10.1",
     "@vueuse/core": "^14.2.1",
+    "@xstate/vue": "^5.0.1",
     "axios": "^1.13.6",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -35,7 +36,8 @@
     "reka-ui": "^2.9.6",
     "tailwind-merge": "^3.5.0",
     "vue": "^3.5.30",
-    "vue-router": "^5.0.3"
+    "vue-router": "^5.0.3",
+    "xstate": "^5.32.5"
   },
   "devDependencies": {
     "@iconify-json/radix-icons": "^1.2.6",
