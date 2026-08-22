@@ -38,12 +38,17 @@ const handleLogout = async (): Promise<void> => {
   await authStore.logout()
   await router.push('/auth')
 }
+
+const isFullScreenMap = computed(() => route.name === 'space-owner-map')
 </script>
 
 <template>
-  <div class="bg-far text-foreground flex min-h-screen flex-col">
-    <header class="bg-card/80 border-border sticky top-0 z-40 border-b backdrop-blur">
-      <div class="mx-auto flex h-16 w-full max-w-7xl items-center justify-between gap-4 px-4">
+  <div class="bg-far text-foreground flex h-screen flex-col overflow-hidden">
+    <header class="bg-card/80 border-border sticky top-0 z-40 shrink-0 border-b backdrop-blur">
+      <div
+        class="mx-auto flex h-16 w-full items-center justify-between gap-4 px-4"
+        :class="isFullScreenMap ? '' : 'max-w-7xl'"
+      >
         <div class="flex items-center gap-6">
           <RouterLink to="/app/home" class="flex items-center gap-2">
             <img :src="logoImage" alt="BizNest" class="h-8 w-8 rounded-md object-cover" />
@@ -76,7 +81,10 @@ const handleLogout = async (): Promise<void> => {
         </div>
       </div>
     </header>
-    <main class="mx-auto w-full max-w-7xl flex-1 px-4 py-6">
+    <main
+      class="min-h-0 w-full flex-1"
+      :class="isFullScreenMap ? 'overflow-hidden p-0' : 'mx-auto max-w-7xl overflow-y-auto px-4 py-6'"
+    >
       <RouterView />
     </main>
   </div>
