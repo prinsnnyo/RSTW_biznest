@@ -36,6 +36,9 @@ coverage
 # Vitest
 __screenshots__/
 
+.mcp.json
+supabase/
+
 # Vite
 *.timestamp-*-*.mjs
 
