@@ -23,6 +23,14 @@ import { Input } from '@/components/ui/input'
 import { Check } from 'lucide-vue-next'
 import logoImage from '/register.png'
 import { Loader2 } from 'lucide-vue-next'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { BUSINESS_ROLE_OPTIONS } from '@/types/pinned-location.types'
 
 const props = defineProps<{
   class?: HTMLAttributes['class']
@@ -39,6 +47,7 @@ const {
   email,
   username,
   cityId,
+  businessRole,
   password,
   confirmPassword,
   showPassword,
@@ -165,6 +174,27 @@ onMounted(() => {
                 </ComboboxList>
               </Combobox>
               <FieldError v-if="fieldErrors.city">{{ fieldErrors.city }}</FieldError>
+            </Field>
+            <Field>
+              <FieldLabel for="business-role"> Business type (optional) </FieldLabel>
+              <Select v-model="businessRole" :disabled="isSubmitting">
+                <SelectTrigger id="business-role" class="w-full">
+                  <SelectValue placeholder="Regular user" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem
+                    v-for="option in BUSINESS_ROLE_OPTIONS"
+                    :key="option.value"
+                    :value="option.value"
+                  >
+                    {{ option.label }}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+              <FieldDescription>
+                Leave empty for a regular explorer account. Space Owners, Entrepreneurs, and
+                Suppliers can pin a location and build a site.
+              </FieldDescription>
             </Field>
             <Field>
               <Field class="grid grid-cols-2 gap-4">

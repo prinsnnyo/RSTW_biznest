@@ -2,6 +2,7 @@ import type { Ref } from 'vue'
 import type { BarangayFeatureCollection } from '@/types/map.types'
 import type { Hazard } from '@/types/hazard.types'
 import type { MapDrawPoint, MappedZone } from '@/types/zoning.types'
+import type { MapPinMarker } from '@/types/pinned-location.types'
 import type {
   GoogleMapStyleRule,
   GoogleInfoWindowInstance,
@@ -35,7 +36,14 @@ interface GoogleAdapterOptions {
 
 type MapClickHandler = (point: MapDrawPoint) => void
 type DrawPointMoveHandler = (index: number, point: MapDrawPoint) => void
+type PinClickHandler = (pinId: string) => void
 type MapThemeMode = 'light' | 'dark'
+
+const PIN_ROLE_COLORS: Record<string, string> = {
+  space_owner: '#0ea5e9',
+  entrepreneur: '#f59e0b',
+  supplier: '#10b981',
+}
 
 const GOOGLE_DARK_STYLES: GoogleMapStyleRule[] = [
   { elementType: 'geometry', stylers: [{ color: '#1f2a44' }] },
@@ -79,6 +87,9 @@ export function useGoogleMapAdapter(options: GoogleAdapterOptions) {
   let googleFocusMarker: GoogleMarkerInstance | null = null
   let googleFocusInfoWindow: GoogleInfoWindowInstance | null = null
   let googleMapClickListener: GoogleMapsEventListener | null = null
+  let googlePinMarkers: GoogleMarkerInstance[] = []
+  let googlePinClickListeners: GoogleMapsEventListener[] = []
+  let pinClickHandler: PinClickHandler | null = null
   let mapClickHandler: MapClickHandler | null = null
   let drawPointMoveHandler: DrawPointMoveHandler | null = null
   let isDrawMode = false
@@ -148,6 +159,13 @@ export function useGoogleMapAdapter(options: GoogleAdapterOptions) {
     googleFocusInfoWindow?.close()
   }
 
+  function destroyGooglePinMarkers(): void {
+    googlePinClickListeners.forEach((listener) => listener.remove())
+    googlePinClickListeners = []
+    googlePinMarkers.forEach((marker) => marker.setMap(null))
+    googlePinMarkers = []
+  }
+
   function clearGoogleMapClickListener(): void {
     googleMapClickListener?.remove()
     googleMapClickListener = null
@@ -178,6 +196,7 @@ export function useGoogleMapAdapter(options: GoogleAdapterOptions) {
     destroyGoogleHazards()
     destroyGoogleDrawPreview()
     destroyGoogleFocusMarker()
+    destroyGooglePinMarkers()
     clearGoogleMapClickListener()
 
     if (googleMap) {
@@ -540,6 +559,51 @@ export function useGoogleMapAdapter(options: GoogleAdapterOptions) {
     googleMap.setZoom?.(17)
   }
 
+  function renderPinnedLocations(
+    pins: MapPinMarker[],
+    onPinClick?: PinClickHandler | null,
+  ): void {
+    if (!googleMap) {
+      return
+    }
+
+    const googleMaps = (window as GoogleWindow).google?.maps
+    const MarkerCtor = googleMaps?.Marker
+    if (!MarkerCtor) {
+      return
+    }
+
+    destroyGooglePinMarkers()
+    pinClickHandler = onPinClick ?? null
+
+    pins.forEach((pin) => {
+      const color = PIN_ROLE_COLORS[pin.role] ?? '#2563eb'
+      const marker = new MarkerCtor({
+        position: { lat: pin.lat, lng: pin.lng },
+        map: googleMap as GoogleMapInstance,
+        title: pin.title,
+        icon: {
+          path: 'M 0,0 C -2,-3 -8,-5 -8,-11 A 8,8 0 1,1 8,-11 C 8,-5 2,-3 0,0 z',
+          fillColor: color,
+          fillOpacity: 1,
+          strokeColor: '#ffffff',
+          strokeOpacity: 1,
+          strokeWeight: 2,
+          scale: 1.5,
+        },
+      })
+
+      if (marker.addListener) {
+        const listener = marker.addListener('click', () => {
+          pinClickHandler?.(pin.id)
+        })
+        googlePinClickListeners.push(listener)
+      }
+
+      googlePinMarkers.push(marker)
+    })
+  }
+
   function loadGoogleMaps(): Promise<void> {
     const resolvedGoogleMapsApiKey = options.getApiKey()
 
@@ -604,5 +668,6 @@ export function useGoogleMapAdapter(options: GoogleAdapterOptions) {
     setDrawPointMoveHandler,
     focusOnZone,
     showLocationMarker,
+    renderPinnedLocations,
   }
 }

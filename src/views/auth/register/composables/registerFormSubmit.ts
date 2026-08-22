@@ -9,12 +9,14 @@ import {
 import { useAlertContext } from '@/composables/useAlert'
 import { AuthServiceError, signUpWithEmail } from '@/services/auth.service'
 import type { CityOption } from '@/services/cities.service'
+import type { BusinessRole } from '@/types/pinned-location.types'
 
 export interface UseRegisterFormReturn {
   // Form fields
   email: Ref<string>
   username: Ref<string>
   cityId: Ref<string>
+  businessRole: Ref<BusinessRole | ''>
   password: Ref<string>
   confirmPassword: Ref<string>
 
@@ -70,6 +72,7 @@ export function useRegisterFormSubmit({
   const email = ref('')
   const username = ref('')
   const cityId = ref('')
+  const businessRole = ref<BusinessRole | ''>('')
   const password = ref('')
   const confirmPassword = ref('')
 
@@ -237,6 +240,7 @@ export function useRegisterFormSubmit({
         password: password.value,
         city_id: cityId.value,
         city_name: selectedCityName.value,
+        business_role: businessRole.value || null,
         inviteToken,
       })
 
@@ -244,7 +248,7 @@ export function useRegisterFormSubmit({
         showSuccess('Your account has been created and you are now signed in.', {
           title: 'Account created',
         })
-        await router.push('/')
+        await router.push(businessRole.value || inviteToken ? '/app/map' : '/app/map')
         return
       }
 
@@ -290,6 +294,7 @@ export function useRegisterFormSubmit({
     email,
     username,
     cityId,
+    businessRole,
     password,
     confirmPassword,
 

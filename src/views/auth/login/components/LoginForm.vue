@@ -9,6 +9,8 @@ import { Input } from '@/components/ui/input'
 import { useAlertContext } from '@/composables/useAlert'
 import { AuthServiceError, signInWithEmail } from '@/services/auth.service'
 import { DotLottieVue } from '@lottiefiles/dotlottie-vue'
+import { useAuthStore } from '@/stores/auth.store'
+import logoImage from '/login.png'
 
 const props = defineProps<{
   class?: HTMLAttributes['class']
@@ -47,7 +49,7 @@ const handleSubmit = async (): Promise<void> => {
       title: 'Login successful',
     })
 
-    await router.push('/admin')
+    await router.push(useAuthStore().homeRouteName === 'admin-map' ? '/admin/map' : '/app/map')
   } catch (error) {
     if (error instanceof AuthServiceError) {
       showErrorAlert(error.message)

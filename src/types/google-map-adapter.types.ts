@@ -45,7 +45,7 @@ export interface GooglePolylineInstance {
 export interface GoogleMarkerInstance {
   setMap: (map: GoogleMapInstance | null) => void
   addListener?: (
-    eventName: 'dragend',
+    eventName: 'click' | 'dragend',
     handler: (event: GoogleMapMouseEvent) => void,
   ) => GoogleMapsEventListener
 }
