@@ -21,6 +21,7 @@ import {
 } from '@/services/zoning/zoning.service.ts'
 import { resolveCityCenter } from '@/services/cities.service.ts'
 import { getSupabaseClient } from '@/services/supabase.client.ts'
+import { listAllPinsForAdmin } from '@/services/pinned-locations.service.ts'
 import type {
   CreateHazardFormInput,
   Hazard,
@@ -40,7 +41,10 @@ import type {
   UpdateZoningLayerInput,
   ZoningLayer,
 } from '@/types/zoning.types.ts'
+import type { BusinessRole, MapPinMarker, PinnedLocation } from '@/types/pinned-location.types.ts'
 import type Maplibre from '@/views/(admin)/map/components/Maplibre.vue'
+
+export type AdminMapPanelKey = 'zoning' | 'hazard' | 'local-business' | 'reports' | 'poi'
 
 export const useAdminMapStore = defineStore('adminMap', () => {
   // ── 1. State ────────────────────────────────────────────────────────────────
@@ -54,8 +58,7 @@ export const useAdminMapStore = defineStore('adminMap', () => {
   const showBarangayBorders = ref(false)
 
   // Sidebar UI
-  const isSidebarOpen = ref(false)
-  const isHazardSidebarOpen = ref(false)
+  const activePanel = ref<AdminMapPanelKey | null>(null)
 
   // Map display
   const showMapPoi = ref(true)
@@ -73,6 +76,7 @@ export const useAdminMapStore = defineStore('adminMap', () => {
   const showMappedZoneModal = ref(false)
   const selectedMappedZoneId = ref<string | null>(null)
   const editingMappedZoneGeometryId = ref<string | null>(null)
+  const editingMappedZone = ref<MappedZone | null>(null)
 
   // Hazards
   const cityId = ref<string | null>(null)
@@ -87,6 +91,15 @@ export const useAdminMapStore = defineStore('adminMap', () => {
   const hazardPlacementType = ref<HazardGeometryType | null>(null)
   const hazardDrawPoints = ref<MapDrawPoint[]>([])
   const showHazardFormModal = ref(false)
+  const editingHazard = ref<Hazard | null>(null)
+
+  // Local businesses (pinned locations)
+  const localBusinesses = ref<PinnedLocation[]>([])
+  const isLoadingLocalBusinesses = ref(false)
+  const localBusinessesError = ref('')
+  const hasLoadedLocalBusinesses = ref(false)
+  const hiddenBusinessRoles = ref<BusinessRole[]>([])
+  const selectedLocalBusinessId = ref<string | null>(null)
 
   // Internal-only (not reactive UI state, no need to expose)
   let cityScopedSyncTimer: ReturnType<typeof setInterval> | null = null
@@ -123,10 +136,30 @@ export const useAdminMapStore = defineStore('adminMap', () => {
   const isEditingMappedZoneGeometry = computed(() => editingMappedZoneGeometryId.value !== null)
   const editingMappedZoneGeometryName = computed(() => editingMappedZoneGeometry.value?.name ?? '')
 
+  const hiddenBusinessRoleSet = computed(() => new Set(hiddenBusinessRoles.value))
+
+  const visibleLocalBusinesses = computed(() =>
+    localBusinesses.value.filter((pin) => !hiddenBusinessRoleSet.value.has(pin.role)),
+  )
+
+  const localBusinessMarkers = computed<MapPinMarker[]>(() =>
+    visibleLocalBusinesses.value.map((pin) => ({
+      id: pin.id,
+      lat: pin.latitude,
+      lng: pin.longitude,
+      title: pin.title,
+      role: pin.role,
+    })),
+  )
+
   // ── 3. Actions ──────────────────────────────────────────────────────────────
 
   function setMapRef(instance: InstanceType<typeof Maplibre> | null): void {
     mapRef.value = instance
+  }
+
+  function togglePanel(panel: AdminMapPanelKey): void {
+    activePanel.value = activePanel.value === panel ? null : panel
   }
 
   function buildZoningLayersSignature(layers: ZoningLayer[]): string {
@@ -338,6 +371,7 @@ export const useAdminMapStore = defineStore('adminMap', () => {
     try {
       await updateMappedZone(payload.zoneId, payload.input)
       await loadMappedZones()
+      editingMappedZone.value = null
     } catch (error) {
       zoningError.value = error instanceof Error ? error.message : 'Failed to update mapped zone.'
     } finally {
@@ -360,6 +394,14 @@ export const useAdminMapStore = defineStore('adminMap', () => {
 
   function handleFocusMappedZone(zoneId: string): void {
     selectedMappedZoneId.value = zoneId
+  }
+
+  function openEditMappedZoneModal(zone: MappedZone): void {
+    editingMappedZone.value = zone
+  }
+
+  function closeEditMappedZoneModal(): void {
+    editingMappedZone.value = null
   }
 
   // Draw zone mode
@@ -609,6 +651,14 @@ export const useAdminMapStore = defineStore('adminMap', () => {
     selectedHazardId.value = hazardId
   }
 
+  function openEditHazardModal(hazard: Hazard): void {
+    editingHazard.value = hazard
+  }
+
+  function closeEditHazardModal(): void {
+    editingHazard.value = null
+  }
+
   async function handleUpdateHazard(payload: {
     hazardId: HazardId
     input: UpdateHazardInput
@@ -620,6 +670,7 @@ export const useAdminMapStore = defineStore('adminMap', () => {
       hazards.value = hazards.value.map((hazard) =>
         hazard.id !== updatedHazard.id ? hazard : updatedHazard,
       )
+      editingHazard.value = null
     } catch (error) {
       hazardError.value = error instanceof Error ? error.message : 'Failed to update hazard.'
     } finally {
@@ -641,6 +692,46 @@ export const useAdminMapStore = defineStore('adminMap', () => {
     } finally {
       isSavingHazard.value = false
     }
+  }
+
+  // Local businesses (pinned locations)
+  async function loadLocalBusinesses(force = false): Promise<void> {
+    if (hasLoadedLocalBusinesses.value && !force) {
+      return
+    }
+    isLoadingLocalBusinesses.value = true
+    localBusinessesError.value = ''
+    try {
+      localBusinesses.value = await listAllPinsForAdmin()
+      hasLoadedLocalBusinesses.value = true
+    } catch (error) {
+      localBusinessesError.value =
+        error instanceof Error ? error.message : 'Failed to load local businesses.'
+    } finally {
+      isLoadingLocalBusinesses.value = false
+    }
+  }
+
+  function toggleBusinessRoleVisibility(role: BusinessRole): void {
+    if (hiddenBusinessRoleSet.value.has(role)) {
+      hiddenBusinessRoles.value = hiddenBusinessRoles.value.filter((r) => r !== role)
+    } else {
+      hiddenBusinessRoles.value = [...hiddenBusinessRoles.value, role]
+    }
+  }
+
+  function handleSelectLocalBusiness(pinId: string): void {
+    selectedLocalBusinessId.value = pinId
+    activePanel.value = 'local-business'
+
+    const pin = localBusinesses.value.find((business) => business.id === pinId)
+    if (pin) {
+      void mapRef.value?.focusLocation({ lat: pin.latitude, lng: pin.longitude }, pin.title)
+    }
+  }
+
+  function clearSelectedLocalBusiness(): void {
+    selectedLocalBusinessId.value = null
   }
 
   // Map event handlers
@@ -725,22 +816,8 @@ export const useAdminMapStore = defineStore('adminMap', () => {
       mapRef.value?.renderMappedZones(visibleMappedZones.value),
       mapRef.value?.renderHazards(true, visibleHazards.value),
       mapRef.value?.renderDrawPreview(activeDrawPoints.value),
+      mapRef.value?.renderPinnedLocations(localBusinessMarkers.value, handleSelectLocalBusiness),
     ])
-  }
-
-  // Panel toggle helpers (mutually exclusive)
-  function toggleLayerSidebar(): void {
-    isSidebarOpen.value = !isSidebarOpen.value
-    if (isSidebarOpen.value) {
-      isHazardSidebarOpen.value = false
-    }
-  }
-
-  function toggleHazardSidebar(): void {
-    isHazardSidebarOpen.value = !isHazardSidebarOpen.value
-    if (isHazardSidebarOpen.value) {
-      isSidebarOpen.value = false
-    }
   }
 
   // ── Watchers ────────────────────────────────────────────────────────────────
@@ -767,6 +844,14 @@ export const useAdminMapStore = defineStore('adminMap', () => {
     visibleHazards,
     (visible) => {
       void mapRef.value?.renderHazards(true, visible)
+    },
+    { deep: true },
+  )
+
+  watch(
+    localBusinessMarkers,
+    (markers) => {
+      void mapRef.value?.renderPinnedLocations(markers, handleSelectLocalBusiness)
     },
     { deep: true },
   )
@@ -835,6 +920,7 @@ export const useAdminMapStore = defineStore('adminMap', () => {
       loadMappedZones(),
       loadHazardCategories(),
       loadHazards(),
+      loadLocalBusinesses(),
     ])
   }
 
@@ -863,10 +949,8 @@ export const useAdminMapStore = defineStore('adminMap', () => {
     showBarangayBorders,
     toggleBarangayBorders,
     // Sidebar UI
-    isSidebarOpen,
-    isHazardSidebarOpen,
-    toggleLayerSidebar,
-    toggleHazardSidebar,
+    activePanel,
+    togglePanel,
     // Map display
     showMapPoi,
     toggleMapPoi,
@@ -899,6 +983,9 @@ export const useAdminMapStore = defineStore('adminMap', () => {
     handleUpdateMappedZone,
     handleDeleteMappedZone,
     handleFocusMappedZone,
+    editingMappedZone,
+    openEditMappedZoneModal,
+    closeEditMappedZoneModal,
     // Hazards
     hazardCategories,
     hazards,
@@ -922,6 +1009,20 @@ export const useAdminMapStore = defineStore('adminMap', () => {
     undoLastDrawPoint,
     undoLastHazardPoint,
     finishHazardPlacement,
+    editingHazard,
+    openEditHazardModal,
+    closeEditHazardModal,
+    // Local businesses
+    localBusinesses,
+    isLoadingLocalBusinesses,
+    localBusinessesError,
+    hiddenBusinessRoles,
+    selectedLocalBusinessId,
+    visibleLocalBusinesses,
+    loadLocalBusinesses,
+    toggleBusinessRoleVisibility,
+    handleSelectLocalBusiness,
+    clearSelectedLocalBusiness,
     // Lifecycle
     initialize,
     dispose,

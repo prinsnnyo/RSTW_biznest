@@ -12,7 +12,13 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from '@/components/ui/sheet'
-import type { HazardCategory, HazardSeverity, HazardStatus } from '@/types/hazard.types'
+import type {
+  HazardCategory,
+  HazardGeometry,
+  HazardGeometryType,
+  HazardSeverity,
+  HazardStatus,
+} from '@/types/hazard.types'
 
 const severityOptions: HazardSeverity[] = ['low', 'moderate', 'high', 'critical']
 const statusOptions: HazardStatus[] = [
@@ -22,6 +28,7 @@ const statusOptions: HazardStatus[] = [
   'mitigated',
   'resolved',
 ]
+const geometryOptions: HazardGeometryType[] = ['point', 'linestring', 'polygon']
 const placementLabels: Record<string, string> = {
   point: 'Pin',
   linestring: 'Draw Line',
@@ -30,6 +37,11 @@ const placementLabels: Record<string, string> = {
 
 const adminMapStore = useAdminMapStore()
 
+const isEditing = computed(() => adminMapStore.editingHazard !== null)
+const open = computed(() => adminMapStore.showHazardFormModal || isEditing.value)
+const modalTitle = computed(() => (isEditing.value ? 'Update Hazard' : 'Add Hazard'))
+const submitLabel = computed(() => (isEditing.value ? 'Update Hazard' : 'Create Hazard'))
+
 const form = reactive({
   name: '',
   category_id: '',
@@ -37,7 +49,11 @@ const form = reactive({
   status: 'reported' as HazardStatus,
   location_name: '',
   description: '',
+  geometry_type: 'point' as HazardGeometryType,
+  coordinatesText: '',
 })
+
+const parseError = ref('')
 
 const fetchedCategories = ref<HazardCategory[]>([])
 const isLoadingCategories = ref(false)
@@ -54,19 +70,12 @@ const canSubmit = computed(
 )
 
 watch(
-  () => adminMapStore.showHazardFormModal,
-  async (open) => {
-    if (!open) {
+  open,
+  async (isOpen) => {
+    if (!isOpen) {
       categoryFetchError.value = ''
       return
     }
-
-    form.name = ''
-    form.category_id = ''
-    form.severity = 'low'
-    form.status = 'reported'
-    form.location_name = ''
-    form.description = ''
 
     if (resolvedCategories.value.length > 0) {
       return
@@ -85,7 +94,88 @@ watch(
   { immediate: true },
 )
 
+watch(
+  () => adminMapStore.editingHazard,
+  (hazard) => {
+    parseError.value = ''
+
+    if (hazard) {
+      form.name = hazard.name
+      form.category_id = hazard.category_id
+      form.severity = hazard.severity
+      form.status = hazard.status
+      form.location_name = hazard.location_name ?? ''
+      form.description = hazard.description ?? ''
+      form.geometry_type = hazard.geometry_type
+      form.coordinatesText = JSON.stringify(hazard.geometry.coordinates)
+      return
+    }
+
+    form.name = ''
+    form.category_id = ''
+    form.severity = 'low'
+    form.status = 'reported'
+    form.location_name = ''
+    form.description = ''
+    form.geometry_type = 'point'
+    form.coordinatesText = ''
+  },
+  { immediate: true },
+)
+
+function isCoordinatePair(value: unknown): value is [number, number] {
+  return (
+    Array.isArray(value) &&
+    value.length === 2 &&
+    value.every((entry) => typeof entry === 'number' && Number.isFinite(entry))
+  )
+}
+
+function isLinearRing(value: unknown): value is [number, number][] {
+  return Array.isArray(value) && value.length >= 4 && value.every(isCoordinatePair)
+}
+
+function buildGeometry(): HazardGeometry | null {
+  parseError.value = ''
+
+  try {
+    const raw = JSON.parse(form.coordinatesText)
+
+    if (form.geometry_type === 'point') {
+      if (!isCoordinatePair(raw)) {
+        parseError.value = 'Point coordinates must be [lng, lat].'
+        return null
+      }
+
+      return { type: 'Point', coordinates: raw }
+    }
+
+    if (form.geometry_type === 'linestring') {
+      if (!Array.isArray(raw) || raw.length < 2 || !raw.every(isCoordinatePair)) {
+        parseError.value = 'LineString coordinates must be [[lng, lat], ...].'
+        return null
+      }
+
+      return { type: 'LineString', coordinates: raw }
+    }
+
+    if (!Array.isArray(raw) || raw.length === 0 || !raw.every(isLinearRing)) {
+      parseError.value = 'Polygon coordinates must be [[[lng, lat], ...]].'
+      return null
+    }
+
+    return { type: 'Polygon', coordinates: raw }
+  } catch {
+    parseError.value = 'Coordinates must be valid JSON.'
+    return null
+  }
+}
+
 function close(): void {
+  if (isEditing.value) {
+    adminMapStore.closeEditHazardModal()
+    return
+  }
   adminMapStore.cancelHazardPlacement()
 }
 
@@ -94,20 +184,40 @@ function submit(): void {
     return
   }
 
-  void adminMapStore.handleSaveHazard({
+  const basePayload = {
     name: form.name.trim(),
     category_id: form.category_id,
     severity: form.severity,
     status: form.status,
     location_name: form.location_name.trim() || null,
     description: form.description.trim() || null,
-  })
+  }
+
+  if (isEditing.value) {
+    const hazard = adminMapStore.editingHazard
+    if (!hazard) {
+      return
+    }
+
+    const geometry = buildGeometry()
+    if (!geometry) {
+      return
+    }
+
+    void adminMapStore.handleUpdateHazard({
+      hazardId: hazard.id,
+      input: { ...basePayload, geometry, geometry_type: form.geometry_type },
+    })
+    return
+  }
+
+  void adminMapStore.handleSaveHazard(basePayload)
 }
 </script>
 
 <template>
   <Sheet
-    :open="adminMapStore.showHazardFormModal"
+    :open="open"
     @update:open="
       (val) => {
         if (!val) close()
@@ -119,7 +229,7 @@ function submit(): void {
       class="flex flex-col gap-0 p-0 sm:max-w-[41.6667vw] w-full overflow-hidden"
     >
       <SheetHeader class="shrink-0 border-b py-4 px-5 pr-12">
-        <SheetTitle class="text-base">Add Hazard</SheetTitle>
+        <SheetTitle class="text-base">{{ modalTitle }}</SheetTitle>
       </SheetHeader>
 
       <div class="flex-1 overflow-y-auto p-5">
@@ -179,7 +289,7 @@ function submit(): void {
             </Select>
           </div>
 
-          <div class="col-span-2 rounded-md border bg-muted/30 p-3">
+          <div v-if="!isEditing" class="col-span-2 rounded-md border bg-muted/30 p-3">
             <div class="space-y-1">
               <label class="text-xs font-medium">Placement Type</label>
               <p class="text-sm font-medium">
@@ -205,6 +315,20 @@ function submit(): void {
             </div>
           </div>
 
+          <div v-else class="space-y-1">
+            <label class="text-xs font-medium">Geometry Type</label>
+            <Select v-model="form.geometry_type">
+              <SelectTrigger>
+                <SelectValue placeholder="Select geometry" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem v-for="geometry in geometryOptions" :key="geometry" :value="geometry">
+                  {{ placementLabels[geometry] }}
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
           <div class="col-span-2 space-y-1">
             <label class="text-xs font-medium">Description</label>
             <textarea
@@ -214,12 +338,31 @@ function submit(): void {
               placeholder="Describe hazard details"
             />
           </div>
+
+          <div v-if="isEditing" class="col-span-2 space-y-1">
+            <label class="text-xs font-medium">Coordinates (JSON)</label>
+            <textarea
+              v-model="form.coordinatesText"
+              rows="4"
+              class="border-input focus-visible:border-ring focus-visible:ring-ring/50 font-mono w-full rounded-md border bg-transparent px-3 py-2 text-xs outline-none focus-visible:ring-[3px]"
+              :placeholder="
+                form.geometry_type === 'point'
+                  ? '[125.5406, 8.9475]'
+                  : form.geometry_type === 'linestring'
+                    ? '[[125.54, 8.94], [125.55, 8.95]]'
+                    : '[[[125.54, 8.94], [125.55, 8.94], [125.55, 8.95], [125.54, 8.94]]]'
+              "
+            />
+            <p v-if="parseError" class="text-xs text-destructive">
+              {{ parseError }}
+            </p>
+          </div>
         </div>
       </div>
 
       <SheetFooter class="shrink-0 border-t bg-background/95 px-5 py-4">
         <Button variant="outline" @click="close">Cancel</Button>
-        <Button :disabled="!canSubmit" @click="submit">Create Hazard</Button>
+        <Button :disabled="!canSubmit" @click="submit">{{ submitLabel }}</Button>
       </SheetFooter>
     </SheetContent>
   </Sheet>

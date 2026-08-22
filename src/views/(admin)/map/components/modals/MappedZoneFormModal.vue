@@ -14,6 +14,11 @@ import {
 
 const adminMapStore = useAdminMapStore()
 
+const isEditing = computed(() => adminMapStore.editingMappedZone !== null)
+const open = computed(() => adminMapStore.showMappedZoneModal || isEditing.value)
+const modalTitle = computed(() => (isEditing.value ? 'Update Mapped Zone' : 'Save Mapped Zone'))
+const submitLabel = computed(() => (isEditing.value ? 'Update Zone' : 'Save Zone'))
+
 const form = reactive({
   name: '',
   zoningLayerId: '',
@@ -28,9 +33,16 @@ const canSubmit = computed(
 )
 
 watch(
-  () => adminMapStore.showMappedZoneModal,
-  (open) => {
-    if (!open) {
+  () => adminMapStore.editingMappedZone,
+  (zone) => {
+    if (zone) {
+      form.name = zone.name
+      form.description = zone.description ?? ''
+      form.zoningLayerId = zone.zoning_layer_id
+      return
+    }
+
+    if (!adminMapStore.showMappedZoneModal) {
       return
     }
 
@@ -42,9 +54,22 @@ watch(
 )
 
 watch(
+  () => adminMapStore.showMappedZoneModal,
+  (isOpen) => {
+    if (!isOpen || isEditing.value) {
+      return
+    }
+
+    form.name = ''
+    form.description = ''
+    form.zoningLayerId = adminMapStore.zoningLayers[0]?.id ?? ''
+  },
+)
+
+watch(
   () => adminMapStore.zoningLayers,
   (layers) => {
-    if (!adminMapStore.showMappedZoneModal) {
+    if (!open.value) {
       return
     }
 
@@ -57,6 +82,10 @@ watch(
 )
 
 function close(): void {
+  if (isEditing.value) {
+    adminMapStore.closeEditMappedZoneModal()
+    return
+  }
   adminMapStore.showMappedZoneModal = false
 }
 
@@ -65,25 +94,34 @@ function submit(): void {
     return
   }
 
-  void adminMapStore.handleSaveMappedZone({
+  const payload = {
     name: form.name.trim(),
     zoningLayerId: form.zoningLayerId,
     description: form.description.trim(),
-  })
+  }
+
+  if (isEditing.value) {
+    const zone = adminMapStore.editingMappedZone
+    if (!zone) {
+      return
+    }
+
+    void adminMapStore.handleUpdateMappedZone({ zoneId: zone.id, input: payload })
+    return
+  }
+
+  void adminMapStore.handleSaveMappedZone(payload)
 }
 </script>
 
 <template>
-  <div
-    v-if="adminMapStore.showMappedZoneModal"
-    class="fixed inset-0 z-10000 flex items-center justify-center bg-black/40 p-4"
-  >
+  <div v-if="open" class="fixed inset-0 z-10000 flex items-center justify-center bg-black/40 p-4">
     <Card class="w-full max-w-md py-0">
       <CardHeader class="border-b py-4">
-        <CardTitle class="text-base">Save Mapped Zone</CardTitle>
+        <CardTitle class="text-base">{{ modalTitle }}</CardTitle>
       </CardHeader>
       <CardContent class="space-y-3 p-4">
-        <p class="text-xs text-muted-foreground">
+        <p v-if="!isEditing" class="text-xs text-muted-foreground">
           {{ adminMapStore.drawPoints.length }} polygon points captured.
         </p>
 
@@ -122,7 +160,7 @@ function submit(): void {
 
         <div class="flex justify-end gap-2">
           <Button variant="outline" @click="close">Cancel</Button>
-          <Button :disabled="!canSubmit" @click="submit">Save Zone</Button>
+          <Button :disabled="!canSubmit" @click="submit">{{ submitLabel }}</Button>
         </div>
       </CardContent>
     </Card>
