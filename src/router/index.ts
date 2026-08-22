@@ -56,7 +56,7 @@ const router = createRouter({
       component: SiteView,
     },
     {
-      path: '/auth',
+      path: '/login',
       component: AuthLayout,
       children: [
         {
@@ -64,6 +64,16 @@ const router = createRouter({
           name: 'login',
           component: LoginView,
           meta: { requiresGuest: true },
+        },
+      ],
+    },
+    {
+      path: '/auth',
+      component: AuthLayout,
+      children: [
+        {
+          path: '',
+          redirect: { name: 'login' },
         },
         {
           path: 'register',

@@ -26,60 +26,51 @@ const UNSPLASH = (photoId: string): string =>
 
 export const RENTAL_SPACES: RentalSpace[] = [
   {
-    id: 'rs-intino-1',
-    name: 'RC Intino Building',
-    barangay: 'Obrero',
-    address: 'Montilla Blvd., Obrero',
-    location: { lat: 8.94837, lng: 125.537574 },
-    spaceType: 'retail',
+    id: 'rs-samping-avenue',
+    name: 'Samping Avenue',
+    barangay: 'Bayanihan',
+    address: 'J. C. Aquino Ave, Butuan City, 8600 Agusan del Norte',
+    location: { lat: 8.943719846151486, lng: 125.5253970459244 },
+    spaceType: 'office',
     isAvailable: true,
-    suitableFor: ['office', 'retail', 'commercial business', 'clinic', 'salon'],
-    imageUrl: UNSPLASH('photo-1486406146926-c627a92ad1ab'),
+    suitableFor: ['office', 'commercial business', 'printing services', 'electronics repair'],
+    imageUrl:
+    'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTTGxq9AtTRkcmmZTIslGv6sthPUXVNEzNJ_fU0Q3dIDax9keb_D6Fzt8k&s=10',
     description:
-      'Established commercial building along Montilla Boulevard with rentable spaces for offices and businesses.',
+      'Multi-tenant commercial/office building along JC Aquino Avenue with rentable spaces for offices and businesses. Has parking space and security.',
   },
   {
     id: 'rs-intino-2',
     name: 'RC Intino Building 2',
-    barangay: 'Libertad',
-    address: 'North Montilla Boulevard, Libertad',
-    location: { lat: 8.956425, lng: 125.536026 },
+    barangay: 'Ong Yiu',
+    address: 'North Montilla Boulevard, Ong Yiu',
+    location: { lat: 8.957163, lng: 125.540412 },
     spaceType: 'office',
     isAvailable: true,
     suitableFor: ['office', 'retail', 'commercial business', 'tutorial center', 'printing services'],
-    imageUrl: UNSPLASH('photo-1497366216548-37526070297c'),
+    imageUrl:
+      'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQA5HweJ_ATwda8DgIqsgJzNVivGT_NiAkgL6gDUVlJH1gtKRh3vrG8bDU&s=10',
     rating: 4.4,
     contactNumber: '0956 466 5774',
     description:
       'Has parking and affordable rental space suitable for offices and businesses.',
   },
   {
-    id: 'rs-vcdu',
-    name: 'VCDU Building',
-    barangay: 'Obrero',
-    address: 'Montilla Blvd., Obrero',
-    location: { lat: 8.94504, lng: 125.5367 },
+    id: 'rs-ps-arcade',
+    name: 'PS Arcade',
+    barangay: 'Imadejas',
+    address: 'Jose Rosales Ave., Imadejas',
+    location: { lat: 8.94676684700114, lng: 125.53137829822042 },
     spaceType: 'retail',
     isAvailable: true,
     suitableFor: ['retail', 'office', 'sari-sari store', 'pharmacy', 'clothing boutique'],
-    imageUrl: UNSPLASH('photo-1441984904996-e0b6ba687e04'),
+    imageUrl:
+     'https://streetviewpixels-pa.googleapis.com/v1/thumbnail?panoid=G6OhmfJr7onJFf5ikPDdnw&cb_client=search.gws-prod.gps&w=408&h=240&yaw=254.33171&pitch=0&thumbfov=100',
     rating: 4.0,
     description:
-      'Multi-tenant building with multiple businesses occupying individual rental spaces (e.g., Door 2).',
+      'Commercial arcade along Jose Rosales Avenue with rentable spaces for shops and offices.',
   },
-  {
-    id: 'rs-sintrade',
-    name: 'Sintrade Building',
-    barangay: 'Obrero',
-    address: '424 Villanueva Street, Obrero',
-    location: { lat: 8.950299, lng: 125.541976 },
-    spaceType: 'office',
-    isAvailable: true,
-    suitableFor: ['office', 'commercial business', 'printing services', 'electronics repair'],
-    imageUrl: UNSPLASH('photo-1441986300917-64674bd600d8'),
-    description:
-      'Multi-tenant commercial/office building along Villanueva Street.',
-  },
+
 ]
 
 export const SUPPLIERS: Supplier[] = [

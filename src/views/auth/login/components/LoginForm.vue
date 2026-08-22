@@ -8,6 +8,7 @@ import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui
 import { Input } from '@/components/ui/input'
 import { useAlertContext } from '@/composables/useAlert'
 import { AuthServiceError, signInWithEmail } from '@/services/auth.service'
+import { DotLottieVue } from '@lottiefiles/dotlottie-vue'
 import { useAuthStore } from '@/stores/auth.store'
 import logoImage from '/login.png'
 
@@ -162,11 +163,13 @@ const handleSubmit = async (): Promise<void> => {
             </FieldDescription>
           </FieldGroup>
         </form>
-        <div class="bg-muted relative hidden md:block">
-          <img
-            :src="logoImage"
-            alt="Image"
-            class="absolute inset-0 h-full w-full object-cover dark:brightness-75"
+        <div class="bg-muted relative hidden overflow-hidden md:block">
+          <DotLottieVue
+            src="/map-browsing.lottie"
+            autoplay
+            loop
+            class="absolute inset-0 h-full w-full opacity-90"
+            aria-label="Map browsing preview animation"
           />
         </div>
       </CardContent>
