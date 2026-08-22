@@ -2,6 +2,16 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { User, Session } from '@supabase/supabase-js'
 import { getSupabaseClient } from '@/services/supabase.client'
+import type { BusinessRole } from '@/types/pinned-location.types'
+
+const BUSINESS_ROLES: BusinessRole[] = ['space_owner', 'entrepreneur', 'supplier']
+
+const parseBusinessRole = (value: unknown): BusinessRole | null => {
+  if (typeof value !== 'string') {
+    return null
+  }
+  return BUSINESS_ROLES.includes(value as BusinessRole) ? (value as BusinessRole) : null
+}
 
 export const useAuthStore = defineStore('auth', () => {
   // 1. State
@@ -12,6 +22,13 @@ export const useAuthStore = defineStore('auth', () => {
   // 2. Getters
   const isLoggedIn = computed(() => !!session.value)
   const isSuperAdmin = computed(() => user.value?.user_metadata?.role === 'superadmin')
+  const isAdmin = computed(() => {
+    const role = user.value?.user_metadata?.role
+    return role === 'admin' || role === 'superadmin'
+  })
+  const businessRole = computed(() => parseBusinessRole(user.value?.user_metadata?.business_role))
+  const isBusinessUser = computed(() => businessRole.value !== null)
+  const homeRouteName = computed(() => (isAdmin.value ? 'admin-map' : 'user-map'))
 
   // 3. Actions
   const initializeAuthListener = () => {
@@ -45,6 +62,10 @@ export const useAuthStore = defineStore('auth', () => {
     isInitialized,
     isLoggedIn,
     isSuperAdmin,
+    isAdmin,
+    businessRole,
+    isBusinessUser,
+    homeRouteName,
     initializeAuthListener,
     logout,
   }

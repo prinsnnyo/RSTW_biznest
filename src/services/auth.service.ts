@@ -222,6 +222,7 @@ export const signUpWithEmail = async (payload: RegisterPayload): Promise<AuthRes
         role: role,
         city_id: payload.city_id,
         city_name: payload.city_name,
+        business_role: payload.business_role ?? null,
       },
     },
   })

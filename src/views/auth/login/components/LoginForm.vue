@@ -8,6 +8,7 @@ import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui
 import { Input } from '@/components/ui/input'
 import { useAlertContext } from '@/composables/useAlert'
 import { AuthServiceError, signInWithEmail } from '@/services/auth.service'
+import { useAuthStore } from '@/stores/auth.store'
 import logoImage from '/login.png'
 
 const props = defineProps<{
@@ -47,7 +48,7 @@ const handleSubmit = async (): Promise<void> => {
       title: 'Login successful',
     })
 
-    await router.push('/admin')
+    await router.push(useAuthStore().homeRouteName === 'admin-map' ? '/admin/map' : '/app/map')
   } catch (error) {
     if (error instanceof AuthServiceError) {
       showErrorAlert(error.message)

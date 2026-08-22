@@ -64,3 +64,8 @@ supabase/migrations/*_local.sql
 # Local Claude notes
 CLAUDE.md
 
+# Local opencode agent guide
+AGENTS.md
+
+.cursor/
+

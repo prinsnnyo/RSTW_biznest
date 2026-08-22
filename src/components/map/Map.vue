@@ -201,6 +201,17 @@ async function focusOnZone(points: MapDrawPoint[]): Promise<void> {
   await googleMapAdapter.focusOnZone(points)
 }
 
+async function focusLocation(
+  point: { lat: number; lng: number },
+  label?: string,
+): Promise<void> {
+  if (props.provider === 'leaflet') {
+    await leafletMapAdapter.showLocationMarker(point, label)
+    return
+  }
+  googleMapAdapter.showLocationMarker(point, label)
+}
+
 function setDrawMode(enabled: boolean): void {
   if (props.provider === 'leaflet') {
     leafletMapAdapter.setDrawMode(enabled)
@@ -250,17 +261,30 @@ function setPoisVisible(visible: boolean): void {
   googleMapAdapter.setPoisVisible(visible)
 }
 
+async function renderPinnedLocations(
+  pins: import('@/types/pinned-location.types').MapPinMarker[],
+  onPinClick?: ((pinId: string) => void) | null,
+): Promise<void> {
+  if (props.provider === 'leaflet') {
+    await leafletMapAdapter.renderPinnedLocations(pins, onPinClick)
+    return
+  }
+  googleMapAdapter.renderPinnedLocations(pins, onPinClick)
+}
+
 defineExpose({
   renderBarangayBorders,
   renderMappedZones,
   renderHazards,
   renderDrawPreview,
   focusOnZone,
+  focusLocation,
   setDrawMode,
   setMapClickHandler,
   setDrawPointMoveHandler,
   setCenter,
   setPoisVisible,
+  renderPinnedLocations,
 })
 </script>
 
