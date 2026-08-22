@@ -22,7 +22,10 @@ import { updateUserProfile } from '@/services/users.service'
 import { useAlertContext } from '@/composables/useAlert'
 import { fetchPhilippineCities } from '@/services/cities.service'
 import type { CityOption } from '@/services/cities.service'
+import { useRolesStore } from '@/stores/roles.store'
+import { formatRoleLabel } from '@/utils/roles.utils'
 import { Loader2 } from 'lucide-vue-next'
+import { storeToRefs } from 'pinia'
 
 const props = defineProps<{
   isOpen: boolean
@@ -37,6 +40,9 @@ const emit = defineEmits<{
 
 const { showSuccess, showAlert } = useAlertContext()
 
+const rolesStore = useRolesStore()
+const { roles, isLoading: isFetchingRoles } = storeToRefs(rolesStore)
+
 const username = ref('')
 const email = ref('')
 const role = ref('user')
@@ -46,6 +52,34 @@ const isLoading = ref(false)
 
 const PHILIPPINE_CITIES = ref<CityOption[]>([])
 const isFetchingCities = ref(false)
+
+// Every role defined in the `roles` table, plus the user's current role when it
+// is no longer listed there, so an existing assignment is never silently dropped.
+const roleOptions = computed<string[]>(() => {
+  const options: string[] = []
+  const seen = new Set<string>()
+
+  const addOption = (value: string): void => {
+    const trimmed = value.trim()
+    const key = trimmed.toLowerCase()
+
+    if (!trimmed || seen.has(key)) {
+      return
+    }
+
+    seen.add(key)
+    options.push(trimmed)
+  }
+
+  addOption(role.value)
+  roles.value.forEach((roleRow) => addOption(roleRow.title))
+
+  return options
+})
+
+const selectRole = (nextRole: string): void => {
+  role.value = nextRole.trim().toLowerCase()
+}
 
 const selectedCityName = computed(() => {
   if (!cityId.value) {
@@ -99,6 +133,7 @@ watch(
   (isOpen) => {
     if (isOpen) {
       fetchCities()
+      void rolesStore.loadRoles()
     }
   },
   { immediate: true },
@@ -110,7 +145,7 @@ watch(
     if (user) {
       username.value = user.username
       email.value = user.email
-      role.value = user.role.toLowerCase()
+      role.value = user.role.trim().toLowerCase()
       syncCityIdFromUser(user)
     } else {
       username.value = ''
@@ -213,13 +248,34 @@ const saveChanges = async () => {
                 :class="!role && 'text-muted-foreground'"
                 :disabled="isLoading"
               >
-                {{ role ? role.charAt(0).toUpperCase() + role.slice(1) : 'Select a role' }}
+                {{ role ? formatRoleLabel(role) : 'Select a role' }}
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" class="w-[375px]">
-              <DropdownMenuItem @click="role = 'user'">User</DropdownMenuItem>
-              <DropdownMenuItem @click="role = 'admin'">Admin</DropdownMenuItem>
-              <DropdownMenuItem @click="role = 'superadmin'">Superadmin</DropdownMenuItem>
+            <DropdownMenuContent align="start" class="max-h-[300px] w-[375px] overflow-y-auto">
+              <TypographyMuted
+                v-if="isFetchingRoles && roleOptions.length === 0"
+                as="div"
+                class="mt-0 p-4 text-center text-sm"
+              >
+                <Loader2 class="mr-2 inline-block h-4 w-4 animate-spin" />
+                Loading roles...
+              </TypographyMuted>
+              <TypographyMuted
+                v-else-if="roleOptions.length === 0"
+                as="div"
+                class="mt-0 p-4 text-center text-sm"
+              >
+                No roles available.
+              </TypographyMuted>
+              <template v-else>
+                <DropdownMenuItem
+                  v-for="option in roleOptions"
+                  :key="option"
+                  @click="selectRole(option)"
+                >
+                  {{ formatRoleLabel(option) }}
+                </DropdownMenuItem>
+              </template>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

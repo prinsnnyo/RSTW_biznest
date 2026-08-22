@@ -14,7 +14,7 @@ const router = useRouter()
 const roleLabel = computed(() => {
   const role = authStore.businessRole
   if (!role) {
-    return 'Explorer'
+    return 'Space Owner'
   }
   return BUSINESS_ROLE_OPTIONS.find((option) => option.value === role)?.label ?? role
 })
@@ -23,11 +23,9 @@ const navItems = computed(() => {
   const items = [
     { label: 'Map', to: '/app/map' },
     { label: 'Home', to: '/app/home' },
+    { label: 'My Site', to: '/app/my-site' },
+    { label: 'Messages', to: '/app/messages' },
   ]
-
-  if (authStore.isBusinessUser) {
-    items.push({ label: 'My Site', to: '/app/my-site' }, { label: 'Messages', to: '/app/messages' })
-  }
 
   if (authStore.isAdmin) {
     items.push({ label: 'Admin', to: '/admin/map' })

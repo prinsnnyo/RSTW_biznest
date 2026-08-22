@@ -35,18 +35,12 @@ const getText = (row: GenericDbRow, keys: string[]): string => {
   return ''
 }
 
+// Roles are user-defined in the `roles` table, so any non-empty value is kept
+// as-is (lower-cased) rather than being collapsed into the three built-ins.
 const normalizeRole = (value: string): string => {
-  const normalized = value.toLowerCase()
+  const normalized = value.trim().toLowerCase()
 
-  if (normalized === 'superadmin') {
-    return 'superadmin'
-  }
-
-  if (normalized === 'admin') {
-    return 'admin'
-  }
-
-  return 'user'
+  return normalized.length > 0 ? normalized : 'user'
 }
 
 const getOptionalText = (value: unknown): string | null => {

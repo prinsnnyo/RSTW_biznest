@@ -10,6 +10,8 @@
     "test:unit": "vitest",
     "build-only": "vite build",
     "type-check": "vue-tsc --build",
+    "db:types": "supabase gen types typescript --linked > src/types/database.types.ts",
+    "db:schema": "supabase db dump --schema public -f sql/schema.sql",
     "lint": "run-s lint:*",
     "lint:oxlint": "oxlint . --fix",
     "lint:eslint": "eslint . --fix --cache",

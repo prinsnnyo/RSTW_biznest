@@ -12,3 +12,22 @@ export const getRoleBadgeVariant = (
       return 'secondary'
   }
 }
+
+/**
+ * Turns a stored role value into a display label.
+ * Slug-ish values are title-cased ("space_owner" -> "Space Owner"); titles that
+ * already carry their own casing ("IT Admin") are left untouched.
+ */
+export const formatRoleLabel = (role: string): string => {
+  const spaced = role.trim().replace(/[_-]+/g, ' ').replace(/\s+/g, ' ')
+
+  if (!spaced) {
+    return ''
+  }
+
+  if (/[A-Z]/.test(spaced)) {
+    return spaced
+  }
+
+  return spaced.replace(/\b\w/g, (character) => character.toUpperCase())
+}

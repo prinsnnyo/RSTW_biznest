@@ -49,7 +49,7 @@ const handleSubmit = async (): Promise<void> => {
       title: 'Login successful',
     })
 
-    await router.push(useAuthStore().homeRouteName === 'admin-map' ? '/admin/map' : '/app/map')
+    await router.push({ name: useAuthStore().homeRouteName })
   } catch (error) {
     if (error instanceof AuthServiceError) {
       showErrorAlert(error.message)

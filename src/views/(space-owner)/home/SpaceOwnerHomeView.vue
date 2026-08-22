@@ -32,15 +32,15 @@ const roleMeta = computed(() => {
     }
   }
   return {
-    title: 'Explorer workspace',
-    blurb: 'Browse pinned locations across Butuan and open each dynamic website from the map.',
-    action: 'Browse the map',
+    title: 'Space Owner workspace',
+    blurb: 'Pin your rentable space in Butuan and publish a site visitors can open from the map.',
+    action: 'List a space on the map',
   }
 })
 
 const roleLabel = computed(() => {
   const role = authStore.businessRole
-  return BUSINESS_ROLE_OPTIONS.find((option) => option.value === role)?.label ?? 'Regular user'
+  return BUSINESS_ROLE_OPTIONS.find((option) => option.value === role)?.label ?? 'Space Owner'
 })
 </script>
 
@@ -61,7 +61,6 @@ const roleLabel = computed(() => {
           <RouterLink to="/app/map">{{ roleMeta.action }}</RouterLink>
         </Button>
         <Button
-          v-if="authStore.isBusinessUser"
           as-child
           variant="outline"
           class="border-primary-foreground/30 bg-transparent text-primary-foreground hover:bg-primary-foreground/10"
@@ -91,7 +90,7 @@ const roleLabel = computed(() => {
           <CardDescription>Customize themes, layouts, fonts, and CMS sections.</CardDescription>
         </CardHeader>
         <CardContent>
-          <Button as-child variant="secondary" class="w-full" :disabled="!authStore.isBusinessUser">
+          <Button as-child variant="secondary" class="w-full">
             <RouterLink to="/app/my-site">My site</RouterLink>
           </Button>
         </CardContent>
@@ -102,7 +101,7 @@ const roleLabel = computed(() => {
           <CardDescription>Read Contact Us messages from your published site.</CardDescription>
         </CardHeader>
         <CardContent>
-          <Button as-child variant="secondary" class="w-full" :disabled="!authStore.isBusinessUser">
+          <Button as-child variant="secondary" class="w-full">
             <RouterLink to="/app/messages">Messages</RouterLink>
           </Button>
         </CardContent>

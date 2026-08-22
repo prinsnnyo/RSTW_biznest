@@ -248,7 +248,11 @@ export function useRegisterFormSubmit({
         showSuccess('Your account has been created and you are now signed in.', {
           title: 'Account created',
         })
-        await router.push(businessRole.value || inviteToken ? '/app/map' : '/app/map')
+        if (inviteToken) {
+          await router.push('/admin/map')
+        } else {
+          await router.push(businessRole.value ? '/app/map' : '/user/map')
+        }
         return
       }
 

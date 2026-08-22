@@ -6,7 +6,8 @@ import LandingView from '@/views/landing/LandingView.vue'
 import OuterLayout from '@/layouts/OuterLayout.vue'
 import AuthLayout from '@/layouts/AuthLayout.vue'
 import InnerLayout from '@/layouts/InnerLayout.vue'
-import UserLayout from '@/layouts/UserLayout.vue'
+import SpaceOwnerLayout from '@/layouts/SpaceOwnerLayout.vue'
+import UserSidebar from '@/components/UserSidebar.vue'
 
 //Auth Routes
 import LoginView from '@/views/auth/login/LoginView.vue'
@@ -19,14 +20,11 @@ import UsersView from '@/views/(admin)/users/UsersView.vue'
 import ReportsView from '@/views/(admin)/reports/ReportsView.vue'
 import RolesView from '@/views/(admin)/roles/RolesView.vue'
 
-// User app
-import UserHomeView from '@/views/(user)/home/UserHomeView.vue'
-import UserMapView from '@/views/(user)/map/UserMapView.vue'
-import SiteBuilderView from '@/views/(user)/site-builder/SiteBuilderView.vue'
-import MessagesView from '@/views/(user)/messages/MessagesView.vue'
-import SpaceOwnerHomeView from '@/views/(user)/roles/SpaceOwnerHomeView.vue'
-import EntrepreneurHomeView from '@/views/(user)/roles/EntrepreneurHomeView.vue'
-import SupplierHomeView from '@/views/(user)/roles/SupplierHomeView.vue'
+// Space owner app (also used by entrepreneur + supplier until they get their own shells)
+import SpaceOwnerHomeView from '@/views/(space-owner)/home/SpaceOwnerHomeView.vue'
+import SpaceOwnerMapView from '@/views/(space-owner)/map/SpaceOwnerMapView.vue'
+import SiteBuilderView from '@/views/(space-owner)/site-builder/SiteBuilderView.vue'
+import MessagesView from '@/views/(space-owner)/messages/MessagesView.vue'
 import SiteView from '@/views/sites/SiteView.vue'
 
 const router = createRouter({
@@ -85,54 +83,54 @@ const router = createRouter({
     },
     {
       path: '/app',
-      component: UserLayout,
-      meta: { requiresAuth: true },
+      component: SpaceOwnerLayout,
+      meta: { requiresAuth: true, requiresBusiness: true },
       children: [
         {
           path: '',
-          redirect: { name: 'user-home' },
+          redirect: { name: 'space-owner-home' },
         },
         {
           path: 'home',
-          name: 'user-home',
-          component: UserHomeView,
-          meta: { requiresAuth: true },
-        },
-        {
-          path: 'map',
-          name: 'user-map',
-          component: UserMapView,
-          meta: { requiresAuth: true },
-        },
-        {
-          path: 'my-site',
-          name: 'user-site-builder',
-          component: SiteBuilderView,
-          meta: { requiresAuth: true, requiresBusiness: true },
-        },
-        {
-          path: 'messages',
-          name: 'user-messages',
-          component: MessagesView,
-          meta: { requiresAuth: true, requiresBusiness: true },
-        },
-        {
-          path: 'space-owner',
           name: 'space-owner-home',
           component: SpaceOwnerHomeView,
           meta: { requiresAuth: true, requiresBusiness: true },
         },
         {
-          path: 'entrepreneur',
-          name: 'entrepreneur-home',
-          component: EntrepreneurHomeView,
+          path: 'map',
+          name: 'space-owner-map',
+          component: SpaceOwnerMapView,
           meta: { requiresAuth: true, requiresBusiness: true },
         },
         {
-          path: 'supplier',
-          name: 'supplier-home',
-          component: SupplierHomeView,
+          path: 'my-site',
+          name: 'space-owner-site-builder',
+          component: SiteBuilderView,
           meta: { requiresAuth: true, requiresBusiness: true },
+        },
+        {
+          path: 'messages',
+          name: 'space-owner-messages',
+          component: MessagesView,
+          meta: { requiresAuth: true, requiresBusiness: true },
+        },
+      ],
+    },
+    {
+      path: '/user',
+      component: InnerLayout,
+      props: { sidebar: UserSidebar },
+      meta: { requiresAuth: true },
+      children: [
+        {
+          path: '',
+          redirect: { name: 'user-map' },
+        },
+        {
+          path: 'map',
+          name: 'user-map',
+          component: AdminMap,
+          meta: { requiresAuth: true },
         },
       ],
     },
@@ -208,7 +206,7 @@ router.beforeEach(async (to) => {
   }
 
   if (to.meta.requiresBusiness && !authStore.isBusinessUser) {
-    return { name: 'user-home' }
+    return { name: authStore.homeRouteName }
   }
 
   return true
