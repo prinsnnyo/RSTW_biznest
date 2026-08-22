@@ -28,7 +28,12 @@ export const useAuthStore = defineStore('auth', () => {
   })
   const businessRole = computed(() => parseBusinessRole(user.value?.user_metadata?.business_role))
   const isBusinessUser = computed(() => businessRole.value !== null)
-  const homeRouteName = computed(() => (isAdmin.value ? 'admin-map' : 'user-map'))
+  const homeRouteName = computed(() => {
+    if (isAdmin.value) {
+      return 'admin-map'
+    }
+    return isBusinessUser.value ? 'space-owner-map' : 'user-map'
+  })
 
   // 3. Actions
   const initializeAuthListener = () => {
