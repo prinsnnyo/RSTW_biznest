@@ -34,7 +34,7 @@ import type {
   HazardId,
   UpdateHazardInput,
 } from '@/types/hazard.types.ts'
-import type { BarangayFeatureCollection } from '@/types/map.types.ts'
+import type { BarangayFeatureCollection, MapCanvasApi } from '@/types/map.types.ts'
 import type {
   CreateMappedZoneInput,
   CreateZoningLayerInput,
@@ -45,7 +45,6 @@ import type {
   ZoningLayer,
 } from '@/types/zoning.types.ts'
 import type { BusinessRole, MapPinMarker, PinnedLocation } from '@/types/pinned-location.types.ts'
-import type Maplibre from '@/views/(admin)/map/components/Maplibre.vue'
 
 export type AdminMapPanelKey = 'zoning' | 'hazard' | 'local-business' | 'reports' | 'poi'
 
@@ -110,7 +109,7 @@ export const useAdminMapStore = defineStore('adminMap', () => {
   // ── 1. State ────────────────────────────────────────────────────────────────
 
   // Map
-  const mapRef = ref<InstanceType<typeof Maplibre> | null>(null)
+  const mapRef = ref<MapCanvasApi | null>(null)
   // A persisted focus (from a prior visit) takes priority over the resolved
   // city default — restored here, before anything else runs.
   const storedFocus = loadStoredFocus()
@@ -247,7 +246,7 @@ export const useAdminMapStore = defineStore('adminMap', () => {
 
   // ── 3. Actions ──────────────────────────────────────────────────────────────
 
-  function setMapRef(instance: InstanceType<typeof Maplibre> | null): void {
+  function setMapRef(instance: MapCanvasApi | null): void {
     mapRef.value = instance
   }
 
