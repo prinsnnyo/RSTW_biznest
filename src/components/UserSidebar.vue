@@ -24,8 +24,19 @@ import {
   SidebarTrigger,
 } from '@/components/ui/sidebar'
 import { useAuthStore } from '@/stores/auth.store'
-import type { AdminSidebarIconName } from '@/types/admin-sidebar.types'
+import type { AdminNavItem, AdminSidebarIconName } from '@/types/admin-sidebar.types'
 import { primaryUserNavItems } from '@/utils/user-sidebar-nav'
+
+// `items` lets sibling shells (e.g. the space-owner shell) reuse this sidebar
+// with their own nav. Defaults to the normal-user nav.
+const props = withDefaults(
+  defineProps<{
+    items?: AdminNavItem[]
+  }>(),
+  {
+    items: () => primaryUserNavItems,
+  },
+)
 
 const route = useRoute()
 const authStore = useAuthStore()
@@ -80,7 +91,7 @@ const getNavItemClass = (itemPath: string): string => {
       <SidebarGroup>
         <SidebarGroupContent>
           <SidebarMenu>
-            <SidebarMenuItem v-for="item in primaryUserNavItems" :key="item.to">
+            <SidebarMenuItem v-for="item in props.items" :key="item.to">
               <SidebarMenuButton
                 as-child
                 :is-active="isActive(item.to)"
