@@ -47,7 +47,7 @@ const WHICH_NUMBER_TEXT =
   '2 - Business permit requirements'
 
 const BUSINESS_TYPE_QUESTION =
-  'What type of business would you like to put up? (e.g., coffee shop, restaurant, sari-sari store, printing services)'
+  'What type of business would you like to put up? (e.g., coffee shop, restaurant, clothing, printing services)'
 
 const PERMIT_CLARIFYING_QUESTION =
   'Before I answer — is this for a NEW business permit application, or a RENEWAL of an existing one?'
