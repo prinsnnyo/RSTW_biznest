@@ -11,6 +11,14 @@ import { AuthServiceError, signUpWithEmail } from '@/services/auth.service'
 import type { CityOption } from '@/services/cities.service'
 import type { BusinessRole } from '@/types/pinned-location.types'
 
+// Each business role lands on its own shell; space owners run the normal-user
+// shell, entrepreneurs and suppliers share the business shell under /app.
+const SIGNED_UP_HOME_PATHS: Record<BusinessRole, string> = {
+  space_owner: '/space-owner/map',
+  entrepreneur: '/app/map',
+  supplier: '/app/map',
+}
+
 export interface UseRegisterFormReturn {
   // Form fields
   email: Ref<string>
@@ -212,6 +220,11 @@ export function useRegisterFormSubmit({
   })
 
   // Form submission
+  function resolveSignedUpHomePath(): string {
+    const role = businessRole.value
+    return role ? SIGNED_UP_HOME_PATHS[role] : '/user/map'
+  }
+
   const handleSubmit = async (): Promise<void> => {
     errorMessage.value = ''
 
@@ -251,7 +264,7 @@ export function useRegisterFormSubmit({
         if (inviteToken) {
           await router.push('/admin/map')
         } else {
-          await router.push(businessRole.value ? '/app/map' : '/user/map')
+          await router.push(resolveSignedUpHomePath())
         }
         return
       }
