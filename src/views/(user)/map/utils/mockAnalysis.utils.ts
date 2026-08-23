@@ -1,6 +1,8 @@
-// Static stand-in for the real suitability engine. Everything here is mock data:
-// no scoring model, no spatial query, no backend call. Results are derived from
-// the form input only so the same selection always shows the same numbers.
+// Static stand-in for the real engine behind the three list-style analyses.
+// Business suitability has its own richer builder in suitabilityReport.utils.ts.
+// Everything here is mock data: no scoring model, no spatial query, no backend
+// call. Results derive from the form input so a selection always shows the same
+// numbers.
 import {
   BUSINESS_CATEGORIES,
   INVESTMENT_SCALES,
@@ -9,7 +11,6 @@ import {
 } from '@/views/(user)/map/constants'
 import type {
   AnalysisResult,
-  BusinessSuitabilityInput,
   ChoiceOption,
   NearestSpacesInput,
   NearestSuppliersInput,
@@ -31,54 +32,6 @@ function seededScore(seed: string, min: number, max: number): number {
 
 function seededDistance(seed: string): number {
   return Number((seededScore(seed, 3, 42) / 10).toFixed(1))
-}
-
-export function buildBusinessSuitabilityResult(
-  input: BusinessSuitabilityInput,
-  pointCount: number,
-): AnalysisResult {
-  const categoryLabel = labelOf(BUSINESS_CATEGORIES, input.category)
-  const scaleLabel = labelOf(INVESTMENT_SCALES, input.investmentScale)
-  const seed = `${input.category}${input.investmentScale}${input.operatingDays}${input.operatingHours}`
-
-  return {
-    optionKey: 'business-suitability',
-    title: 'Business Suitability',
-    summary: `${categoryLabel} · ${scaleLabel} across a ${pointCount}-point area.`,
-    score: seededScore(seed, 58, 92),
-    scoreRows: [
-      {
-        label: 'Foot traffic',
-        detail: 'Estimated daily passers-by within the drawn boundary',
-        score: seededScore(`${seed}foot`, 45, 95),
-      },
-      {
-        label: 'Competition density',
-        detail: `Existing ${categoryLabel.toLowerCase()} businesses nearby`,
-        score: seededScore(`${seed}competition`, 30, 88),
-      },
-      {
-        label: 'Accessibility',
-        detail: 'Road network and public transport reach',
-        score: seededScore(`${seed}access`, 50, 96),
-      },
-      {
-        label: 'Zoning fit',
-        detail: 'Alignment with the city land-use plan',
-        score: seededScore(`${seed}zoning`, 55, 98),
-      },
-      {
-        label: 'Hazard exposure',
-        detail: 'Inverse of flood and fire risk in the area',
-        score: seededScore(`${seed}hazard`, 40, 90),
-      },
-    ],
-    placeRows: [],
-    notes: [
-      `Operating window: ${labelOf(OPERATING_HOURS, input.operatingHours)}.`,
-      'Sample figures only — the live suitability model is not connected yet.',
-    ],
-  }
 }
 
 export function buildTopBusinessesResult(

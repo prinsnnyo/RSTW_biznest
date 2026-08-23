@@ -2,6 +2,8 @@
 import UserMapShell from '@/components/map/UserMapShell.vue'
 import AreaAnalysisDrawer from '@/views/(user)/map/components/AreaAnalysisDrawer.vue'
 import SmartAnalysisToolbar from '@/views/(user)/map/components/SmartAnalysisToolbar.vue'
+import SuitabilityReportModal from '@/views/(user)/map/components/SuitabilityReportModal.vue'
+import TopBusinessesReportModal from '@/views/(user)/map/components/TopBusinessesReportModal.vue'
 import UserMapRightSideBar from '@/views/(user)/map/components/UserMapRightSideBar.vue'
 import { useSmartAnalysis } from '@/views/(user)/map/composables/useSmartAnalysis'
 
@@ -54,6 +56,18 @@ function toggleDraw(): void {
       @submit-top-businesses="analysis.runTopBusinesses"
       @submit-nearest-suppliers="analysis.runNearestSuppliers"
       @submit-nearest-spaces="analysis.runNearestSpaces"
+    />
+
+    <SuitabilityReportModal
+      :open="analysis.isReportOpen.value"
+      :report="analysis.report.value"
+      @close="analysis.closeReport"
+    />
+
+    <TopBusinessesReportModal
+      :open="analysis.isTopBusinessesReportOpen.value"
+      :report="analysis.topBusinessesReport.value"
+      @close="analysis.closeReport"
     />
 
     <UserMapRightSideBar

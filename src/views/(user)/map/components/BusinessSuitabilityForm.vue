@@ -3,6 +3,7 @@ import { computed, ref, watch } from 'vue'
 import ChoiceCardGroup from '@/views/(user)/map/components/ChoiceCardGroup.vue'
 import {
   BUSINESS_CATEGORIES,
+  BUSINESS_TYPES_BY_CATEGORY,
   INVESTMENT_SCALES,
   OPERATING_DAYS,
   OPERATING_HOURS,
@@ -15,13 +16,23 @@ const emit = defineEmits<{
 }>()
 
 const category = ref('')
+const businessType = ref('')
 const investmentScale = ref('')
 const operatingDays = ref('')
 const operatingHours = ref('')
 
+const businessTypes = computed(() => BUSINESS_TYPES_BY_CATEGORY[category.value] ?? [])
+
+// A type only means something inside its category, so switching category drops
+// whatever was picked underneath it.
+watch(category, () => {
+  businessType.value = ''
+})
+
 const canSubmit = computed(
   () =>
     category.value !== '' &&
+    businessType.value !== '' &&
     investmentScale.value !== '' &&
     operatingDays.value !== '' &&
     operatingHours.value !== '',
@@ -34,6 +45,7 @@ function submit(): void {
 
   emit('submit', {
     category: category.value,
+    businessType: businessType.value,
     investmentScale: investmentScale.value,
     operatingDays: operatingDays.value,
     operatingHours: operatingHours.value,
@@ -50,6 +62,12 @@ watch(canSubmit, (valid) => emit('update:valid', valid), { immediate: true })
       v-model="category"
       label="Business Category"
       :options="BUSINESS_CATEGORIES"
+    />
+    <ChoiceCardGroup
+      v-if="businessTypes.length > 0"
+      v-model="businessType"
+      label="Business Type"
+      :options="businessTypes"
     />
     <ChoiceCardGroup
       v-model="investmentScale"

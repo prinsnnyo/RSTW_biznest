@@ -2,11 +2,11 @@ import { computed, ref, type ComputedRef, type Ref } from 'vue'
 import { useAuthStore } from '@/stores/auth.store'
 import { DEFAULT_LOCATION_LABEL } from '@/views/(user)/map/constants'
 import {
-  buildBusinessSuitabilityResult,
   buildNearestSpacesResult,
   buildNearestSuppliersResult,
-  buildTopBusinessesResult,
 } from '@/views/(user)/map/utils/mockAnalysis.utils'
+import { buildSuitabilityReport } from '@/views/(user)/map/utils/suitabilityReport.utils'
+import { buildTopBusinessesReport } from '@/views/(user)/map/utils/topBusinessesReport.utils'
 import type {
   AnalysisOptionKey,
   AnalysisResult,
@@ -14,7 +14,9 @@ import type {
   NearestSpacesInput,
   NearestSuppliersInput,
   SmartAnalysisStep,
+  SuitabilityReport,
   TopBusinessesInput,
+  TopBusinessesReport,
 } from '@/views/(user)/map/types/smart-analysis.types'
 import { useAreaDrawing, type UseAreaDrawingReturn } from '@/views/(user)/map/composables/useAreaDrawing'
 
@@ -24,6 +26,10 @@ export interface UseSmartAnalysisReturn {
   isActive: ComputedRef<boolean>
   selectedOption: Ref<AnalysisOptionKey | null>
   result: Ref<AnalysisResult | null>
+  report: Ref<SuitabilityReport | null>
+  topBusinessesReport: Ref<TopBusinessesReport | null>
+  isReportOpen: ComputedRef<boolean>
+  isTopBusinessesReportOpen: ComputedRef<boolean>
   areaSummary: ComputedRef<string>
   isOptionsOpen: ComputedRef<boolean>
   isFormOpen: ComputedRef<boolean>
@@ -34,6 +40,7 @@ export interface UseSmartAnalysisReturn {
   chooseOption: (key: AnalysisOptionKey) => void
   backToOptions: () => void
   closeFlow: () => void
+  closeReport: () => void
   resetAll: () => void
   runBusinessSuitability: (input: BusinessSuitabilityInput) => void
   runTopBusinesses: (input: TopBusinessesInput) => void
@@ -48,6 +55,8 @@ export function useSmartAnalysis(): UseSmartAnalysisReturn {
   const step = ref<SmartAnalysisStep>('idle')
   const selectedOption = ref<AnalysisOptionKey | null>(null)
   const result = ref<AnalysisResult | null>(null)
+  const report = ref<SuitabilityReport | null>(null)
+  const topBusinessesReport = ref<TopBusinessesReport | null>(null)
 
   const locationLabel = computed(() => {
     const cityName = authStore.user?.user_metadata?.city_name
@@ -66,9 +75,15 @@ export function useSmartAnalysis(): UseSmartAnalysisReturn {
   const isOptionsOpen = computed(() => step.value === 'choosing')
   const isFormOpen = computed(() => step.value === 'form')
   const isResultsOpen = computed(() => step.value === 'results')
+  const isReportOpen = computed(() => step.value === 'report' && report.value !== null)
+  const isTopBusinessesReportOpen = computed(
+    () => step.value === 'report' && topBusinessesReport.value !== null,
+  )
 
   function beginDrawing(): void {
     result.value = null
+    report.value = null
+    topBusinessesReport.value = null
     selectedOption.value = null
     drawing.clearArea()
     drawing.startDrawing()
@@ -108,7 +123,16 @@ export function useSmartAnalysis(): UseSmartAnalysisReturn {
     drawing.clearArea()
     selectedOption.value = null
     result.value = null
+    report.value = null
+    topBusinessesReport.value = null
     step.value = 'idle'
+  }
+
+  /** Closing a report drops back to the option list, not out of the tool. */
+  function closeReport(): void {
+    report.value = null
+    topBusinessesReport.value = null
+    step.value = 'choosing'
   }
 
   function showResult(next: AnalysisResult): void {
@@ -117,11 +141,25 @@ export function useSmartAnalysis(): UseSmartAnalysisReturn {
   }
 
   function runBusinessSuitability(input: BusinessSuitabilityInput): void {
-    showResult(buildBusinessSuitabilityResult(input, drawing.points.value.length))
+    topBusinessesReport.value = null
+    report.value = buildSuitabilityReport(
+      input,
+      areaSummary.value,
+      new Date().toLocaleString('en-PH'),
+      crypto.randomUUID().slice(0, 8),
+    )
+    step.value = 'report'
   }
 
   function runTopBusinesses(input: TopBusinessesInput): void {
-    showResult(buildTopBusinessesResult(input, drawing.points.value.length))
+    report.value = null
+    topBusinessesReport.value = buildTopBusinessesReport(
+      input,
+      areaSummary.value,
+      new Date().toLocaleString('en-PH'),
+      crypto.randomUUID().slice(0, 8),
+    )
+    step.value = 'report'
   }
 
   function runNearestSuppliers(input: NearestSuppliersInput): void {
@@ -138,6 +176,10 @@ export function useSmartAnalysis(): UseSmartAnalysisReturn {
     isActive,
     selectedOption,
     result,
+    report,
+    topBusinessesReport,
+    isReportOpen,
+    isTopBusinessesReportOpen,
     areaSummary,
     isOptionsOpen,
     isFormOpen,
@@ -148,6 +190,7 @@ export function useSmartAnalysis(): UseSmartAnalysisReturn {
     chooseOption,
     backToOptions,
     closeFlow,
+    closeReport,
     resetAll,
     runBusinessSuitability,
     runTopBusinesses,
