@@ -72,32 +72,16 @@ export const SITE_COMPONENT_META: Record<
   contact: { label: 'Contact form', hint: 'Visitors can message you from the site' },
 }
 
-export function siteFontStacks(pin: {
+export const SITE_FONT_STACK = '"Poppins", "Segoe UI", sans-serif'
+
+export function siteFontStacks(_pin?: {
   font_primary?: string
   font_secondary?: string
   font_tertiary?: string
 }): Record<string, string> {
-  const primaryMap: Record<string, string> = {
-    fraunces: '"Fraunces", Georgia, serif',
-    libre_baskerville: '"Libre Baskerville", Georgia, serif',
-    playfair: '"Playfair Display", Georgia, serif',
-  }
-  const secondaryMap: Record<string, string> = {
-    source_sans: '"Source Sans 3", "Segoe UI", sans-serif',
-    dm_sans: '"DM Sans", "Segoe UI", sans-serif',
-    nunito: '"Nunito", "Segoe UI", sans-serif',
-  }
-  const tertiaryMap: Record<string, string> = {
-    jetbrains_mono: '"JetBrains Mono", ui-monospace, monospace',
-    ibm_plex_mono: '"IBM Plex Mono", ui-monospace, monospace',
-    space_mono: '"Space Mono", ui-monospace, monospace',
-  }
-
   return {
-    '--site-font-primary': primaryMap[pin.font_primary ?? 'fraunces'] ?? primaryMap.fraunces!,
-    '--site-font-secondary':
-      secondaryMap[pin.font_secondary ?? 'source_sans'] ?? secondaryMap.source_sans!,
-    '--site-font-tertiary':
-      tertiaryMap[pin.font_tertiary ?? 'jetbrains_mono'] ?? tertiaryMap.jetbrains_mono!,
+    '--site-font-primary': SITE_FONT_STACK,
+    '--site-font-secondary': SITE_FONT_STACK,
+    '--site-font-tertiary': SITE_FONT_STACK,
   }
 }

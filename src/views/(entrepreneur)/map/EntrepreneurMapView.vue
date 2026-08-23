@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import MapCanvas from '@/components/map/Map.vue'
-import PlaceSidebar from '@/views/(space-owner)/map/components/PlaceSidebar.vue'
+import PlaceSidebar from '@/views/(entrepreneur)/map/components/PlaceSidebar.vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'

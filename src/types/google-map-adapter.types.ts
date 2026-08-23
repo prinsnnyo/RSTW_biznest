@@ -94,15 +94,17 @@ export type LegacyMarkerCtor = new (options: {
   title?: string
   draggable?: boolean
   zIndex?: number
-  icon?: {
-    path: string
-    fillColor: string
-    fillOpacity: number
-    strokeColor: string
-    strokeOpacity: number
-    strokeWeight: number
-    scale: number
-  }
+  icon?:
+    | {
+        path: string
+        fillColor: string
+        fillOpacity: number
+        strokeColor: string
+        strokeOpacity: number
+        strokeWeight: number
+        scale: number
+      }
+    | { url: string }
 }) => GoogleMarkerInstance
 
 export interface GoogleMapsAPI {

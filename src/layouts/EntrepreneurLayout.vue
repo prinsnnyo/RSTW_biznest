@@ -14,7 +14,7 @@ const router = useRouter()
 const roleLabel = computed(() => {
   const role = authStore.businessRole
   if (!role) {
-    return 'Space Owner'
+    return 'Entrepreneur'
   }
   return BUSINESS_ROLE_OPTIONS.find((option) => option.value === role)?.label ?? role
 })
@@ -39,7 +39,7 @@ const handleLogout = async (): Promise<void> => {
   await router.push('/auth')
 }
 
-const isFullScreenMap = computed(() => route.name === 'space-owner-map')
+const isFullScreenMap = computed(() => route.name === 'entrepreneur-map')
 </script>
 
 <template>

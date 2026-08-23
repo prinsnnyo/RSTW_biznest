@@ -6,6 +6,7 @@ import type { MapDrawPoint, MappedZone } from '@/types/zoning.types'
 import type { MapPinMarker } from '@/types/pinned-location.types'
 import { MapLibreEngine, type MapLibreTheme } from '@/engine/maplibre.egine'
 import { getBarangayLabel, getBorderColor } from '@/utils/map/barangayBorder.utils'
+import { createPinIconSrc } from '@/utils/pin-icon.utils'
 
 interface MapLibreAdapterOptions {
   containerRef: Ref<HTMLDivElement | null>
@@ -25,12 +26,6 @@ type CameraIdleHandler = (camera: {
   pitch: number
   center: { lat: number; lng: number }
 }) => void
-
-const PIN_ROLE_COLORS: Record<string, string> = {
-  space_owner: '#0ea5e9',
-  entrepreneur: '#f59e0b',
-  supplier: '#10b981',
-}
 
 const DRAW_MODE_CURSOR =
   "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M4 20l4-1 9.5-9.5-3-3L5 16z' fill='%231f2937'/%3E%3Cpath d='M14.5 6.5l3 3 1-1a1.6 1.6 0 000-2.2l-.8-.8a1.6 1.6 0 00-2.2 0z' fill='%230f172a'/%3E%3C/svg%3E\") 2 20, crosshair"
@@ -730,9 +725,17 @@ export function useMapLibreAdapter(options: MapLibreAdapterOptions) {
     }
 
     pins.forEach((pin) => {
-      const color = PIN_ROLE_COLORS[pin.role] ?? '#2563eb'
       const markerId = `${PIN_MARKER_ID_PREFIX}${pin.id}`
-      const marker = engine?.addMarker(markerId, [pin.lng, pin.lat], { color }) as Marker | null
+      const el = document.createElement('img')
+      el.src = createPinIconSrc()
+      el.alt = pin.title
+      el.style.width = '28px'
+      el.style.height = '40px'
+      el.style.cursor = 'pointer'
+      const marker = engine?.addMarker(markerId, [pin.lng, pin.lat], {
+        element: el,
+        anchor: 'bottom',
+      }) as Marker | null
 
       if (!marker) {
         return

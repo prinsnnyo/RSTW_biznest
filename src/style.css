@@ -5,31 +5,39 @@
 
 /* 1. Define the local fonts */
 @font-face {
-  font-family: 'SF Pro Display';
+  font-family: 'Poppins';
   font-style: normal;
   font-weight: 400; /* Regular */
   font-display: swap;
-  src: url('./assets/fonts/SF-Pro-Display-Regular.otf') format('opentype');
+  src: url('./assets/fonts/Poppins-Regular.ttf') format('truetype');
 }
 
 @font-face {
-  font-family: 'SF Pro Display';
+  font-family: 'Poppins';
+  font-style: normal;
+  font-weight: 500; /* Medium */
+  font-display: swap;
+  src: url('./assets/fonts/Poppins-Medium.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'Poppins';
   font-style: normal;
   font-weight: 600; /* Semibold */
   font-display: swap;
-  src: url('./assets/fonts/SF-Pro-Display-Semibold.otf') format('opentype');
+  src: url('./assets/fonts/Poppins-SemiBold.ttf') format('truetype');
 }
 
 @font-face {
-  font-family: 'SF Pro Display';
+  font-family: 'Poppins';
   font-style: normal;
-  font-weight: 800; /* Heavy / Black */
+  font-weight: 700; /* Bold */
   font-display: swap;
-  src: url('./assets/fonts/SF-Pro-Display-Heavy.otf') format('opentype');
+  src: url('./assets/fonts/Poppins-Bold.ttf') format('truetype');
 }
 
 @theme inline {
-  --font-sans: 'SF Pro Display', ui-sans-serif, system-ui, sans-serif;
+  --font-sans: 'Poppins', ui-sans-serif, system-ui, sans-serif;
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
