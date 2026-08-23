@@ -7,15 +7,15 @@ import { Separator } from '@/components/ui/separator'
 import { TypographyMuted, TypographySmall } from '@/components/typography'
 import { useAlertContext } from '@/composables/useAlert'
 import { cn } from '@/lib/utils'
-import ReportActionBar from '@/views/(user)/map/components/ReportActionBar.vue'
-import { useAnalysisReportExport } from '@/views/(user)/map/composables/useAnalysisReportExport'
-import { useSavedReports } from '@/views/(user)/map/composables/useSavedReports'
+import ReportActionBar from '@/components/smart-analysis/ReportActionBar.vue'
+import { useAnalysisReportExport } from '@/composables/useAnalysisReportExport'
+import { useSavedReports } from '@/composables/useSavedReports'
 import type {
   CompetitionLevel,
   DemandLevel,
   ReportMetric,
   TopBusinessesReport,
-} from '@/views/(user)/map/types/smart-analysis.types'
+} from '@/types/smart-analysis.types'
 
 const props = defineProps<{
   open: boolean

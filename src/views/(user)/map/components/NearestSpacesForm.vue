@@ -2,7 +2,7 @@
 import { computed, ref, watch } from 'vue'
 import ChoiceCardGroup from '@/views/(user)/map/components/ChoiceCardGroup.vue'
 import { SPACE_INTENTS, SPACE_SIZES } from '@/views/(user)/map/constants'
-import type { NearestSpacesInput } from '@/views/(user)/map/types/smart-analysis.types'
+import type { NearestSpacesInput } from '@/types/smart-analysis.types'
 
 const emit = defineEmits<{
   submit: [input: NearestSpacesInput]

@@ -11,6 +11,7 @@ import UserSidebar from '@/components/UserSidebar.vue'
 import SpaceOwnerSidebar from '@/components/SpaceOwnerSidebar.vue'
 import SpaceOwnerMapView from '@/views/(space-owner)/map/SpaceOwnerMapView.vue'
 import UserMapView from '@/views/(user)/map/UserMapView.vue'
+import UserReportsView from '@/views/(user)/reports/ReportsView.vue'
 
 //Auth Routes
 import LoginView from '@/views/auth/login/LoginView.vue'
@@ -153,6 +154,12 @@ const router = createRouter({
           path: 'map',
           name: 'user-map',
           component: UserMapView,
+          meta: { requiresAuth: true },
+        },
+        {
+          path: 'reports',
+          name: 'user-reports',
+          component: UserReportsView,
           meta: { requiresAuth: true },
         },
       ],

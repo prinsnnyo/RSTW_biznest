@@ -6,7 +6,7 @@ import {
   OPERATING_DAYS,
   OPERATING_HOURS,
 } from '@/views/(user)/map/constants'
-import type { TopBusinessesInput } from '@/views/(user)/map/types/smart-analysis.types'
+import type { TopBusinessesInput } from '@/types/smart-analysis.types'
 
 const emit = defineEmits<{
   submit: [input: TopBusinessesInput]

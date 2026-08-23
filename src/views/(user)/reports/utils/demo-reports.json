@@ -1,0 +1,1700 @@
+[
+  {
+    "kind": "business-suitability",
+    "id": "demo-business-suitability",
+    "generatedAt": "2026-08-21T10:24:00",
+    "areaSummary": "8 boundary points · Butuan City, Agusan del Norte",
+    "verdict": {
+      "score": 71,
+      "label": "Moderately Suitable",
+      "tone": "primary",
+      "headline": "Based on foot traffic, CLUP zoning, competitors, POI, and capital alignment."
+    },
+    "disclaimer": "Prototype analysis using static Butuan City data. Conduct an actual site survey for field-validated results.",
+    "selection": [
+      {
+        "label": "Category",
+        "value": "Food & Beverage"
+      },
+      {
+        "label": "Business Type",
+        "value": "Café / Coffee Shop"
+      },
+      {
+        "label": "Investment Scale",
+        "value": "Small Enterprise",
+        "hint": "₱100,001 – ₱3,000,000"
+      },
+      {
+        "label": "Operating Days",
+        "value": "6 Days",
+        "hint": "Monday – Saturday"
+      },
+      {
+        "label": "Operating Hours",
+        "value": "Business Hours",
+        "hint": "9:00 AM – 5:00 PM"
+      }
+    ],
+    "demographics": [
+      {
+        "label": "Resident population",
+        "value": "4,276",
+        "hint": "within the drawn boundary"
+      },
+      {
+        "label": "Households",
+        "value": "994",
+        "hint": "average 4.3 members per household"
+      },
+      {
+        "label": "Population density",
+        "value": "5,258 / km²",
+        "hint": "barangay-level estimate"
+      },
+      {
+        "label": "Median age",
+        "value": "24 years",
+        "hint": "working-age majority"
+      },
+      {
+        "label": "Daytime population",
+        "value": "7,788",
+        "hint": "residents plus workers and students"
+      }
+    ],
+    "market": [
+      {
+        "label": "Median household income",
+        "value": "₱24,000 / month",
+        "hint": "city-band estimate"
+      },
+      {
+        "label": "Discretionary spend",
+        "value": "20%",
+        "hint": "share of income beyond essentials"
+      },
+      {
+        "label": "Purchasing power per household",
+        "value": "₱4,800 / month",
+        "hint": "addressable monthly spend"
+      },
+      {
+        "label": "Estimated area spend pool",
+        "value": "₱4,771,000 / month",
+        "hint": "across all categories"
+      },
+      {
+        "label": "Capturable share",
+        "value": "4%",
+        "hint": "realistic first-year share for café / coffee shop"
+      }
+    ],
+    "scoreRows": [
+      {
+        "label": "Foot traffic",
+        "detail": "Estimated daily passers within the drawn boundary (weight 20%)",
+        "score": 64
+      },
+      {
+        "label": "Competition density",
+        "detail": "Headroom left by existing food & beverage businesses (weight 18%)",
+        "score": 59
+      },
+      {
+        "label": "CLUP zoning fit",
+        "detail": "Alignment with the Butuan City land-use plan (weight 18%)",
+        "score": 86
+      },
+      {
+        "label": "Accessibility",
+        "detail": "Road hierarchy, parking and public-transport reach (weight 14%)",
+        "score": 69
+      },
+      {
+        "label": "Purchasing power",
+        "detail": "Household income against this price point (weight 12%)",
+        "score": 62
+      },
+      {
+        "label": "Capital alignment",
+        "detail": "Investment scale against local rent and fit-out costs (weight 10%)",
+        "score": 71
+      },
+      {
+        "label": "Hazard resilience",
+        "detail": "Inverse of flood, fire and storm-surge exposure (weight 8%)",
+        "score": 83
+      }
+    ],
+    "footTraffic": {
+      "dailyEstimate": "1,200–1,600",
+      "peakWindow": "Midday · 11:00 AM – 2:00 PM",
+      "note": "Traffic peaks at midday · 11:00 am – 2:00 pm with roughly 384 passers. Align staffing and stock to that window.",
+      "bands": [
+        {
+          "window": "Early morning · 5:00 – 8:00 AM",
+          "share": 8,
+          "level": "Low",
+          "volume": "114 passers"
+        },
+        {
+          "window": "Morning · 8:00 – 11:00 AM",
+          "share": 24,
+          "level": "High",
+          "volume": "342 passers"
+        },
+        {
+          "window": "Midday · 11:00 AM – 2:00 PM",
+          "share": 27,
+          "level": "Peak",
+          "volume": "384 passers"
+        },
+        {
+          "window": "Afternoon · 2:00 – 5:00 PM",
+          "share": 24,
+          "level": "High",
+          "volume": "342 passers"
+        },
+        {
+          "window": "Evening · 5:00 – 9:00 PM",
+          "share": 13,
+          "level": "Moderate",
+          "volume": "185 passers"
+        },
+        {
+          "window": "Late night · 9:00 PM – 1:00 AM",
+          "share": 4,
+          "level": "Low",
+          "volume": "57 passers"
+        }
+      ]
+    },
+    "basis": [
+      {
+        "icon": "📍",
+        "title": "Points of Interest (POI)",
+        "body": "6 POI within 500 m. Schools, hospitals and public markets raise customer potential for café / coffee shop.",
+        "bullets": [
+          "1 schools or campuses within 500 m",
+          "2 government or barangay offices within 700 m",
+          "1 public market or transport terminal within 1 km"
+        ]
+      },
+      {
+        "icon": "🏪",
+        "title": "Competitor Analysis",
+        "body": "4 direct competitors identified in the area. Competition is heavy — a clear differentiator is required.",
+        "bullets": [
+          "Established local businesses in the same sector (4 within 300 m)",
+          "National chain branches (3 within 500 m)",
+          "Online businesses serving the same area"
+        ]
+      },
+      {
+        "icon": "🚶",
+        "title": "Foot Traffic Estimate",
+        "body": "Estimated 1,423 daily passers based on road type and proximity to commercial anchors.",
+        "bullets": [
+          "Peak window: Midday · 11:00 AM – 2:00 PM",
+          "Weekend uplift of roughly 33% over a weekday",
+          "Slowest window: Early morning · 5:00 – 8:00 AM"
+        ]
+      },
+      {
+        "icon": "⚠️",
+        "title": "Natural Hazard Assessment",
+        "body": "Area shows low flood susceptibility. Infrastructure investment may be needed for ground-level establishments.",
+        "bullets": [
+          "Flood susceptibility: low",
+          "Nearest fire station approximately 2.5 km away",
+          "No active landslide-prone slope mapped inside the boundary"
+        ]
+      },
+      {
+        "icon": "🗺️",
+        "title": "CLUP — Land Use Plan",
+        "body": "Zone classification allows food & beverage operations. Butuan City CLUP 2020–2029 designates this area as Commercial Zone (C-1/C-2).",
+        "bullets": [
+          "Commercial Zone (C-1/C-2) under CLUP 2020–2029",
+          "Business permit and locational clearance required before operating",
+          "Setback and signage rules apply along the main road frontage"
+        ]
+      },
+      {
+        "icon": "🏢",
+        "title": "Available Spaces",
+        "body": "2 commercial spaces available within 200 m ranging from ₱8,000–₱24,000 per month.",
+        "bullets": [
+          "Median asking rent: ₱16,000 per month",
+          "Typical floor area: 41 sqm",
+          "Average vacancy on the strip: 7%"
+        ]
+      },
+      {
+        "icon": "📦",
+        "title": "Nearby Suppliers",
+        "body": "JC Trading and Butuan Public Market wholesalers are within 1.5 km — favourable for the supply chain.",
+        "bullets": [
+          "4 wholesale suppliers within 2 km",
+          "Nearest bulk supplier approximately 0.5 km away",
+          "Port of Nasipit reachable within a 45-minute drive for bulk inbound freight"
+        ]
+      }
+    ],
+    "recommendations": [
+      "Open through the midday · 11:00 am – 2:00 pm window — that is where most passers fall.",
+      "Budget roughly ₱218,000 for fit-out and permits before first revenue.",
+      "Differentiate on service or price band; café / coffee shop in this area competes mostly on convenience.",
+      "Secure a locational clearance early — CLUP compliance is checked before the business permit is released.",
+      "Negotiate a rent-free fit-out period; vacancy on this strip gives some leverage."
+    ],
+    "risks": [
+      "Minor street ponding during heavy rain; drainage at the frontage should be checked.",
+      "Rent has moved roughly 11% year on year along this corridor.",
+      "Traffic rerouting on the main road during city road works can suppress walk-ins.",
+      "Utility interruptions are common in the area; a backup power plan is recommended."
+    ]
+  },
+  {
+    "kind": "top-businesses",
+    "id": "demo-top-businesses",
+    "generatedAt": "2026-08-21T14:05:00",
+    "areaSummary": "12 boundary points · Butuan City, Agusan del Norte",
+    "disclaimer": "Prototype analysis using static Butuan City data. Rankings are based on area suitability factors, not guaranteed returns.",
+    "criteria": [
+      {
+        "label": "Investment Scale",
+        "value": "Small Enterprise",
+        "hint": "₱100,001 – ₱3,000,000"
+      },
+      {
+        "label": "Operating Days",
+        "value": "6 Days",
+        "hint": "Monday – Saturday"
+      },
+      {
+        "label": "Operating Hours",
+        "value": "Business Hours",
+        "hint": "9:00 AM – 5:00 PM"
+      },
+      {
+        "label": "Candidates screened",
+        "value": "6 business types",
+        "hint": "ranked down to the top 5"
+      }
+    ],
+    "areaProfile": [
+      {
+        "label": "Resident population",
+        "value": "8,473",
+        "hint": "within the drawn boundary"
+      },
+      {
+        "label": "Households",
+        "value": "1,970",
+        "hint": "average 4.3 members per household"
+      },
+      {
+        "label": "Daytime population",
+        "value": "11,550",
+        "hint": "residents plus workers and students"
+      },
+      {
+        "label": "Daily foot traffic",
+        "value": "2,600 – 3,500",
+        "hint": "estimated passers in the area"
+      },
+      {
+        "label": "Purchasing power per household",
+        "value": "₱12,210 / month",
+        "hint": "33% of median income beyond essentials"
+      },
+      {
+        "label": "Estimated area spend pool",
+        "value": "₱24,054,000 / month",
+        "hint": "across all categories"
+      }
+    ],
+    "methodology": [
+      {
+        "label": "Demand signal",
+        "detail": "Population, daytime population and category spend in the drawn area (weight 25%)",
+        "score": 82
+      },
+      {
+        "label": "Competitive headroom",
+        "detail": "Unmet demand after accounting for existing operators (weight 20%)",
+        "score": 73
+      },
+      {
+        "label": "Foot traffic alignment",
+        "detail": "Overlap between passer peaks and the selected operating hours (weight 20%)",
+        "score": 85
+      },
+      {
+        "label": "Capital fit",
+        "detail": "Match between the selected investment scale and local cost base (weight 15%)",
+        "score": 68
+      },
+      {
+        "label": "CLUP & permitting",
+        "detail": "Zoning permissiveness and licensing friction (weight 12%)",
+        "score": 98
+      },
+      {
+        "label": "Supply chain access",
+        "detail": "Distance to wholesalers, cold chain and the Port of Nasipit (weight 8%)",
+        "score": 73
+      }
+    ],
+    "opportunities": [
+      {
+        "rank": 1,
+        "name": "Milk Tea / Beverage Shop",
+        "categoryLabel": "Food & Beverage",
+        "score": 96,
+        "rationale": "The youth and working-age population in Butuan City drives consistent demand for trendy beverages. The area shows high student and young-professional foot traffic, a CLUP-permitted commercial zone, and available kiosk spaces below ₱12,000 per month — an ideal entry point for a beverage brand.",
+        "demand": "Very High",
+        "competition": "Moderate",
+        "economics": [
+          {
+            "label": "Startup capital",
+            "value": "₱250,000 – ₱850,000"
+          },
+          {
+            "label": "Monthly revenue",
+            "value": "₱120,000 – ₱380,000"
+          },
+          {
+            "label": "Break-even",
+            "value": "8 – 14 months"
+          },
+          {
+            "label": "Staffing",
+            "value": "3 – 5 crew"
+          }
+        ],
+        "sections": [
+          {
+            "icon": "📍",
+            "title": "Points of Interest (POI)",
+            "bullets": [
+              "Campus or senior high school (within 400 m)",
+              "Office and BPO cluster (within 600 m)",
+              "Commercial row with evening traffic",
+              "Cinema or mall entrance"
+            ],
+            "note": "These nearby establishments increase customer foot traffic and marketability for this business type."
+          },
+          {
+            "icon": "🏪",
+            "title": "Competitor Analysis",
+            "bullets": [
+              "National milk tea chains (1 – 3 within 800 m)",
+              "Independent beverage kiosks (2 – 4)",
+              "Coffee shops serving cold drinks"
+            ],
+            "note": "The category is crowded but demand keeps expanding. Signature drinks, seating comfort and delivery-app presence separate the survivors."
+          },
+          {
+            "icon": "🚶",
+            "title": "Foot Traffic Estimate",
+            "bullets": [
+              "Very High — 2,600 – 3,500 daily passers in the drawn area",
+              "Steady through office hours with a pronounced 12:00 – 1:00 PM lunch spike.",
+              "Weekend uplift of roughly 14% over a weekday"
+            ],
+            "note": "Volumes are modelled from road hierarchy and proximity to commercial anchors."
+          },
+          {
+            "icon": "⚠️",
+            "title": "Natural Hazard Assessment",
+            "bullets": [
+              "Flood susceptibility: moderate",
+              "Nearest fire station approximately 3.0 km away",
+              "No active landslide-prone slope mapped inside the boundary"
+            ],
+            "note": "Raised flooring or flood gates are advised for ground-level operations."
+          },
+          {
+            "icon": "🗺️",
+            "title": "CLUP — Land Use Plan",
+            "bullets": [
+              "Commercial Zone (C-1/C-2) under Butuan City CLUP 2020–2029",
+              "Food & Beverage operations are among the permitted uses in this zone",
+              "Business permit and locational clearance required before operating"
+            ],
+            "note": "Zoning permits this business type without a variance application."
+          },
+          {
+            "icon": "🏢",
+            "title": "Recommended Space Sizes",
+            "bullets": [
+              "Mall or plaza kiosk (8 – 15 sqm)",
+              "Inline shop with counter seating (25 – 45 sqm)",
+              "Corner unit with outdoor seating (45 – 70 sqm)"
+            ],
+            "note": "Based on standard requirements for this business type."
+          },
+          {
+            "icon": "📦",
+            "title": "Potential Suppliers",
+            "bullets": [
+              "Manila-based tea and syrup importers (weekly freight)",
+              "Local dairy and ice distributors",
+              "Packaging wholesalers in Butuan City"
+            ],
+            "note": "Verified supplier categories in Butuan City that can support this business."
+          }
+        ]
+      },
+      {
+        "rank": 2,
+        "name": "Pharmacy / Drugstore",
+        "categoryLabel": "Health & Wellness",
+        "score": 89,
+        "rationale": "Healthcare demand in Butuan is rising. Proximity to hospitals, clinics and a large residential population creates sustained daily demand. Pharmacies have low inventory spoilage and strong repeat-customer rates — one of the most recession-proof retail categories.",
+        "demand": "Very High",
+        "competition": "Moderate",
+        "economics": [
+          {
+            "label": "Startup capital",
+            "value": "₱600,000 – ₱2,200,000"
+          },
+          {
+            "label": "Monthly revenue",
+            "value": "₱250,000 – ₱700,000"
+          },
+          {
+            "label": "Break-even",
+            "value": "12 – 20 months"
+          },
+          {
+            "label": "Staffing",
+            "value": "2 – 4 incl. licensed pharmacist"
+          }
+        ],
+        "sections": [
+          {
+            "icon": "📍",
+            "title": "Points of Interest (POI)",
+            "bullets": [
+              "Hospital or diagnostic centre (within 800 m)",
+              "Medical and dental clinics (within 500 m)",
+              "Dense residential catchment",
+              "Public Market foot traffic"
+            ],
+            "note": "These nearby establishments increase customer foot traffic and marketability for this business type."
+          },
+          {
+            "icon": "🏪",
+            "title": "Competitor Analysis",
+            "bullets": [
+              "National drugstore chains (1 – 3 within 1 km)",
+              "Independent botica outlets (2 – 4)",
+              "Clinic-attached dispensaries"
+            ],
+            "note": "Chains win on price; independents win on stock availability of maintenance medicines and on longer opening hours."
+          },
+          {
+            "icon": "🚶",
+            "title": "Foot Traffic Estimate",
+            "bullets": [
+              "Very High — 2,600 – 3,500 daily passers in the drawn area",
+              "Steady through office hours with a pronounced 12:00 – 1:00 PM lunch spike.",
+              "Weekend uplift of roughly 30% over a weekday"
+            ],
+            "note": "Volumes are modelled from road hierarchy and proximity to commercial anchors."
+          },
+          {
+            "icon": "⚠️",
+            "title": "Natural Hazard Assessment",
+            "bullets": [
+              "Flood susceptibility: moderate",
+              "Nearest fire station approximately 1.6 km away",
+              "No active landslide-prone slope mapped inside the boundary"
+            ],
+            "note": "Raised flooring or flood gates are advised for ground-level operations."
+          },
+          {
+            "icon": "🗺️",
+            "title": "CLUP — Land Use Plan",
+            "bullets": [
+              "Commercial Zone (C-1/C-2) under Butuan City CLUP 2020–2029",
+              "Health & Wellness operations are among the permitted uses in this zone",
+              "Business permit and locational clearance required before operating"
+            ],
+            "note": "Zoning permits this business type without a variance application."
+          },
+          {
+            "icon": "🏢",
+            "title": "Recommended Space Sizes",
+            "bullets": [
+              "Inline retail unit (25 – 45 sqm)",
+              "Corner unit with consultation nook (45 – 80 sqm)",
+              "Hospital-adjacent stall (15 – 30 sqm)"
+            ],
+            "note": "Based on standard requirements for this business type."
+          },
+          {
+            "icon": "📦",
+            "title": "Potential Suppliers",
+            "bullets": [
+              "Regional pharmaceutical distributors (Cagayan de Oro routes)",
+              "Generic-medicine consolidators",
+              "FDA-licensed local wholesalers"
+            ],
+            "note": "Verified supplier categories in Butuan City that can support this business."
+          }
+        ]
+      },
+      {
+        "rank": 3,
+        "name": "Water Refilling Station",
+        "categoryLabel": "Manufacturing & Production",
+        "score": 85,
+        "rationale": "Piped-water quality concerns keep refilling demand steady across Butuan barangays. Recurring household subscriptions make revenue unusually predictable for the capital involved.",
+        "demand": "High",
+        "competition": "Low",
+        "economics": [
+          {
+            "label": "Startup capital",
+            "value": "₱400,000 – ₱1,200,000"
+          },
+          {
+            "label": "Monthly revenue",
+            "value": "₱90,000 – ₱220,000"
+          },
+          {
+            "label": "Break-even",
+            "value": "10 – 18 months"
+          },
+          {
+            "label": "Staffing",
+            "value": "2 – 4 incl. delivery rider"
+          }
+        ],
+        "sections": [
+          {
+            "icon": "📍",
+            "title": "Points of Interest (POI)",
+            "bullets": [
+              "Dense residential subdivisions (within 800 m)",
+              "Boarding houses and dormitories",
+              "Small eateries and offices",
+              "Barangay hall"
+            ],
+            "note": "These nearby establishments increase customer foot traffic and marketability for this business type."
+          },
+          {
+            "icon": "🏪",
+            "title": "Competitor Analysis",
+            "bullets": [
+              "Existing refilling stations (1 – 3 within 1.5 km)",
+              "Branded bottled-water delivery",
+              "Household filtration units"
+            ],
+            "note": "Competition is thin outside the city core. Delivery reliability and container hygiene certification are the real differentiators."
+          },
+          {
+            "icon": "🚶",
+            "title": "Foot Traffic Estimate",
+            "bullets": [
+              "High — 2,600 – 3,500 daily passers in the drawn area",
+              "Steady through office hours with a pronounced 12:00 – 1:00 PM lunch spike.",
+              "Weekend uplift of roughly 30% over a weekday"
+            ],
+            "note": "Volumes are modelled from road hierarchy and proximity to commercial anchors."
+          },
+          {
+            "icon": "⚠️",
+            "title": "Natural Hazard Assessment",
+            "bullets": [
+              "Flood susceptibility: moderate",
+              "Nearest fire station approximately 1.2 km away",
+              "No active landslide-prone slope mapped inside the boundary"
+            ],
+            "note": "Raised flooring or flood gates are advised for ground-level operations."
+          },
+          {
+            "icon": "🗺️",
+            "title": "CLUP — Land Use Plan",
+            "bullets": [
+              "Commercial Zone (C-1/C-2) under Butuan City CLUP 2020–2029",
+              "Manufacturing & Production operations are among the permitted uses in this zone",
+              "Business permit and locational clearance required before operating"
+            ],
+            "note": "Zoning permits this business type without a variance application."
+          },
+          {
+            "icon": "🏢",
+            "title": "Recommended Space Sizes",
+            "bullets": [
+              "Standard station with delivery bay (35 – 60 sqm)",
+              "Station plus storage yard (60 – 100 sqm)",
+              "Compact inline station (25 – 40 sqm)"
+            ],
+            "note": "Based on standard requirements for this business type."
+          },
+          {
+            "icon": "📦",
+            "title": "Potential Suppliers",
+            "bullets": [
+              "Filtration equipment dealers in Butuan City",
+              "Container and cap wholesalers",
+              "Accredited water-testing laboratory"
+            ],
+            "note": "Verified supplier categories in Butuan City that can support this business."
+          }
+        ]
+      },
+      {
+        "rank": 4,
+        "name": "Grocery / Minimart",
+        "categoryLabel": "Retail & Shopping",
+        "score": 82,
+        "rationale": "A residential-commercial mix supports a mid-sized grocery. Working capital is the binding constraint, not demand.",
+        "demand": "High",
+        "competition": "Dense",
+        "economics": [
+          {
+            "label": "Startup capital",
+            "value": "₱800,000 – ₱2,800,000"
+          },
+          {
+            "label": "Monthly revenue",
+            "value": "₱350,000 – ₱900,000"
+          },
+          {
+            "label": "Break-even",
+            "value": "14 – 24 months"
+          },
+          {
+            "label": "Staffing",
+            "value": "4 – 8 crew"
+          }
+        ],
+        "sections": [
+          {
+            "icon": "📍",
+            "title": "Points of Interest (POI)",
+            "bullets": [
+              "Residential subdivisions (within 700 m)",
+              "Transport terminal",
+              "School cluster",
+              "Barangay commercial row"
+            ],
+            "note": "These nearby establishments increase customer foot traffic and marketability for this business type."
+          },
+          {
+            "icon": "🏪",
+            "title": "Competitor Analysis",
+            "bullets": [
+              "Convenience-store chains (1 – 3 within 800 m)",
+              "Public Market dry-goods section",
+              "Established neighbourhood groceries"
+            ],
+            "note": "Chains set the price expectation. Bulk repacking, credit terms for regulars and extended hours are where independents hold ground."
+          },
+          {
+            "icon": "🚶",
+            "title": "Foot Traffic Estimate",
+            "bullets": [
+              "High — 2,600 – 3,500 daily passers in the drawn area",
+              "Steady through office hours with a pronounced 12:00 – 1:00 PM lunch spike.",
+              "Weekend uplift of roughly 16% over a weekday"
+            ],
+            "note": "Volumes are modelled from road hierarchy and proximity to commercial anchors."
+          },
+          {
+            "icon": "⚠️",
+            "title": "Natural Hazard Assessment",
+            "bullets": [
+              "Flood susceptibility: moderate",
+              "Nearest fire station approximately 2.8 km away",
+              "No active landslide-prone slope mapped inside the boundary"
+            ],
+            "note": "Raised flooring or flood gates are advised for ground-level operations."
+          },
+          {
+            "icon": "🗺️",
+            "title": "CLUP — Land Use Plan",
+            "bullets": [
+              "Commercial Zone (C-1/C-2) under Butuan City CLUP 2020–2029",
+              "Retail & Shopping operations are among the permitted uses in this zone",
+              "Business permit and locational clearance required before operating"
+            ],
+            "note": "Zoning permits this business type without a variance application."
+          },
+          {
+            "icon": "🏢",
+            "title": "Recommended Space Sizes",
+            "bullets": [
+              "Inline minimart (60 – 120 sqm)",
+              "Corner unit with stockroom (120 – 200 sqm)",
+              "Standalone with parking (200 – 300 sqm)"
+            ],
+            "note": "Based on standard requirements for this business type."
+          },
+          {
+            "icon": "📦",
+            "title": "Potential Suppliers",
+            "bullets": [
+              "FMCG regional distributors",
+              "Butuan City Public Market bagsakan",
+              "Direct route-to-market delivery accounts"
+            ],
+            "note": "Verified supplier categories in Butuan City that can support this business."
+          }
+        ]
+      },
+      {
+        "rank": 5,
+        "name": "Printing / Photocopy Shop",
+        "categoryLabel": "Services & Professional",
+        "score": 81,
+        "rationale": "School and government document demand is constant in this catchment. Equipment is the main cost and it holds resale value, which lowers downside risk.",
+        "demand": "High",
+        "competition": "Dense",
+        "economics": [
+          {
+            "label": "Startup capital",
+            "value": "₱180,000 – ₱700,000"
+          },
+          {
+            "label": "Monthly revenue",
+            "value": "₱70,000 – ₱190,000"
+          },
+          {
+            "label": "Break-even",
+            "value": "8 – 15 months"
+          },
+          {
+            "label": "Staffing",
+            "value": "2 – 3 operators"
+          }
+        ],
+        "sections": [
+          {
+            "icon": "📍",
+            "title": "Points of Interest (POI)",
+            "bullets": [
+              "School or university (within 400 m)",
+              "Government offices (within 600 m)",
+              "Law and accounting offices",
+              "Commercial row"
+            ],
+            "note": "These nearby establishments increase customer foot traffic and marketability for this business type."
+          },
+          {
+            "icon": "🏪",
+            "title": "Competitor Analysis",
+            "bullets": [
+              "Campus-adjacent photocopy shops (3 – 6)",
+              "Full-service printing presses",
+              "Online print-on-demand services"
+            ],
+            "note": "Volume photocopying is commoditised. Layout, tarpaulin and same-day binding services carry the margin."
+          },
+          {
+            "icon": "🚶",
+            "title": "Foot Traffic Estimate",
+            "bullets": [
+              "High — 2,600 – 3,500 daily passers in the drawn area",
+              "Steady through office hours with a pronounced 12:00 – 1:00 PM lunch spike.",
+              "Weekend uplift of roughly 22% over a weekday"
+            ],
+            "note": "Volumes are modelled from road hierarchy and proximity to commercial anchors."
+          },
+          {
+            "icon": "⚠️",
+            "title": "Natural Hazard Assessment",
+            "bullets": [
+              "Flood susceptibility: moderate",
+              "Nearest fire station approximately 0.8 km away",
+              "No active landslide-prone slope mapped inside the boundary"
+            ],
+            "note": "Raised flooring or flood gates are advised for ground-level operations."
+          },
+          {
+            "icon": "🗺️",
+            "title": "CLUP — Land Use Plan",
+            "bullets": [
+              "Commercial Zone (C-1/C-2) under Butuan City CLUP 2020–2029",
+              "Services & Professional operations are among the permitted uses in this zone",
+              "Business permit and locational clearance required before operating"
+            ],
+            "note": "Zoning permits this business type without a variance application."
+          },
+          {
+            "icon": "🏢",
+            "title": "Recommended Space Sizes",
+            "bullets": [
+              "Counter shop (12 – 25 sqm)",
+              "Shop with layout station (25 – 45 sqm)",
+              "Corner unit with tarpaulin printer (45 – 70 sqm)"
+            ],
+            "note": "Based on standard requirements for this business type."
+          },
+          {
+            "icon": "📦",
+            "title": "Potential Suppliers",
+            "bullets": [
+              "Toner and paper wholesalers in Butuan City",
+              "Large-format ink distributors",
+              "Equipment service contractors"
+            ],
+            "note": "Verified supplier categories in Butuan City that can support this business."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "kind": "nearest-suppliers",
+    "id": "demo-nearest-suppliers",
+    "generatedAt": "2026-08-22T09:41:00",
+    "areaSummary": "6 boundary points · Butuan City, Agusan del Norte",
+    "disclaimer": "Prototype — static supplier data for Butuan City. Contacts and terms are illustrative; field verification recommended before committing to any supplier.",
+    "criteria": [
+      {
+        "label": "Business Category",
+        "value": "Food & Beverage"
+      },
+      {
+        "label": "Business Type",
+        "value": "Restaurant"
+      },
+      {
+        "label": "Search origin",
+        "value": "8.9490, 125.5375",
+        "hint": "centroid of the drawn area"
+      },
+      {
+        "label": "Suppliers matched",
+        "value": "5",
+        "hint": "ranked by proximity and category fit"
+      }
+    ],
+    "supplyProfile": [
+      {
+        "label": "Nearest supplier",
+        "value": "0.3 km",
+        "hint": "straight-line from the area centroid"
+      },
+      {
+        "label": "Average distance",
+        "value": "1.1 km",
+        "hint": "across 5 matches"
+      },
+      {
+        "label": "Within 5 km",
+        "value": "5 of 5",
+        "hint": "reachable for same-day pickup"
+      },
+      {
+        "label": "Offer free delivery",
+        "value": "4 of 5",
+        "hint": "within their stated radius"
+      },
+      {
+        "label": "Offer credit terms",
+        "value": "3 of 5",
+        "hint": "subject to accreditation"
+      },
+      {
+        "label": "Typical lead time",
+        "value": "Immediate, daily 4:00 AM bagsakan",
+        "hint": "for the top-ranked supplier"
+      }
+    ],
+    "suppliers": [
+      {
+        "record": {
+          "name": "Butuan City Public Market Wholesalers",
+          "trade": "Wet / Dry Goods & Agricultural",
+          "address": "Lihis St., Butuan City",
+          "barangay": "Poblacion",
+          "phone": "+63 85 341 5678",
+          "email": "bcpmarket@butuan.gov.ph",
+          "lat": 8.9472,
+          "lng": 125.5401,
+          "specialties": [
+            "Fresh produce",
+            "Meat and poultry",
+            "Seafood",
+            "Bulk vegetables"
+          ],
+          "bestFor": [
+            "food-stall-carinderia",
+            "restaurant",
+            "bbq-grill",
+            "catering-services",
+            "fruit-stand"
+          ],
+          "minimumOrder": "None — per-kilo bagsakan pricing",
+          "paymentTerms": "Cash on pickup",
+          "delivery": "Buyer-arranged, tricycle and multicab hire on site",
+          "leadTime": "Immediate, daily 4:00 AM bagsakan",
+          "operatingHours": "Daily, 4:00 AM – 6:00 PM",
+          "yearsOperating": 40
+        },
+        "distanceKm": 0.3,
+        "matchScore": 98,
+        "matchReason": "Stocks lines specific to restaurant and sits close enough for daily replenishment.",
+        "rank": 1
+      },
+      {
+        "record": {
+          "name": "JC Trading Butuan",
+          "trade": "General Wholesale / Dry Goods",
+          "address": "P. Casal St., Butuan City",
+          "barangay": "Poblacion",
+          "phone": "+63 85 342 1234",
+          "email": "jctrading@gmail.com",
+          "lat": 8.9488,
+          "lng": 125.5415,
+          "specialties": [
+            "Canned goods",
+            "Condiments and seasonings",
+            "Rice and flour",
+            "Cooking oil"
+          ],
+          "bestFor": [
+            "restaurant",
+            "fast-food",
+            "food-stall-carinderia",
+            "bakery",
+            "bbq-grill"
+          ],
+          "minimumOrder": "₱5,000 per delivery",
+          "paymentTerms": "Cash, 15-day terms for accredited accounts",
+          "delivery": "Free within 5 km, ₱350 beyond",
+          "leadTime": "Same day for stocked items, 2 – 3 days otherwise",
+          "operatingHours": "Mon – Sat, 7:00 AM – 6:00 PM",
+          "yearsOperating": 18
+        },
+        "distanceKm": 0.4,
+        "matchScore": 93,
+        "matchReason": "Stocks lines specific to restaurant and sits close enough for daily replenishment.",
+        "rank": 2
+      },
+      {
+        "record": {
+          "name": "Caraga Cold Chain & Abattoir Supply",
+          "trade": "Frozen Meat & Cold Storage",
+          "address": "Doongan Rd., Butuan City",
+          "barangay": "Doongan",
+          "phone": "+63 85 815 3321",
+          "email": "caragacoldchain@gmail.com",
+          "lat": 8.9631,
+          "lng": 125.5487,
+          "specialties": [
+            "Frozen pork and chicken",
+            "Processed meats",
+            "Ice supply",
+            "Cold storage rental"
+          ],
+          "bestFor": [
+            "restaurant",
+            "fast-food",
+            "bbq-grill",
+            "catering-services",
+            "food-processing"
+          ],
+          "minimumOrder": "₱8,000 or 20 kg per item",
+          "paymentTerms": "30-day terms with deposit",
+          "delivery": "Refrigerated van, free above ₱15,000",
+          "leadTime": "1 – 3 days",
+          "operatingHours": "Mon – Sat, 6:00 AM – 5:00 PM",
+          "yearsOperating": 9
+        },
+        "distanceKm": 2,
+        "matchScore": 81,
+        "matchReason": "Stocks lines specific to restaurant and sits close enough for daily replenishment.",
+        "rank": 3
+      },
+      {
+        "record": {
+          "name": "D&J Wholesale Center",
+          "trade": "Beverages, Snacks & Personal Care",
+          "address": "Montilla Blvd, Butuan City",
+          "barangay": "Poblacion",
+          "phone": "+63 85 225 9900",
+          "email": "dj.wholesale@yahoo.com",
+          "lat": 8.9501,
+          "lng": 125.5438,
+          "specialties": [
+            "Softdrinks and juices",
+            "Snack packs",
+            "Coffee and creamer",
+            "Disposables"
+          ],
+          "bestFor": [
+            "cafe-coffee-shop",
+            "milk-tea-beverage-shop",
+            "sari-sari-store",
+            "fast-food"
+          ],
+          "minimumOrder": "₱3,000 per delivery",
+          "paymentTerms": "Cash, cheque for regular accounts",
+          "delivery": "Free within Butuan proper",
+          "leadTime": "1 – 2 days",
+          "operatingHours": "Mon – Sat, 8:00 AM – 5:30 PM",
+          "yearsOperating": 12
+        },
+        "distanceKm": 0.7,
+        "matchScore": 71,
+        "matchReason": "Close enough for same-day pickup, though its range is broader than this business type needs.",
+        "rank": 4
+      },
+      {
+        "record": {
+          "name": "Agusan Bakers Ingredients Depot",
+          "trade": "Baking & Pastry Ingredients",
+          "address": "J.C. Aquino Ave., Butuan City",
+          "barangay": "Villa Kananga",
+          "phone": "+63 85 342 6612",
+          "email": "agusanbakersdepot@gmail.com",
+          "lat": 8.9556,
+          "lng": 125.5533,
+          "specialties": [
+            "Bread flour",
+            "Yeast and improvers",
+            "Fillings and glazes",
+            "Packaging"
+          ],
+          "bestFor": [
+            "bakery",
+            "cafe-coffee-shop",
+            "catering-services",
+            "milk-tea-beverage-shop"
+          ],
+          "minimumOrder": "₱2,500 per delivery",
+          "paymentTerms": "Cash, 7-day terms for regulars",
+          "delivery": "Free within 8 km",
+          "leadTime": "Same day to 2 days",
+          "operatingHours": "Mon – Sat, 7:30 AM – 6:00 PM",
+          "yearsOperating": 15
+        },
+        "distanceKm": 1.9,
+        "matchScore": 66,
+        "matchReason": "Close enough for same-day pickup, though its range is broader than this business type needs.",
+        "rank": 5
+      }
+    ]
+  },
+  {
+    "kind": "nearest-spaces",
+    "id": "demo-nearest-spaces",
+    "generatedAt": "2026-08-22T16:18:00",
+    "areaSummary": "10 boundary points · Butuan City, Agusan del Norte",
+    "disclaimer": "Prototype — static property data for Butuan City. Prices, unit counts and terms are illustrative; verify with the listing contact and inspect on site before committing.",
+    "criteria": [
+      {
+        "label": "Intent",
+        "value": "For Rent"
+      },
+      {
+        "label": "Space Size",
+        "value": "51 – 100 sqm",
+        "hint": "Medium space"
+      },
+      {
+        "label": "Search origin",
+        "value": "8.9490, 125.5375",
+        "hint": "centroid of the drawn area"
+      },
+      {
+        "label": "Listings matched",
+        "value": "9",
+        "hint": "ranked by proximity, size fit and inventory"
+      }
+    ],
+    "marketProfile": [
+      {
+        "label": "Units available",
+        "value": "12 of 43",
+        "hint": "in the requested size band, across all matches"
+      },
+      {
+        "label": "Buildings in band",
+        "value": "6 of 9",
+        "hint": "exact size-band matches"
+      },
+      {
+        "label": "Entry price",
+        "value": "₱4,500",
+        "hint": "lowest monthly rent"
+      },
+      {
+        "label": "Upper price",
+        "value": "₱85,000",
+        "hint": "highest starting rent"
+      },
+      {
+        "label": "Nearest listing",
+        "value": "0.4 km",
+        "hint": "straight-line from the area centroid"
+      },
+      {
+        "label": "Average distance",
+        "value": "1.8 km",
+        "hint": "across 9 listings"
+      }
+    ],
+    "listings": [
+      {
+        "listing": {
+          "id": "sp-montilla-groundfloor",
+          "name": "Montilla Boulevard Ground Floor",
+          "address": "Montilla Blvd, Golden Ribbon",
+          "barangay": "Golden Ribbon",
+          "lat": 8.9524,
+          "lng": 125.5381,
+          "imageUrl": "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=640&h=320&q=60",
+          "spaceType": "retail",
+          "description": "Ground-floor commercial space on the central boulevard. Wide glass frontage, suited to pharmacy, clinic or specialty retail.",
+          "sizeBands": [
+            "51-100",
+            "101-300"
+          ],
+          "intents": [
+            "rent",
+            "sale"
+          ],
+          "unitsAvailable": 3,
+          "areaSqmMin": 65,
+          "areaSqmMax": 240,
+          "rentMin": 28000,
+          "rentMax": 78000,
+          "salePriceMin": 6800000,
+          "salePriceMax": 18500000,
+          "rating": 4.2,
+          "contactNumber": "0917 622 4410",
+          "amenities": [
+            "Glass frontage",
+            "Air-conditioning provision",
+            "Parking",
+            "Elevator access"
+          ],
+          "terms": [
+            {
+              "label": "Deposit",
+              "value": "3 months"
+            },
+            {
+              "label": "Advance",
+              "value": "2 months"
+            },
+            {
+              "label": "Minimum lease",
+              "value": "36 months"
+            },
+            {
+              "label": "Association dues",
+              "value": "₱85 / sqm per month"
+            },
+            {
+              "label": "Turnover",
+              "value": "Warm shell with ceiling and lighting"
+            }
+          ]
+        },
+        "distanceKm": 0.4,
+        "matchScore": 95,
+        "matchReason": "Inside the drawn area with 51 – 100 sqm units for lease right now.",
+        "priceLabel": "₱28,000 – ₱78,000 / mo",
+        "unitsInBand": 2,
+        "rank": 1
+      },
+      {
+        "listing": {
+          "id": "sp-poblacion-shophouse",
+          "name": "Poblacion Shophouse Units",
+          "address": "San Francisco St., Poblacion",
+          "barangay": "Poblacion",
+          "lat": 8.9465,
+          "lng": 125.5424,
+          "imageUrl": "https://images.unsplash.com/photo-1555636222-cae831e670b3?auto=format&fit=crop&w=640&h=320&q=60",
+          "spaceType": "retail",
+          "description": "Two-storey shophouse units in the old commercial core — retail below, stockroom or staff quarters above.",
+          "sizeBands": [
+            "20-50",
+            "51-100"
+          ],
+          "intents": [
+            "rent",
+            "sale"
+          ],
+          "unitsAvailable": 4,
+          "areaSqmMin": 32,
+          "areaSqmMax": 88,
+          "rentMin": 14000,
+          "rentMax": 34000,
+          "salePriceMin": 3900000,
+          "salePriceMax": 9200000,
+          "rating": 3.9,
+          "amenities": [
+            "Two storeys",
+            "Roll-up shutter",
+            "Mezzanine stockroom",
+            "Walk-in market traffic"
+          ],
+          "terms": [
+            {
+              "label": "Deposit",
+              "value": "2 months"
+            },
+            {
+              "label": "Advance",
+              "value": "1 month"
+            },
+            {
+              "label": "Minimum lease",
+              "value": "12 months"
+            },
+            {
+              "label": "Association dues",
+              "value": "None"
+            },
+            {
+              "label": "Turnover",
+              "value": "Painted, tiled ground floor"
+            }
+          ]
+        },
+        "distanceKm": 0.6,
+        "matchScore": 94,
+        "matchReason": "Inside the drawn area with 51 – 100 sqm units for lease right now.",
+        "priceLabel": "₱14,000 – ₱34,000 / mo",
+        "unitsInBand": 2,
+        "rank": 2
+      },
+      {
+        "listing": {
+          "id": "rs-samping-avenue",
+          "name": "Samping Avenue",
+          "address": "J. C. Aquino Ave, Butuan City, 8600 Agusan del Norte",
+          "barangay": "Bayanihan",
+          "lat": 8.943719846151486,
+          "lng": 125.5253970459244,
+          "spaceType": "office",
+          "description": "Multi-tenant commercial/office building along JC Aquino Avenue with rentable spaces for offices and businesses. Has parking space and security.",
+          "imageUrl": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTTGxq9AtTRkcmmZTIslGv6sthPUXVNEzNJ_fU0Q3dIDax9keb_D6Fzt8k&s=10",
+          "sizeBands": [
+            "20-50",
+            "51-100",
+            "101-300"
+          ],
+          "intents": [
+            "rent"
+          ],
+          "unitsAvailable": 6,
+          "areaSqmMin": 24,
+          "areaSqmMax": 180,
+          "rentMin": 9000,
+          "rentMax": 38000,
+          "amenities": [
+            "Parking",
+            "24/7 security",
+            "Fibre-ready",
+            "Backup generator",
+            "Comfort rooms"
+          ],
+          "terms": [
+            {
+              "label": "Deposit",
+              "value": "2 months"
+            },
+            {
+              "label": "Advance",
+              "value": "1 month"
+            },
+            {
+              "label": "Minimum lease",
+              "value": "12 months"
+            },
+            {
+              "label": "Association dues",
+              "value": "₱45 / sqm per month"
+            },
+            {
+              "label": "Turnover",
+              "value": "Bare shell, 30-day fit-out grace"
+            }
+          ]
+        },
+        "distanceKm": 1.5,
+        "matchScore": 92,
+        "matchReason": "Inside the drawn area with 51 – 100 sqm units for lease right now.",
+        "priceLabel": "₱9,000 – ₱38,000 / mo",
+        "unitsInBand": 2,
+        "rank": 3
+      },
+      {
+        "listing": {
+          "id": "rs-intino-2",
+          "name": "RC Intino Building 2",
+          "address": "North Montilla Boulevard, Ong Yiu",
+          "barangay": "Ong Yiu",
+          "lat": 8.957163,
+          "lng": 125.540412,
+          "spaceType": "office",
+          "description": "Has parking and affordable rental space suitable for offices and businesses.",
+          "imageUrl": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQA5HweJ_ATwda8DgIqsgJzNVivGT_NiAkgL6gDUVlJH1gtKRh3vrG8bDU&s=10",
+          "rating": 4.4,
+          "contactNumber": "0956 466 5774",
+          "sizeBands": [
+            "under-20",
+            "20-50",
+            "51-100"
+          ],
+          "intents": [
+            "rent"
+          ],
+          "unitsAvailable": 4,
+          "areaSqmMin": 16,
+          "areaSqmMax": 90,
+          "rentMin": 6500,
+          "rentMax": 22000,
+          "amenities": [
+            "Parking",
+            "Water and power sub-meter",
+            "Street frontage",
+            "CCTV"
+          ],
+          "terms": [
+            {
+              "label": "Deposit",
+              "value": "2 months"
+            },
+            {
+              "label": "Advance",
+              "value": "1 month"
+            },
+            {
+              "label": "Minimum lease",
+              "value": "6 months"
+            },
+            {
+              "label": "Association dues",
+              "value": "None"
+            },
+            {
+              "label": "Turnover",
+              "value": "Painted, tiled, with lighting"
+            }
+          ]
+        },
+        "distanceKm": 1,
+        "matchScore": 92,
+        "matchReason": "Inside the drawn area with 51 – 100 sqm units for lease right now.",
+        "priceLabel": "₱6,500 – ₱22,000 / mo",
+        "unitsInBand": 1,
+        "rank": 4
+      },
+      {
+        "listing": {
+          "id": "sp-libertad-strip",
+          "name": "Libertad Commercial Strip",
+          "address": "Libertad Rd., Butuan City",
+          "barangay": "Libertad",
+          "lat": 8.9598,
+          "lng": 125.5318,
+          "imageUrl": "https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=640&h=320&q=60",
+          "spaceType": "retail",
+          "description": "Roadside retail row facing the Libertad market catchment. Inline units with shared parking apron and high weekend walk-in volume.",
+          "sizeBands": [
+            "20-50",
+            "51-100"
+          ],
+          "intents": [
+            "rent"
+          ],
+          "unitsAvailable": 5,
+          "areaSqmMin": 28,
+          "areaSqmMax": 96,
+          "rentMin": 12000,
+          "rentMax": 30000,
+          "amenities": [
+            "Shared parking apron",
+            "Loading bay",
+            "Three-phase power",
+            "Night security"
+          ],
+          "terms": [
+            {
+              "label": "Deposit",
+              "value": "3 months"
+            },
+            {
+              "label": "Advance",
+              "value": "1 month"
+            },
+            {
+              "label": "Minimum lease",
+              "value": "24 months"
+            },
+            {
+              "label": "Association dues",
+              "value": "₱60 / sqm per month"
+            },
+            {
+              "label": "Turnover",
+              "value": "Bare shell"
+            }
+          ]
+        },
+        "distanceKm": 1.4,
+        "matchScore": 91,
+        "matchReason": "Inside the drawn area with 51 – 100 sqm units for lease right now.",
+        "priceLabel": "₱12,000 – ₱30,000 / mo",
+        "unitsInBand": 3,
+        "rank": 5
+      },
+      {
+        "listing": {
+          "id": "rs-ps-arcade",
+          "name": "PS Arcade",
+          "address": "Jose Rosales Ave., Imadejas",
+          "barangay": "Imadejas",
+          "lat": 8.94676684700114,
+          "lng": 125.53137829822042,
+          "spaceType": "retail",
+          "description": "Commercial arcade along Jose Rosales Avenue with rentable spaces for shops and offices.",
+          "imageUrl": "https://streetviewpixels-pa.googleapis.com/v1/thumbnail?panoid=G6OhmfJr7onJFf5ikPDdnw&cb_client=search.gws-prod.gps&w=408&h=240&yaw=254.33171&pitch=0&thumbfov=100",
+          "rating": 4,
+          "sizeBands": [
+            "under-20",
+            "20-50"
+          ],
+          "intents": [
+            "rent"
+          ],
+          "unitsAvailable": 7,
+          "areaSqmMin": 12,
+          "areaSqmMax": 48,
+          "rentMin": 5500,
+          "rentMax": 18000,
+          "amenities": [
+            "Arcade foot traffic",
+            "Shared comfort rooms",
+            "Roll-up shutters",
+            "Signage band"
+          ],
+          "terms": [
+            {
+              "label": "Deposit",
+              "value": "2 months"
+            },
+            {
+              "label": "Advance",
+              "value": "1 month"
+            },
+            {
+              "label": "Minimum lease",
+              "value": "12 months"
+            },
+            {
+              "label": "Association dues",
+              "value": "₱1,200 per month"
+            },
+            {
+              "label": "Turnover",
+              "value": "Bare, with electrical rough-in"
+            }
+          ]
+        },
+        "distanceKm": 0.7,
+        "matchScore": 79,
+        "matchReason": "Outside the requested size band — units here run 12–48 sqm. Worth a look if the requirement can flex.",
+        "priceLabel": "₱5,500 – ₱18,000 / mo",
+        "unitsInBand": 0,
+        "rank": 6
+      },
+      {
+        "listing": {
+          "id": "sp-villa-kananga-kiosks",
+          "name": "Villa Kananga Kiosk Row",
+          "address": "J.C. Aquino Ave., Villa Kananga",
+          "barangay": "Villa Kananga",
+          "lat": 8.9557,
+          "lng": 125.5529,
+          "imageUrl": "https://images.unsplash.com/photo-1567521464027-f127ff144326?auto=format&fit=crop&w=640&h=320&q=60",
+          "spaceType": "food-stall",
+          "description": "Purpose-built kiosk row beside a campus gate. Sized for beverage, snack and load counters, with a shared dining deck.",
+          "sizeBands": [
+            "under-20"
+          ],
+          "intents": [
+            "rent"
+          ],
+          "unitsAvailable": 9,
+          "areaSqmMin": 6,
+          "areaSqmMax": 18,
+          "rentMin": 4500,
+          "rentMax": 12000,
+          "amenities": [
+            "Shared dining deck",
+            "Grease trap",
+            "Sub-metered utilities",
+            "Student foot traffic"
+          ],
+          "terms": [
+            {
+              "label": "Deposit",
+              "value": "2 months"
+            },
+            {
+              "label": "Advance",
+              "value": "1 month"
+            },
+            {
+              "label": "Minimum lease",
+              "value": "6 months"
+            },
+            {
+              "label": "Association dues",
+              "value": "₱800 per month"
+            },
+            {
+              "label": "Turnover",
+              "value": "Counter, sink and power provided"
+            }
+          ]
+        },
+        "distanceKm": 1.8,
+        "matchScore": 73,
+        "matchReason": "Outside the requested size band — units here run 6–18 sqm. Worth a look if the requirement can flex.",
+        "priceLabel": "₱4,500 – ₱12,000 / mo",
+        "unitsInBand": 0,
+        "rank": 7
+      },
+      {
+        "listing": {
+          "id": "sp-doongan-warehouse",
+          "name": "Doongan Warehouse Annex",
+          "address": "Doongan Rd., Butuan City",
+          "barangay": "Doongan",
+          "lat": 8.9641,
+          "lng": 125.5481,
+          "imageUrl": "https://images.unsplash.com/photo-1553413077-190dd305871c?auto=format&fit=crop&w=640&h=320&q=60",
+          "spaceType": "warehouse",
+          "description": "Clear-span warehouse with a hardstand yard and truck access, suited to cold chain, distribution or light manufacturing.",
+          "sizeBands": [
+            "300-plus"
+          ],
+          "intents": [
+            "rent",
+            "sale"
+          ],
+          "unitsAvailable": 2,
+          "areaSqmMin": 420,
+          "areaSqmMax": 1200,
+          "rentMin": 85000,
+          "rentMax": 240000,
+          "salePriceMin": 18000000,
+          "salePriceMax": 46000000,
+          "contactNumber": "0918 445 7729",
+          "amenities": [
+            "Truck hardstand",
+            "Clear-span 7 m",
+            "Three-phase power",
+            "Perimeter fence",
+            "Guardhouse"
+          ],
+          "terms": [
+            {
+              "label": "Deposit",
+              "value": "3 months"
+            },
+            {
+              "label": "Advance",
+              "value": "2 months"
+            },
+            {
+              "label": "Minimum lease",
+              "value": "36 months"
+            },
+            {
+              "label": "Association dues",
+              "value": "None"
+            },
+            {
+              "label": "Turnover",
+              "value": "As-is, buyer fit-out"
+            }
+          ]
+        },
+        "distanceKm": 2,
+        "matchScore": 66,
+        "matchReason": "Outside the requested size band — units here run 420–1200 sqm. Worth a look if the requirement can flex.",
+        "priceLabel": "₱85,000 – ₱240,000 / mo",
+        "unitsInBand": 0,
+        "rank": 8
+      },
+      {
+        "listing": {
+          "id": "sp-ampayon-roadside",
+          "name": "Ampayon Roadside Units",
+          "address": "Butuan – Cagayan Rd., Ampayon",
+          "barangay": "Ampayon",
+          "lat": 8.9579,
+          "lng": 125.5974,
+          "imageUrl": "https://images.unsplash.com/photo-1524230572899-a752b3835840?auto=format&fit=crop&w=640&h=320&q=60",
+          "spaceType": "retail",
+          "description": "Highway-facing units near the university belt, with deep parking and space for a service bay or drive-through.",
+          "sizeBands": [
+            "51-100",
+            "101-300"
+          ],
+          "intents": [
+            "rent"
+          ],
+          "unitsAvailable": 3,
+          "areaSqmMin": 70,
+          "areaSqmMax": 260,
+          "rentMin": 22000,
+          "rentMax": 62000,
+          "contactNumber": "0995 774 2218",
+          "amenities": [
+            "Deep parking",
+            "Highway frontage",
+            "Service bay provision",
+            "Three-phase power"
+          ],
+          "terms": [
+            {
+              "label": "Deposit",
+              "value": "3 months"
+            },
+            {
+              "label": "Advance",
+              "value": "1 month"
+            },
+            {
+              "label": "Minimum lease",
+              "value": "24 months"
+            },
+            {
+              "label": "Association dues",
+              "value": "₱50 / sqm per month"
+            },
+            {
+              "label": "Turnover",
+              "value": "Bare shell"
+            }
+          ]
+        },
+        "distanceKm": 6.7,
+        "matchScore": 58,
+        "matchReason": "Carries 51 – 100 sqm units for lease, a short trip from the boundary.",
+        "priceLabel": "₱22,000 – ₱62,000 / mo",
+        "unitsInBand": 2,
+        "rank": 9
+      }
+    ]
+  }
+]

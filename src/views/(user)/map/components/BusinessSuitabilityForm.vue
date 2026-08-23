@@ -8,7 +8,7 @@ import {
   OPERATING_DAYS,
   OPERATING_HOURS,
 } from '@/views/(user)/map/constants'
-import type { BusinessSuitabilityInput } from '@/views/(user)/map/types/smart-analysis.types'
+import type { BusinessSuitabilityInput } from '@/types/smart-analysis.types'
 
 const emit = defineEmits<{
   submit: [input: BusinessSuitabilityInput]

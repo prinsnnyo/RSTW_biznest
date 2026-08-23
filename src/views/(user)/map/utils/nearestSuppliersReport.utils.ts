@@ -11,7 +11,7 @@ import type {
   ReportMetric,
   SupplierMatch,
   SupplierRecord,
-} from '@/views/(user)/map/types/smart-analysis.types'
+} from '@/types/smart-analysis.types'
 
 /** Distance beyond which a supplier stops scoring well for daily replenishment. */
 const FAR_KM = 12

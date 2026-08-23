@@ -24,7 +24,7 @@ import type {
   NearestSuppliersInput,
   SmartAnalysisStep,
   TopBusinessesInput,
-} from '@/views/(user)/map/types/smart-analysis.types'
+} from '@/types/smart-analysis.types'
 
 // One drawer for the whole flow — options, the chosen form, then results — so
 // the map never leaves the screen.
