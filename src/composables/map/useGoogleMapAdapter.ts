@@ -30,12 +30,15 @@ import {
 interface GoogleAdapterOptions {
   containerRef: Ref<HTMLDivElement | null>
   center: { lat: number; lng: number }
+  zoom?: number
   mapId?: string
   getApiKey: () => string
 }
 
 type MapClickHandler = (point: MapDrawPoint) => void
 type DrawPointMoveHandler = (index: number, point: MapDrawPoint) => void
+type FreehandPointHandler = (point: MapDrawPoint) => void
+type CameraIdleHandler = (camera: { center: { lat: number; lng: number }; zoom: number }) => void
 type PinClickHandler = (pinId: string) => void
 type MapThemeMode = 'light' | 'dark'
 
@@ -69,6 +72,25 @@ const GOOGLE_HIDE_POI_STYLES: GoogleMapStyleRule[] = [
   { featureType: 'transit', stylers: [{ visibility: 'off' }] },
 ]
 
+/**
+ * Google styles POIs by feature type rather than by style layer, so the
+ * per-type toggles are this fixed vocabulary instead of MapLibre's layer ids.
+ */
+const GOOGLE_POI_FEATURE_TYPES: readonly string[] = [
+  'poi.attraction',
+  'poi.business',
+  'poi.government',
+  'poi.medical',
+  'poi.park',
+  'poi.place_of_worship',
+  'poi.school',
+  'poi.sports_complex',
+  'transit',
+]
+
+// Freehand emits one vertex per this much cursor travel, in degrees.
+const FREEHAND_MIN_STEP_DEGREES = 0.00004
+
 const DRAW_MODE_CURSOR =
   "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M4 20l4-1 9.5-9.5-3-3L5 16z' fill='%231f2937'/%3E%3Cpath d='M14.5 6.5l3 3 1-1a1.6 1.6 0 000-2.2l-.8-.8a1.6 1.6 0 00-2.2 0z' fill='%230f172a'/%3E%3C/svg%3E\") 2 20, crosshair"
 
@@ -87,14 +109,21 @@ export function useGoogleMapAdapter(options: GoogleAdapterOptions) {
   let googleFocusMarker: GoogleMarkerInstance | null = null
   let googleFocusInfoWindow: GoogleInfoWindowInstance | null = null
   let googleMapClickListener: GoogleMapsEventListener | null = null
+  let googleCameraIdleListener: GoogleMapsEventListener | null = null
+  let googleFreehandListeners: GoogleMapsEventListener[] = []
   let googlePinMarkers: GoogleMarkerInstance[] = []
   let googlePinClickListeners: GoogleMapsEventListener[] = []
   let pinClickHandler: PinClickHandler | null = null
   let mapClickHandler: MapClickHandler | null = null
   let drawPointMoveHandler: DrawPointMoveHandler | null = null
+  let freehandPointHandler: FreehandPointHandler | null = null
+  let cameraIdleHandler: CameraIdleHandler | null = null
+  let isFreehandDragging = false
+  let lastFreehandPoint: MapDrawPoint | null = null
   let isDrawMode = false
   let currentTheme: MapThemeMode = 'light'
   let showPoi = false
+  const hiddenPoiTypes = new Set<string>()
 
   function applyGoogleTheme(): void {
     if (!googleMap || !googleMap.setOptions) {
@@ -102,7 +131,12 @@ export function useGoogleMapAdapter(options: GoogleAdapterOptions) {
     }
 
     const baseStyles = currentTheme === 'dark' ? GOOGLE_DARK_STYLES : []
-    const poiStyles = showPoi ? [] : GOOGLE_HIDE_POI_STYLES
+    const poiStyles = showPoi
+      ? [...hiddenPoiTypes].map<GoogleMapStyleRule>((featureType) => ({
+          featureType,
+          stylers: [{ visibility: 'off' }],
+        }))
+      : GOOGLE_HIDE_POI_STYLES
     googleMap.setOptions({ styles: [...baseStyles, ...poiStyles] })
   }
 
@@ -190,6 +224,133 @@ export function useGoogleMapAdapter(options: GoogleAdapterOptions) {
     })
   }
 
+  function clearGoogleCameraIdleListener(): void {
+    googleCameraIdleListener?.remove()
+    googleCameraIdleListener = null
+  }
+
+  function syncGoogleCameraIdleListener(): void {
+    clearGoogleCameraIdleListener()
+
+    if (!googleMap || !googleMap.addListener || !cameraIdleHandler) {
+      return
+    }
+
+    googleCameraIdleListener = googleMap.addListener('idle', () => {
+      const center = googleMap?.getCenter?.()
+      const zoom = googleMap?.getZoom?.()
+
+      if (!center || typeof zoom !== 'number') {
+        return
+      }
+
+      cameraIdleHandler?.({ center: { lat: center.lat(), lng: center.lng() }, zoom })
+    })
+  }
+
+  function clearGoogleFreehandListeners(): void {
+    googleFreehandListeners.forEach((listener) => listener.remove())
+    googleFreehandListeners = []
+    isFreehandDragging = false
+    lastFreehandPoint = null
+  }
+
+  function setMapDraggable(draggable: boolean): void {
+    googleMap?.setOptions?.({
+      draggable,
+      gestureHandling: draggable ? 'auto' : 'none',
+    })
+  }
+
+  function isFarEnoughForFreehand(point: MapDrawPoint): boolean {
+    if (!lastFreehandPoint) {
+      return true
+    }
+
+    return (
+      Math.abs(point.lat - lastFreehandPoint.lat) >= FREEHAND_MIN_STEP_DEGREES ||
+      Math.abs(point.lng - lastFreehandPoint.lng) >= FREEHAND_MIN_STEP_DEGREES
+    )
+  }
+
+  function syncGoogleFreehandListeners(): void {
+    clearGoogleFreehandListeners()
+
+    if (!googleMap || !googleMap.addListener || !freehandPointHandler) {
+      return
+    }
+
+    const onMouseDown = googleMap.addListener('mousedown', (event) => {
+      if (!event.latLng) {
+        return
+      }
+
+      isFreehandDragging = true
+      // Panning would fight the stroke, so the map is pinned for the drag.
+      setMapDraggable(false)
+
+      const point = { lat: event.latLng.lat(), lng: event.latLng.lng() }
+      lastFreehandPoint = point
+      freehandPointHandler?.(point)
+    })
+
+    const onMouseMove = googleMap.addListener('mousemove', (event) => {
+      if (!isFreehandDragging || !event.latLng) {
+        return
+      }
+
+      const point = { lat: event.latLng.lat(), lng: event.latLng.lng() }
+
+      if (!isFarEnoughForFreehand(point)) {
+        return
+      }
+
+      lastFreehandPoint = point
+      freehandPointHandler?.(point)
+    })
+
+    const onMouseUp = googleMap.addListener('mouseup', () => {
+      isFreehandDragging = false
+      lastFreehandPoint = null
+      setMapDraggable(true)
+    })
+
+    googleFreehandListeners = [onMouseDown, onMouseMove, onMouseUp]
+  }
+
+  function setFreehandDrawHandler(handler: FreehandPointHandler | null): void {
+    freehandPointHandler = handler
+
+    if (!handler) {
+      setMapDraggable(true)
+    }
+
+    syncGoogleFreehandListeners()
+  }
+
+  function setCameraIdleHandler(handler: CameraIdleHandler | null): void {
+    cameraIdleHandler = handler
+    syncGoogleCameraIdleListener()
+  }
+
+  function getPoiTypes(): string[] {
+    return [...GOOGLE_POI_FEATURE_TYPES]
+  }
+
+  function setPoiTypeVisible(type: string, visible: boolean): void {
+    if (!GOOGLE_POI_FEATURE_TYPES.includes(type)) {
+      return
+    }
+
+    if (visible) {
+      hiddenPoiTypes.delete(type)
+    } else {
+      hiddenPoiTypes.add(type)
+    }
+
+    applyGoogleTheme()
+  }
+
   function destroy(): void {
     destroyGoogleBarangayPolygons()
     destroyGoogleMappedZonePolygons()
@@ -198,6 +359,8 @@ export function useGoogleMapAdapter(options: GoogleAdapterOptions) {
     destroyGoogleFocusMarker()
     destroyGooglePinMarkers()
     clearGoogleMapClickListener()
+    clearGoogleCameraIdleListener()
+    clearGoogleFreehandListeners()
 
     if (googleMap) {
       googleMap.getDiv().style.cursor = ''
@@ -621,6 +784,7 @@ export function useGoogleMapAdapter(options: GoogleAdapterOptions) {
     return initializeGoogleMapInstance({
       container: options.containerRef.value,
       center: options.center,
+      zoom: options.zoom,
       mapId: options.mapId,
       onMapReady: (map) => {
         googleMap = map
@@ -649,6 +813,9 @@ export function useGoogleMapAdapter(options: GoogleAdapterOptions) {
         'Google Maps could not be initialized. Check API key and Google Cloud restrictions.',
       )
     }
+
+    syncGoogleCameraIdleListener()
+    syncGoogleFreehandListeners()
   }
 
   return {
@@ -664,8 +831,13 @@ export function useGoogleMapAdapter(options: GoogleAdapterOptions) {
     setTheme,
     setPoisVisible,
     setDrawPointMoveHandler,
+    setFreehandDrawHandler,
+    setCameraIdleHandler,
+    getPoiTypes,
+    setPoiTypeVisible,
     focusOnZone,
     showLocationMarker,
+    clearFocusMarker: destroyGoogleFocusMarker,
     renderPinnedLocations,
   }
 }
