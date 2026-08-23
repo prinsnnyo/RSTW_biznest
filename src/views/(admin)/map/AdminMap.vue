@@ -4,11 +4,13 @@ import { useRoute, useRouter } from 'vue-router'
 import { useAdminMapStore } from '@/stores/admin.map.store'
 import { useAuthStore } from '@/stores/auth.store'
 import Maplibre from '@/views/(admin)/map/components/Maplibre.vue'
+import GoogleMapCanvas from '@/views/(admin)/map/components/GoogleMapCanvas.vue'
 import HazardFormModal from '@/views/(admin)/map/components/modals/HazardFormModal.vue'
 import MappedZoneFormModal from '@/views/(admin)/map/components/modals/MappedZoneFormModal.vue'
 import MapRightSideBar from '@/views/(admin)/map/components/MapRightSideBar.vue'
 import { Button } from '@/components/ui/button'
 import { TypographyMuted, TypographySmall } from '@/components/typography'
+import type { MapCanvasApi } from '@/types/map.types'
 
 const adminMapStore = useAdminMapStore()
 
@@ -16,13 +18,23 @@ const adminMapStore = useAdminMapStore()
 const authStore = useAuthStore()
 const canUseAdminTools = computed(() => authStore.isAdmin)
 
+// Admins and space owners stay on MapLibre; the plain user map runs on Google.
+// Both canvases expose MapCanvasApi, so the store is unaware of the swap.
+const mapCanvas = computed(() => (canUseAdminTools.value ? Maplibre : GoogleMapCanvas))
+
 // ── Focus map from query params (e.g. chatbot "View on map") ───────────────
 const route = useRoute()
 const router = useRouter()
 const isMapReady = ref(false)
 
 function bindMapRef(instance: unknown): void {
-  adminMapStore.setMapRef(instance as InstanceType<typeof Maplibre> | null)
+  const canvas = (instance as MapCanvasApi | null) ?? null
+
+  if (!canvas) {
+    isMapReady.value = false
+  }
+
+  adminMapStore.setMapRef(canvas)
 }
 
 function handleMapReady(): void {
@@ -79,7 +91,8 @@ onBeforeUnmount(() => {
   <div class="relative h-full w-full overflow-hidden">
     <!-- ── Map canvas ────────────────────────────────────────────────── -->
     <div class="relative h-full w-full" :class="{ 'pr-11': canUseAdminTools }">
-      <Maplibre
+      <component
+        :is="mapCanvas"
         :ref="bindMapRef"
         :center="adminMapStore.mapCenter"
         @ready="handleMapReady"
