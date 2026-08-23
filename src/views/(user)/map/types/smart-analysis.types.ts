@@ -14,7 +14,6 @@ export type SmartAnalysisStep =
   | 'drawn'
   | 'choosing'
   | 'form'
-  | 'results'
   | 'report'
 
 /** One selectable card: a value, a heading and a supporting line. */
@@ -46,6 +45,7 @@ export interface TopBusinessesInput {
 
 export interface NearestSuppliersInput {
   category: string
+  businessType: string
 }
 
 export interface NearestSpacesInput {
@@ -64,24 +64,6 @@ export interface AnalysisScoreRow {
   label: string
   detail: string
   score: number
-}
-
-/** A place found near the drawn area. */
-export interface AnalysisPlaceRow {
-  label: string
-  detail: string
-  distanceKm: number
-}
-
-export interface AnalysisResult {
-  optionKey: AnalysisOptionKey
-  title: string
-  summary: string
-  /** Headline 0-100 score. Omitted for the "find me places" analyses. */
-  score?: number
-  scoreRows: AnalysisScoreRow[]
-  placeRows: AnalysisPlaceRow[]
-  notes: string[]
 }
 
 export interface DrawnArea {
@@ -186,4 +168,107 @@ export interface TopBusinessesReport {
 }
 
 /** Anything the report archive can hold. */
-export type SavedAnalysisReport = SuitabilityReport | TopBusinessesReport
+export type SavedAnalysisReport =
+  | SuitabilityReport
+  | TopBusinessesReport
+  | NearestSuppliersReport
+  | NearestSpacesReport
+
+
+// ── Nearest suppliers report ─────────────────────────────────────────────────
+
+/** One supplier in the static Butuan City directory. */
+export interface SupplierRecord {
+  name: string
+  trade: string
+  address: string
+  barangay: string
+  phone: string
+  email: string
+  lat: number
+  lng: number
+  specialties: string[]
+  /** Business-type slugs this supplier serves especially well. */
+  bestFor: string[]
+  minimumOrder: string
+  paymentTerms: string
+  delivery: string
+  leadTime: string
+  operatingHours: string
+  yearsOperating: number
+}
+
+export interface SupplierMatch {
+  rank: number
+  record: SupplierRecord
+  /** Straight-line distance from the drawn area's centroid, in kilometres. */
+  distanceKm: number
+  matchScore: number
+  matchReason: string
+}
+
+export interface NearestSuppliersReport {
+  kind: 'nearest-suppliers'
+  id: string
+  generatedAt: string
+  areaSummary: string
+  disclaimer: string
+  criteria: ReportMetric[]
+  supplyProfile: ReportMetric[]
+  suppliers: SupplierMatch[]
+}
+
+
+// ── Nearest space for rent / sale report ─────────────────────────────────────
+
+export type SpaceIntent = 'rent' | 'sale'
+
+/** A commercial property listing in the static Butuan City inventory. */
+export interface SpaceListing {
+  id: string
+  name: string
+  address: string
+  barangay: string
+  lat: number
+  lng: number
+  imageUrl?: string
+  spaceType: string
+  /** SPACE_SIZES values this building can accommodate. */
+  sizeBands: string[]
+  intents: SpaceIntent[]
+  unitsAvailable: number
+  areaSqmMin: number
+  areaSqmMax: number
+  rentMin?: number
+  rentMax?: number
+  salePriceMin?: number
+  salePriceMax?: number
+  rating?: number
+  contactNumber?: string
+  description: string
+  amenities: string[]
+  terms: ReportMetric[]
+}
+
+export interface SpaceListingMatch {
+  rank: number
+  listing: SpaceListing
+  distanceKm: number
+  matchScore: number
+  matchReason: string
+  /** Price for the requested intent, already formatted. */
+  priceLabel: string
+  /** Units in the requested size band. */
+  unitsInBand: number
+}
+
+export interface NearestSpacesReport {
+  kind: 'nearest-spaces'
+  id: string
+  generatedAt: string
+  areaSummary: string
+  disclaimer: string
+  criteria: ReportMetric[]
+  marketProfile: ReportMetric[]
+  listings: SpaceListingMatch[]
+}
