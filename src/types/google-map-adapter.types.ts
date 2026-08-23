@@ -1,12 +1,21 @@
 import type { GooglePolygonPath } from '@/types/map.types'
 
+export type GoogleMapEventName = 'click' | 'idle' | 'mousedown' | 'mousemove' | 'mouseup'
+
 export interface GoogleMapInstance {
   setCenter: (latLng: { lat: number; lng: number }) => void
   setZoom?: (zoom: number) => void
+  getCenter?: () => GoogleLatLng | undefined
+  getZoom?: () => number | undefined
   getDiv: () => HTMLElement
-  setOptions?: (options: { draggableCursor?: string | null; styles?: GoogleMapStyleRule[] }) => void
+  setOptions?: (options: {
+    draggableCursor?: string | null
+    styles?: GoogleMapStyleRule[]
+    draggable?: boolean
+    gestureHandling?: 'auto' | 'cooperative' | 'greedy' | 'none'
+  }) => void
   addListener?: (
-    eventName: 'click',
+    eventName: GoogleMapEventName,
     handler: (event: GoogleMapMouseEvent) => void,
   ) => GoogleMapsEventListener
 }
