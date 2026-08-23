@@ -1,11 +1,15 @@
 <script setup lang="ts">
-import { MapPin, MapPinOff, X } from 'lucide-vue-next'
+import { Eye, EyeOff, MapPin, X } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { TypographyMuted, TypographyP, TypographySmall } from '@/components/typography'
 import { useAdminMapStore } from '@/stores/admin.map.store'
 
 const adminMapStore = useAdminMapStore()
+
+function isTypeHidden(type: string): boolean {
+  return adminMapStore.hiddenPoiTypes.includes(type)
+}
 
 function close(): void {
   adminMapStore.activePanel = null
@@ -28,23 +32,50 @@ function close(): void {
         </CardTitle>
       </CardHeader>
 
-      <CardContent class="flex-1 p-4">
-        <button
-          type="button"
-          class="flex w-full items-center justify-between rounded-md border px-3 py-2.5 text-left transition-colors hover:bg-muted/40"
-          @click="adminMapStore.toggleMapPoi"
-        >
-          <div>
-            <TypographySmall as="span" class="block font-medium">
-              Show points of interest
+      <CardContent class="flex-1 overflow-y-auto p-0">
+        <TypographyMuted as="p" class="px-4 pt-3 text-xs">
+          Toggle which built-in place labels show on the basemap.
+        </TypographyMuted>
+
+        <div v-if="adminMapStore.poiTypes.length === 0" class="px-4 pt-4">
+          <div class="rounded-md border p-3">
+            <TypographySmall as="p" class="text-xs text-muted-foreground">
+              No POI types available for this basemap yet.
             </TypographySmall>
-            <TypographyMuted as="p" class="mt-0.5 text-xs">
-              Toggles the basemap's built-in place labels (shops, landmarks, transit).
-            </TypographyMuted>
           </div>
-          <MapPin v-if="adminMapStore.showMapPoi" class="h-5 w-5 shrink-0 text-primary" />
-          <MapPinOff v-else class="h-5 w-5 shrink-0 text-muted-foreground" />
-        </button>
+        </div>
+
+        <div v-else class="py-2">
+          <div
+            v-for="type in adminMapStore.poiTypes"
+            :key="type"
+            class="flex items-center gap-1 px-2 py-1 hover:bg-muted/40"
+          >
+            <button
+              type="button"
+              class="flex min-w-0 flex-1 items-center gap-2 text-left"
+              @click="adminMapStore.togglePoiTypeVisibility(type)"
+            >
+              <TypographySmall
+                as="span"
+                class="flex-1 truncate text-sm font-medium"
+                :class="isTypeHidden(type) ? 'text-muted-foreground' : ''"
+              >
+                {{ type }}
+              </TypographySmall>
+            </button>
+
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              :title="isTypeHidden(type) ? `Show ${type}` : `Hide ${type}`"
+              @click="adminMapStore.togglePoiTypeVisibility(type)"
+            >
+              <Eye v-if="!isTypeHidden(type)" class="h-4 w-4" />
+              <EyeOff v-else class="h-4 w-4 text-muted-foreground" />
+            </Button>
+          </div>
+        </div>
       </CardContent>
     </Card>
   </aside>

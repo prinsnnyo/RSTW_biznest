@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Building2, FileText, Globe, Layers, MapPin, MapPinOff, TriangleAlert } from 'lucide-vue-next'
+import { Building2, FileText, Globe, Layers, MapPin, TriangleAlert } from 'lucide-vue-next'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { useAdminMapStore } from '@/stores/admin.map.store'
 import ZoningPanel from '@/views/(admin)/map/components/panels/ZoningPanel.vue'
@@ -150,8 +150,7 @@ const adminMapStore = useAdminMapStore()
               "
               @click="adminMapStore.togglePanel('poi')"
             >
-              <MapPin v-if="adminMapStore.showMapPoi" class="h-4 w-4" />
-              <MapPinOff v-else class="h-4 w-4" />
+              <MapPin class="h-4 w-4" />
             </button>
           </TooltipTrigger>
           <TooltipContent side="left">Map Labels</TooltipContent>
