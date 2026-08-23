@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { Input } from '@/components/ui/input'
@@ -13,7 +13,7 @@ import {
   type PinnedLocation,
   type SiteSection,
 } from '@/types/pinned-location.types'
-import { siteFontStacks } from '@/utils/site-design'
+import { siteFontStacks, SITE_FONT_STACK } from '@/utils/site-design'
 
 const route = useRoute()
 const { showAlert, showSuccess } = useAlertContext()
@@ -54,9 +54,9 @@ const designStyle = computed(() => {
 
   if (isNomade.value) {
     return {
-      '--site-font-primary': '"DM Sans", "Segoe UI", sans-serif',
-      '--site-font-secondary': '"DM Sans", "Segoe UI", sans-serif',
-      '--site-font-tertiary': '"DM Sans", "Segoe UI", sans-serif',
+      '--site-font-primary': SITE_FONT_STACK,
+      '--site-font-secondary': SITE_FONT_STACK,
+      '--site-font-tertiary': SITE_FONT_STACK,
       '--site-bg': '#ffffff',
       '--site-surface': '#ffffff',
       '--site-ink': '#111111',
@@ -67,9 +67,9 @@ const designStyle = computed(() => {
 
   if (isCorporate.value) {
     return {
-      '--site-font-primary': '"Nunito", "Segoe UI", sans-serif',
-      '--site-font-secondary': '"Source Sans 3", "Segoe UI", sans-serif',
-      '--site-font-tertiary': '"Nunito", "Segoe UI", sans-serif',
+      '--site-font-primary': SITE_FONT_STACK,
+      '--site-font-secondary': SITE_FONT_STACK,
+      '--site-font-tertiary': SITE_FONT_STACK,
       '--site-bg': '#f4f7f2',
       '--site-surface': '#ffffff',
       '--site-ink': '#1c2b24',
@@ -85,9 +85,9 @@ const designStyle = computed(() => {
 
   if (isOrbit.value) {
     return {
-      '--site-font-primary': '"DM Sans", "Segoe UI", sans-serif',
-      '--site-font-secondary': '"DM Sans", "Segoe UI", sans-serif',
-      '--site-font-tertiary': '"DM Sans", "Segoe UI", sans-serif',
+      '--site-font-primary': SITE_FONT_STACK,
+      '--site-font-secondary': SITE_FONT_STACK,
+      '--site-font-tertiary': SITE_FONT_STACK,
       '--site-bg': '#ffffff',
       '--site-surface': '#ffffff',
       '--site-ink': '#1d1d1f',
@@ -100,9 +100,9 @@ const designStyle = computed(() => {
 
   if (isBento.value) {
     return {
-      '--site-font-primary': '"DM Sans", "Segoe UI", sans-serif',
-      '--site-font-secondary': '"DM Sans", "Segoe UI", sans-serif',
-      '--site-font-tertiary': '"JetBrains Mono", "Space Mono", ui-monospace, monospace',
+      '--site-font-primary': SITE_FONT_STACK,
+      '--site-font-secondary': SITE_FONT_STACK,
+      '--site-font-tertiary': SITE_FONT_STACK,
       '--site-bg': '#0d0d0d',
       '--site-surface': '#1a1a1a',
       '--site-ink': '#ffffff',
@@ -116,9 +116,9 @@ const designStyle = computed(() => {
 
   if (isSignal.value) {
     return {
-      '--site-font-primary': '"Playfair Display", "Fraunces", Georgia, serif',
-      '--site-font-secondary': '"DM Sans", "Segoe UI", sans-serif',
-      '--site-font-tertiary': '"DM Sans", "Segoe UI", sans-serif',
+      '--site-font-primary': SITE_FONT_STACK,
+      '--site-font-secondary': SITE_FONT_STACK,
+      '--site-font-tertiary': SITE_FONT_STACK,
       '--site-bg': '#f4f1ea',
       '--site-surface': '#faf8f4',
       '--site-ink': '#1a3c34',
@@ -131,9 +131,9 @@ const designStyle = computed(() => {
   }
 
   return {
-    '--site-font-primary': '"DM Sans", "Segoe UI", sans-serif',
-    '--site-font-secondary': '"Source Sans 3", "Segoe UI", sans-serif',
-    '--site-font-tertiary': '"DM Sans", "Segoe UI", sans-serif',
+    '--site-font-primary': SITE_FONT_STACK,
+    '--site-font-secondary': SITE_FONT_STACK,
+    '--site-font-tertiary': SITE_FONT_STACK,
     '--site-bg': '#ffffff',
     '--site-surface': '#ffffff',
     '--site-ink': '#1a2456',
@@ -317,13 +317,6 @@ watch(
 
 <template>
   <div class="bg-background text-foreground min-h-screen">
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
-    <link
-      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;700&family=IBM+Plex+Mono:wght@400;600&family=JetBrains+Mono:wght@400;600&family=Libre+Baskerville:wght@400;700&family=Nunito:wght@400;700&family=Playfair+Display:wght@500;600;700&family=Source+Sans+3:wght@400;600;700&family=Space+Mono:wght@400;700&display=swap"
-      rel="stylesheet"
-    />
-
     <div v-if="isLoading" class="text-muted-foreground p-10 text-center text-sm">Loading site…</div>
     <div v-else-if="!pin" class="text-muted-foreground p-10 text-center text-sm">Site not found.</div>
 

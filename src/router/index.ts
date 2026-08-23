@@ -6,8 +6,11 @@ import LandingView from '@/views/landing/LandingView.vue'
 import OuterLayout from '@/layouts/OuterLayout.vue'
 import AuthLayout from '@/layouts/AuthLayout.vue'
 import InnerLayout from '@/layouts/InnerLayout.vue'
-import SpaceOwnerLayout from '@/layouts/SpaceOwnerLayout.vue'
+import EntrepreneurLayout from '@/layouts/EntrepreneurLayout.vue'
 import UserSidebar from '@/components/UserSidebar.vue'
+import SpaceOwnerSidebar from '@/components/SpaceOwnerSidebar.vue'
+import SpaceOwnerMapView from '@/views/(space-owner)/map/SpaceOwnerMapView.vue'
+import UserMapView from '@/views/(user)/map/UserMapView.vue'
 
 //Auth Routes
 import LoginView from '@/views/auth/login/LoginView.vue'
@@ -20,11 +23,11 @@ import UsersView from '@/views/(admin)/users/UsersView.vue'
 import ReportsView from '@/views/(admin)/reports/ReportsView.vue'
 import RolesView from '@/views/(admin)/roles/RolesView.vue'
 
-// Space owner app (also used by entrepreneur + supplier until they get their own shells)
-import SpaceOwnerHomeView from '@/views/(space-owner)/home/SpaceOwnerHomeView.vue'
-import SpaceOwnerMapView from '@/views/(space-owner)/map/SpaceOwnerMapView.vue'
-import SiteBuilderView from '@/views/(space-owner)/site-builder/SiteBuilderView.vue'
-import MessagesView from '@/views/(space-owner)/messages/MessagesView.vue'
+// Entrepreneur app (also used by supplier until it gets its own shell)
+import EntrepreneurHomeView from '@/views/(entrepreneur)/home/EntrepreneurHomeView.vue'
+import EntrepreneurMapView from '@/views/(entrepreneur)/map/EntrepreneurMapView.vue'
+import SiteBuilderView from '@/views/(entrepreneur)/site-builder/SiteBuilderView.vue'
+import MessagesView from '@/views/(entrepreneur)/messages/MessagesView.vue'
 import SiteView from '@/views/sites/SiteView.vue'
 
 const router = createRouter({
@@ -83,36 +86,56 @@ const router = createRouter({
     },
     {
       path: '/app',
-      component: SpaceOwnerLayout,
-      meta: { requiresAuth: true, requiresBusiness: true },
+      component: EntrepreneurLayout,
+      meta: { requiresAuth: true, requiresBusinessShell: true },
       children: [
         {
           path: '',
-          redirect: { name: 'space-owner-home' },
+          redirect: { name: 'entrepreneur-home' },
         },
         {
           path: 'home',
-          name: 'space-owner-home',
-          component: SpaceOwnerHomeView,
-          meta: { requiresAuth: true, requiresBusiness: true },
+          name: 'entrepreneur-home',
+          component: EntrepreneurHomeView,
+          meta: { requiresAuth: true, requiresBusinessShell: true },
+        },
+        {
+          path: 'map',
+          name: 'entrepreneur-map',
+          component: EntrepreneurMapView,
+          meta: { requiresAuth: true, requiresBusinessShell: true },
+        },
+        {
+          path: 'my-site',
+          name: 'entrepreneur-site-builder',
+          component: SiteBuilderView,
+          meta: { requiresAuth: true, requiresBusinessShell: true },
+        },
+        {
+          path: 'messages',
+          name: 'entrepreneur-messages',
+          component: MessagesView,
+          meta: { requiresAuth: true, requiresBusinessShell: true },
+        },
+      ],
+    },
+    {
+      // Space owners get the normal-user shell, on their own routes so the two
+      // can diverge later without touching each other.
+      path: '/space-owner',
+      component: InnerLayout,
+      props: { sidebar: SpaceOwnerSidebar },
+      meta: { requiresAuth: true, requiresSpaceOwner: true },
+      children: [
+        {
+          path: '',
+          redirect: { name: 'space-owner-map' },
         },
         {
           path: 'map',
           name: 'space-owner-map',
           component: SpaceOwnerMapView,
-          meta: { requiresAuth: true, requiresBusiness: true },
-        },
-        {
-          path: 'my-site',
-          name: 'space-owner-site-builder',
-          component: SiteBuilderView,
-          meta: { requiresAuth: true, requiresBusiness: true },
-        },
-        {
-          path: 'messages',
-          name: 'space-owner-messages',
-          component: MessagesView,
-          meta: { requiresAuth: true, requiresBusiness: true },
+          meta: { requiresAuth: true, requiresSpaceOwner: true },
         },
       ],
     },
@@ -129,7 +152,7 @@ const router = createRouter({
         {
           path: 'map',
           name: 'user-map',
-          component: AdminMap,
+          component: UserMapView,
           meta: { requiresAuth: true },
         },
       ],
@@ -205,7 +228,11 @@ router.beforeEach(async (to) => {
     return { name: authStore.homeRouteName }
   }
 
-  if (to.meta.requiresBusiness && !authStore.isBusinessUser) {
+  if (to.meta.requiresBusinessShell && !authStore.usesBusinessShell) {
+    return { name: authStore.homeRouteName }
+  }
+
+  if (to.meta.requiresSpaceOwner && !authStore.isSpaceOwner) {
     return { name: authStore.homeRouteName }
   }
 

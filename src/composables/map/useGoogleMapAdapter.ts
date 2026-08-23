@@ -26,6 +26,7 @@ import {
   getFeaturePolygons,
   toGooglePath,
 } from '@/utils/map/barangayBorder.utils'
+import { createPinIconSrc } from '@/utils/pin-icon.utils'
 
 interface GoogleAdapterOptions {
   containerRef: Ref<HTMLDivElement | null>
@@ -41,12 +42,6 @@ type FreehandPointHandler = (point: MapDrawPoint) => void
 type CameraIdleHandler = (camera: { center: { lat: number; lng: number }; zoom: number }) => void
 type PinClickHandler = (pinId: string) => void
 type MapThemeMode = 'light' | 'dark'
-
-const PIN_ROLE_COLORS: Record<string, string> = {
-  space_owner: '#0ea5e9',
-  entrepreneur: '#f59e0b',
-  supplier: '#10b981',
-}
 
 const GOOGLE_DARK_STYLES: GoogleMapStyleRule[] = [
   { elementType: 'geometry', stylers: [{ color: '#1f2a44' }] },
@@ -738,19 +733,12 @@ export function useGoogleMapAdapter(options: GoogleAdapterOptions) {
     pinClickHandler = onPinClick ?? null
 
     pins.forEach((pin) => {
-      const color = PIN_ROLE_COLORS[pin.role] ?? '#2563eb'
       const marker = new MarkerCtor({
         position: { lat: pin.lat, lng: pin.lng },
         map: googleMap as GoogleMapInstance,
         title: pin.title,
         icon: {
-          path: 'M 0,0 C -2,-3 -8,-5 -8,-11 A 8,8 0 1,1 8,-11 C 8,-5 2,-3 0,0 z',
-          fillColor: color,
-          fillOpacity: 1,
-          strokeColor: '#ffffff',
-          strokeOpacity: 1,
-          strokeWeight: 2,
-          scale: 1.5,
+          url: createPinIconSrc(),
         },
       })
 

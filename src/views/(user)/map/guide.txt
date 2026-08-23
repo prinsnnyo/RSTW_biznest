@@ -1,0 +1,36 @@
+Normal-user map feature module.
+
+The route entry is UserMapView.vue: the shared UserMapShell plus a right-hand
+icon strip (UserMapRightSideBar) carrying the one tool a normal user gets,
+Smart Analysis.
+
+Smart Analysis flow: click the strip icon -> draw a polygon on the map ->
+Analyze Area -> pick one of four analyses -> fill its form -> read the results.
+The drawer keeps the map on screen the whole time.
+
+Business Suitability (option 1) and Top 5 Best Businesses (option 2) each end in
+their own wide landscape report modal with Close / Save / Export PDF. Options 3
+and 4 still render inline in the drawer.
+
+  UserMapView.vue         route entry. Shell + strip + tool wiring only.
+  components/             strip, drawing HUD, drawer, option list, four forms,
+                          inline results, and the suitability report modal.
+  composables/            useAreaDrawing (polygon capture), useSmartAnalysis
+                          (flow), useSavedReports (localStorage archive),
+                          useSuitabilityReportExport (landscape PDF).
+  constants.ts            category / business type / scale / days / hours / size sets.
+  types/                  flow, result and report shapes.
+  utils/                  mockAnalysis (options 3-4), suitabilityReport (option 1),
+                          topBusinessesReport + businessCatalog (option 2).
+
+ALL ANALYSIS RESULTS ARE STATIC. The util files derive figures from the form
+input with a seeded hash so a selection always renders the same numbers, and
+businessCatalog.ts is authored reference data for Butuan City. There is no
+scoring model, no spatial query and no backend call yet — swap those files out
+when the real engine lands.
+
+Saved reports go to localStorage, not a table: there is no suitability_reports
+schema yet.
+
+Do not import from (admin)/, (space-owner)/ or (entrepreneur)/ here. Shared map
+pieces live in src/components/map/ and src/stores/admin.map.store.ts.

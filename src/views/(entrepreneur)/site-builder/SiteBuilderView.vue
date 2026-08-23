@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import { Button } from '@/components/ui/button'
@@ -37,6 +37,7 @@ import {
   SITE_COMPONENT_META,
   SITE_TEMPLATE_PRESETS,
   SITE_THEME_PRESETS,
+  SITE_FONT_STACK,
   siteFontStacks,
 } from '@/utils/site-design'
 
@@ -84,9 +85,9 @@ const previewStyle = computed(() => {
 
   if (layoutStyle.value === 'nomade') {
     return {
-      '--site-font-primary': '"DM Sans", "Segoe UI", sans-serif',
-      '--site-font-secondary': '"DM Sans", "Segoe UI", sans-serif',
-      '--site-font-tertiary': '"DM Sans", "Segoe UI", sans-serif',
+      '--site-font-primary': SITE_FONT_STACK,
+      '--site-font-secondary': SITE_FONT_STACK,
+      '--site-font-tertiary': SITE_FONT_STACK,
       '--site-bg': '#ffffff',
       '--site-surface': '#ffffff',
       '--site-ink': '#111111',

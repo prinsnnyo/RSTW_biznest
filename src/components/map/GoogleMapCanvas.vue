@@ -8,7 +8,7 @@ import type { MapPinMarker } from '@/types/pinned-location.types'
 import { useGoogleMapAdapter } from '@/composables/map/useGoogleMapAdapter'
 
 defineOptions({
-  name: 'UserGoogleMapCanvas',
+  name: 'GoogleMapCanvas',
 })
 
 const props = withDefaults(
