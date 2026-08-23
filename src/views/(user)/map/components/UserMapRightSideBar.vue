@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ScanSearch } from 'lucide-vue-next'
+import { BrainCircuit } from 'lucide-vue-next'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 
 // Mirrors the admin map's right-hand icon strip, with the single tool a normal
@@ -26,7 +26,7 @@ const emit = defineEmits<{
             :class="active ? 'bg-muted text-primary' : 'text-muted-foreground'"
             @click="emit('toggle-smart-analysis')"
           >
-            <ScanSearch class="h-4 w-4" />
+            <BrainCircuit class="h-4 w-4" />
           </button>
         </TooltipTrigger>
         <TooltipContent side="left">Smart Analysis</TooltipContent>

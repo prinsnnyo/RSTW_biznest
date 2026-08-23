@@ -1,7 +1,7 @@
 // Static supplier directory for Butuan City, grouped by the business category
 // the supplier serves. Names, contacts and coordinates are authored prototype
 // data — no live records, no verification. Field-check before relying on any of it.
-import type { SupplierRecord } from '@/views/(user)/map/types/smart-analysis.types'
+import type { SupplierRecord } from '@/types/smart-analysis.types'
 
 export const SUPPLIER_DIRECTORY: Record<string, SupplierRecord[]> = {
   'food-beverage': [

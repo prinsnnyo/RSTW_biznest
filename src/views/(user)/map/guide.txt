@@ -15,18 +15,19 @@ The suppliers and spaces reports can jump the map to a location: the modal emits
 `focus`, UserMapView dismisses the report and calls focusLocation on the canvas.
 
   UserMapView.vue         route entry. Shell + strip + tool wiring only.
-  components/             strip, drawing HUD, drawer, option list, four forms,
-                          shared report action bar, four report modals.
+  components/             strip, drawing HUD, drawer, option list, four forms.
+                          The four report modals and their action bar live in
+                          src/components/smart-analysis/.
   composables/            useAreaDrawing (polygon capture), useSmartAnalysis
-                          (flow), useSavedReports (localStorage archive),
-                          useSuitabilityReportExport (landscape PDF).
+                          (flow). useSavedReports and useAnalysisReportExport
+                          live in src/composables/.
   constants.ts            category / business type / scale / days / hours / size sets.
-  types/                  flow, result and report shapes.
   utils/                  geo (centroid + haversine, shared),
                           suitabilityReport (option 1),
                           topBusinessesReport + businessCatalog (option 2),
                           nearestSuppliersReport + supplierDirectory (option 3),
                           nearestSpacesReport + spaceInventory (option 4).
+                          Flow/result/report shapes live in src/types/smart-analysis.types.ts.
 
 ALL ANALYSIS RESULTS ARE STATIC. The util files derive figures from the form
 input with a seeded hash so a selection always renders the same numbers;

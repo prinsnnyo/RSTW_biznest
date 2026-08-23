@@ -1,5 +1,5 @@
 import { ref, type Ref } from 'vue'
-import type { SavedAnalysisReport } from '@/views/(user)/map/types/smart-analysis.types'
+import type { SavedAnalysisReport } from '@/types/smart-analysis.types'
 
 // Saved reports live in the browser only. There is no reports table for
 // smart-analysis output yet, so "Save Report" persists to localStorage rather
@@ -33,6 +33,7 @@ export interface UseSavedReportsReturn {
   savedReports: Ref<SavedAnalysisReport[]>
   isSaved: (id: string) => boolean
   saveReport: (report: SavedAnalysisReport) => void
+  removeReport: (id: string) => void
 }
 
 export function useSavedReports(): UseSavedReportsReturn {
@@ -51,5 +52,10 @@ export function useSavedReports(): UseSavedReportsReturn {
     persist(savedReports.value)
   }
 
-  return { savedReports, isSaved, saveReport }
+  function removeReport(id: string): void {
+    savedReports.value = savedReports.value.filter((report) => report.id !== id)
+    persist(savedReports.value)
+  }
+
+  return { savedReports, isSaved, saveReport, removeReport }
 }

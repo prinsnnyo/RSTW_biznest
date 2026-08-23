@@ -5,7 +5,7 @@ import type {
   CompetitionLevel,
   DemandLevel,
   ReportMetric,
-} from '@/views/(user)/map/types/smart-analysis.types'
+} from '@/types/smart-analysis.types'
 
 export interface CatalogEntry {
   name: string

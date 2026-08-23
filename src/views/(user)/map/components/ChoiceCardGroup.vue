@@ -2,7 +2,7 @@
 import { Label } from '@/components/ui/label'
 import { TypographyMuted, TypographySmall } from '@/components/typography'
 import { cn } from '@/lib/utils'
-import type { ChoiceOption } from '@/views/(user)/map/types/smart-analysis.types'
+import type { ChoiceOption } from '@/types/smart-analysis.types'
 
 // Radio-style card picker used by every smart-analysis form, so the forms stay
 // visually identical without repeating the markup.

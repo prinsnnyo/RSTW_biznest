@@ -3,7 +3,7 @@ import { ChevronRight, Store, Target, Truck, Warehouse } from 'lucide-vue-next'
 import type { Component } from 'vue'
 import { TypographyMuted, TypographySmall } from '@/components/typography'
 import { ANALYSIS_OPTIONS } from '@/views/(user)/map/constants'
-import type { AnalysisOptionKey } from '@/views/(user)/map/types/smart-analysis.types'
+import type { AnalysisOptionKey } from '@/types/smart-analysis.types'
 
 const emit = defineEmits<{
   select: [key: AnalysisOptionKey]

@@ -17,7 +17,7 @@ import type {
   ReportBasisItem,
   SuitabilityReport,
   SuitabilityVerdict,
-} from '@/views/(user)/map/types/smart-analysis.types'
+} from '@/types/smart-analysis.types'
 
 const PESO = '₱'
 

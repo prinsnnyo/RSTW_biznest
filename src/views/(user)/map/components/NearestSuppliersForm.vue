@@ -5,7 +5,7 @@ import {
   BUSINESS_CATEGORIES,
   BUSINESS_TYPES_BY_CATEGORY,
 } from '@/views/(user)/map/constants'
-import type { NearestSuppliersInput } from '@/views/(user)/map/types/smart-analysis.types'
+import type { NearestSuppliersInput } from '@/types/smart-analysis.types'
 
 const emit = defineEmits<{
   submit: [input: NearestSuppliersInput]

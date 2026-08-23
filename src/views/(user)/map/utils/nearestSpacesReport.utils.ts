@@ -12,7 +12,7 @@ import type {
   SpaceIntent,
   SpaceListing,
   SpaceListingMatch,
-} from '@/views/(user)/map/types/smart-analysis.types'
+} from '@/types/smart-analysis.types'
 
 const PESO = '₱'
 /** Distance beyond which a listing stops being a practical option for the area. */

@@ -14,7 +14,7 @@ import type {
   ReportMetric,
   TopBusinessesInput,
   TopBusinessesReport,
-} from '@/views/(user)/map/types/smart-analysis.types'
+} from '@/types/smart-analysis.types'
 
 const PESO = '₱'
 const TOP_COUNT = 5

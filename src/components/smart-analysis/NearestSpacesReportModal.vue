@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { ChevronDown, Crosshair, Mail, MapPin, Phone } from 'lucide-vue-next'
+import { Building2, ChevronDown, Crosshair, MapPin, Phone, Star } from 'lucide-vue-next'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -8,18 +8,18 @@ import { Separator } from '@/components/ui/separator'
 import { TypographyMuted, TypographySmall } from '@/components/typography'
 import { useAlertContext } from '@/composables/useAlert'
 import { cn } from '@/lib/utils'
-import ReportActionBar from '@/views/(user)/map/components/ReportActionBar.vue'
-import { useAnalysisReportExport } from '@/views/(user)/map/composables/useAnalysisReportExport'
-import { useSavedReports } from '@/views/(user)/map/composables/useSavedReports'
+import ReportActionBar from '@/components/smart-analysis/ReportActionBar.vue'
+import { useAnalysisReportExport } from '@/composables/useAnalysisReportExport'
+import { useSavedReports } from '@/composables/useSavedReports'
 import type {
-  NearestSuppliersReport,
+  NearestSpacesReport,
   ReportMetric,
-  SupplierMatch,
-} from '@/views/(user)/map/types/smart-analysis.types'
+  SpaceListingMatch,
+} from '@/types/smart-analysis.types'
 
 const props = defineProps<{
   open: boolean
-  report: NearestSuppliersReport | null
+  report: NearestSpacesReport | null
 }>()
 
 const emit = defineEmits<{
@@ -29,15 +29,18 @@ const emit = defineEmits<{
 
 const { showSuccess } = useAlertContext()
 const { isSaved, saveReport } = useSavedReports()
-const { exportNearestSuppliersToPdf } = useAnalysisReportExport()
+const { exportNearestSpacesToPdf } = useAnalysisReportExport()
 
 /** Ranks whose detail block is expanded. The top match opens by default. */
 const expandedRanks = ref<number[]>([1])
+/** Listing ids whose photo failed to load, so the placeholder takes over. */
+const brokenImages = ref<string[]>([])
 
 watch(
   () => props.report?.id,
   () => {
     expandedRanks.value = [1]
+    brokenImages.value = []
   },
 )
 
@@ -53,6 +56,14 @@ function toggleRank(rank: number): void {
     : [...expandedRanks.value, rank]
 }
 
+function hasImage(match: SpaceListingMatch): boolean {
+  return Boolean(match.listing.imageUrl) && !brokenImages.value.includes(match.listing.id)
+}
+
+function markImageBroken(id: string): void {
+  brokenImages.value = [...brokenImages.value, id]
+}
+
 function rankTone(rank: number): string {
   if (rank === 1) {
     return 'bg-success text-success-foreground'
@@ -61,17 +72,22 @@ function rankTone(rank: number): string {
 }
 
 function distanceTone(distanceKm: number): string {
-  if (distanceKm <= 3) {
+  if (distanceKm <= 1.5) {
     return 'border-success/50 text-success'
   }
-  return distanceKm <= 8 ? 'border-primary/50 text-primary' : 'border-border text-muted-foreground'
+  return distanceKm <= 5 ? 'border-primary/50 text-primary' : 'border-border text-muted-foreground'
 }
 
-function handleShowOnMap(match: SupplierMatch): void {
+function areaLabel(match: SpaceListingMatch): string {
+  const { areaSqmMin, areaSqmMax } = match.listing
+  return areaSqmMin === areaSqmMax ? `${areaSqmMin} sqm` : `${areaSqmMin} – ${areaSqmMax} sqm`
+}
+
+function handleShowOnMap(match: SpaceListingMatch): void {
   emit('focus', {
-    lat: match.record.lat,
-    lng: match.record.lng,
-    label: match.record.name,
+    lat: match.listing.lat,
+    lng: match.listing.lng,
+    label: match.listing.name,
   })
 }
 
@@ -89,7 +105,7 @@ function handleExport(): void {
     return
   }
 
-  exportNearestSuppliersToPdf(props.report)
+  exportNearestSpacesToPdf(props.report)
 }
 
 function handleOpenChange(isOpen: boolean): void {
@@ -109,16 +125,16 @@ function handleOpenChange(isOpen: boolean): void {
       <DialogHeader class="border-border shrink-0 border-b px-6 py-4 text-left">
         <div class="flex flex-wrap items-start justify-between gap-4">
           <div class="min-w-0">
-            <DialogTitle class="text-xl">Nearest Suppliers</DialogTitle>
+            <DialogTitle class="text-xl">Nearest Space for Rent / Sale</DialogTitle>
             <DialogDescription>
               {{ props.report.areaSummary }} · Generated {{ props.report.generatedAt }}
             </DialogDescription>
           </div>
           <div class="border-primary/40 bg-primary/8 shrink-0 rounded-lg border px-5 py-2 text-center">
             <p class="text-primary text-4xl font-extrabold leading-none tabular-nums">
-              {{ props.report.suppliers.length }}
+              {{ props.report.listings.length }}
             </p>
-            <TypographyMuted as="p" class="mt-1 text-[11px]">suppliers matched</TypographyMuted>
+            <TypographyMuted as="p" class="mt-1 text-[11px]">listings matched</TypographyMuted>
           </div>
         </div>
       </DialogHeader>
@@ -129,7 +145,7 @@ function handleOpenChange(isOpen: boolean): void {
           <section
             v-for="panel in [
               { title: 'Search Criteria', rows: props.report.criteria },
-              { title: 'Supply Chain Profile', rows: props.report.supplyProfile },
+              { title: 'Market Profile', rows: props.report.marketProfile },
             ]"
             :key="panel.title"
             class="border-border bg-card rounded-lg border p-4"
@@ -156,15 +172,15 @@ function handleOpenChange(isOpen: boolean): void {
           </section>
         </div>
 
-        <!-- Ranked suppliers -->
+        <!-- Ranked listings -->
         <TypographySmall as="h3" class="mt-6 font-semibold">
-          Suppliers Nearest to the Drawn Area
+          Spaces Nearest to the Drawn Area
         </TypographySmall>
 
         <ol class="mt-3 grid gap-3">
           <li
-            v-for="match in props.report.suppliers"
-            :key="match.record.name"
+            v-for="match in props.report.listings"
+            :key="match.listing.id"
             :class="
               cn(
                 'border-border bg-card overflow-hidden rounded-lg border',
@@ -172,67 +188,96 @@ function handleOpenChange(isOpen: boolean): void {
               )
             "
           >
-            <div class="flex flex-wrap items-start gap-4 p-4">
-              <span
-                :class="
-                  cn(
-                    'flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-base font-extrabold tabular-nums',
-                    rankTone(match.rank),
-                  )
-                "
-              >
-                {{ match.rank }}
-              </span>
+            <div class="flex flex-col gap-4 p-4 md:flex-row">
+              <!-- Photo -->
+              <div class="bg-muted relative h-40 w-full shrink-0 overflow-hidden rounded-md md:h-32 md:w-52">
+                <img
+                  v-if="hasImage(match)"
+                  :src="match.listing.imageUrl"
+                  :alt="match.listing.name"
+                  class="h-full w-full object-cover"
+                  loading="lazy"
+                  @error="markImageBroken(match.listing.id)"
+                />
+                <div
+                  v-else
+                  class="bg-primary/10 text-primary/70 flex h-full w-full items-center justify-center"
+                >
+                  <Building2 class="h-8 w-8" />
+                </div>
+                <span
+                  :class="
+                    cn(
+                      'absolute left-2 top-2 flex h-7 w-7 items-center justify-center rounded-full text-sm font-extrabold tabular-nums shadow',
+                      rankTone(match.rank),
+                    )
+                  "
+                >
+                  {{ match.rank }}
+                </span>
+              </div>
 
-              <div class="min-w-[18rem] flex-1">
-                <TypographySmall as="h4" class="text-base font-semibold">
-                  {{ match.record.name }}
-                </TypographySmall>
+              <!-- Detail -->
+              <div class="min-w-[16rem] flex-1">
+                <div class="flex flex-wrap items-baseline justify-between gap-2">
+                  <TypographySmall as="h4" class="text-base font-semibold">
+                    {{ match.listing.name }}
+                  </TypographySmall>
+                  <TypographySmall as="span" class="text-primary font-semibold">
+                    {{ match.priceLabel }}
+                  </TypographySmall>
+                </div>
+
                 <div class="mt-1 flex flex-wrap items-center gap-1.5">
-                  <Badge variant="secondary">{{ match.record.trade }}</Badge>
+                  <Badge variant="secondary">{{ match.listing.spaceType }}</Badge>
                   <Badge variant="outline" :class="distanceTone(match.distanceKm)">
                     {{ match.distanceKm }} km away
                   </Badge>
-                  <Badge variant="outline">{{ match.record.yearsOperating }} yrs operating</Badge>
+                  <Badge variant="outline">{{ areaLabel(match) }}</Badge>
+                  <Badge :variant="match.unitsInBand > 0 ? 'default' : 'outline'">
+                    {{ match.listing.unitsAvailable }} available
+                    <template v-if="match.unitsInBand > 0">
+                      · {{ match.unitsInBand }} in band
+                    </template>
+                  </Badge>
+                  <Badge v-if="match.listing.rating" variant="outline" class="gap-1">
+                    <Star class="h-3 w-3" />{{ match.listing.rating }}
+                  </Badge>
                 </div>
 
                 <div class="text-muted-foreground mt-2 grid gap-1 text-xs">
                   <p class="flex items-start gap-1.5">
                     <MapPin class="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                    <span>{{ match.record.address }} · Brgy. {{ match.record.barangay }}</span>
+                    <span>{{ match.listing.address }} · Brgy. {{ match.listing.barangay }}</span>
                   </p>
-                  <p class="flex flex-wrap items-center gap-x-4 gap-y-1">
-                    <span class="flex items-center gap-1.5">
-                      <Phone class="h-3.5 w-3.5 shrink-0" />
-                      <a :href="`tel:${match.record.phone.replace(/\s/g, '')}`" class="hover:underline">
-                        {{ match.record.phone }}
-                      </a>
-                    </span>
-                    <span class="flex items-center gap-1.5">
-                      <Mail class="h-3.5 w-3.5 shrink-0" />
-                      <a :href="`mailto:${match.record.email}`" class="hover:underline">
-                        {{ match.record.email }}
-                      </a>
-                    </span>
+                  <p v-if="match.listing.contactNumber" class="flex items-center gap-1.5">
+                    <Phone class="h-3.5 w-3.5 shrink-0" />
+                    <a
+                      :href="`tel:${match.listing.contactNumber.replace(/\s/g, '')}`"
+                      class="hover:underline"
+                    >
+                      {{ match.listing.contactNumber }}
+                    </a>
                   </p>
                   <p class="tabular-nums">
-                    {{ match.record.lat.toFixed(4) }}, {{ match.record.lng.toFixed(4) }}
+                    {{ match.listing.lat.toFixed(4) }}, {{ match.listing.lng.toFixed(4) }}
                   </p>
                 </div>
 
-                <TypographyMuted as="p" class="mt-2 text-xs italic">
-                  {{ match.matchReason }}
+                <TypographyMuted as="p" class="mt-2 text-xs">
+                  {{ match.listing.description }}
                 </TypographyMuted>
               </div>
 
-              <div class="flex w-40 shrink-0 flex-col items-end gap-2">
+              <!-- Score + action -->
+              <div class="flex shrink-0 flex-row items-end justify-between gap-2 md:w-36 md:flex-col md:items-end">
                 <div class="text-right">
                   <p class="text-primary text-3xl font-extrabold leading-none tabular-nums">
                     {{ match.matchScore }}
                   </p>
                   <TypographyMuted as="p" class="mt-1 text-[11px]">/ 100 match score</TypographyMuted>
                 </div>
-                <Button size="sm" variant="outline" class="w-full" @click="handleShowOnMap(match)">
+                <Button size="sm" variant="outline" class="md:w-full" @click="handleShowOnMap(match)">
                   <Crosshair class="h-3.5 w-3.5" />
                   <TypographySmall as="span">Show on map</TypographySmall>
                 </Button>
@@ -256,25 +301,19 @@ function handleOpenChange(isOpen: boolean): void {
 
             <div v-if="isExpanded(match.rank)" class="border-border grid gap-3 border-t p-4 lg:grid-cols-2">
               <div class="border-border bg-background rounded-lg border p-3">
-                <TypographySmall as="h5" class="font-semibold">Specialties</TypographySmall>
+                <TypographySmall as="h5" class="font-semibold">Amenities</TypographySmall>
                 <ul class="mt-2 flex flex-wrap gap-1.5">
-                  <li v-for="item in match.record.specialties" :key="item">
+                  <li v-for="item in match.listing.amenities" :key="item">
                     <Badge variant="secondary">{{ item }}</Badge>
                   </li>
                 </ul>
+                <TypographyMuted as="p" class="mt-3 text-[11px] italic">
+                  {{ match.matchReason }}
+                </TypographyMuted>
               </div>
 
               <dl class="border-border bg-background grid gap-2 rounded-lg border p-3 sm:grid-cols-2">
-                <div
-                  v-for="term in [
-                    { label: 'Minimum order', value: match.record.minimumOrder },
-                    { label: 'Payment terms', value: match.record.paymentTerms },
-                    { label: 'Delivery', value: match.record.delivery },
-                    { label: 'Lead time', value: match.record.leadTime },
-                    { label: 'Operating hours', value: match.record.operatingHours },
-                  ]"
-                  :key="term.label"
-                >
+                <div v-for="term in match.listing.terms" :key="term.label">
                   <dt>
                     <TypographyMuted as="span" class="text-[10px] uppercase tracking-wide">
                       {{ term.label }}

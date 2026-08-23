@@ -6,7 +6,7 @@
 // features never disagree. Commercial detail (rent bands, unit counts, terms) is
 // authored prototype data, as are the remaining listings.
 import { RENTAL_SPACES } from '@/services/chatbot/chatbot.static-data'
-import type { SpaceListing } from '@/views/(user)/map/types/smart-analysis.types'
+import type { SpaceListing } from '@/types/smart-analysis.types'
 
 const UNSPLASH = (photoId: string): string =>
   `https://images.unsplash.com/${photoId}?auto=format&fit=crop&w=640&h=320&q=60`

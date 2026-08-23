@@ -1,4 +1,4 @@
-import type { AnalysisOption, ChoiceOption } from '@/views/(user)/map/types/smart-analysis.types'
+import type { AnalysisOption, ChoiceOption } from '@/types/smart-analysis.types'
 
 /** A polygon needs at least this many points before it can be analysed. */
 export const MIN_AREA_POINTS = 3

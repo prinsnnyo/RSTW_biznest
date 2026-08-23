@@ -16,7 +16,7 @@ import type {
   SuitabilityReport,
   TopBusinessesInput,
   TopBusinessesReport,
-} from '@/views/(user)/map/types/smart-analysis.types'
+} from '@/types/smart-analysis.types'
 import { useAreaDrawing, type UseAreaDrawingReturn } from '@/views/(user)/map/composables/useAreaDrawing'
 
 export interface UseSmartAnalysisReturn {

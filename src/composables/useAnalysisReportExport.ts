@@ -6,7 +6,7 @@ import type {
   ReportMetric,
   SuitabilityReport,
   TopBusinessesReport,
-} from '@/views/(user)/map/types/smart-analysis.types'
+} from '@/types/smart-analysis.types'
 
 /** Brand colours as RGB triples — jsPDF cannot read CSS custom properties. */
 const INK: [number, number, number] = [26, 50, 99]
