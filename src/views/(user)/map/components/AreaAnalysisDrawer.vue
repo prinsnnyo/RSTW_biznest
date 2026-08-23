@@ -13,14 +13,12 @@ import {
 import { TypographySmall } from '@/components/typography'
 import { ANALYSIS_OPTIONS } from '@/views/(user)/map/constants'
 import AnalysisOptionList from '@/views/(user)/map/components/AnalysisOptionList.vue'
-import AnalysisResults from '@/views/(user)/map/components/AnalysisResults.vue'
 import BusinessSuitabilityForm from '@/views/(user)/map/components/BusinessSuitabilityForm.vue'
 import NearestSpacesForm from '@/views/(user)/map/components/NearestSpacesForm.vue'
 import NearestSuppliersForm from '@/views/(user)/map/components/NearestSuppliersForm.vue'
 import TopBusinessesForm from '@/views/(user)/map/components/TopBusinessesForm.vue'
 import type {
   AnalysisOptionKey,
-  AnalysisResult,
   BusinessSuitabilityInput,
   NearestSpacesInput,
   NearestSuppliersInput,
@@ -34,7 +32,6 @@ const props = defineProps<{
   step: SmartAnalysisStep
   areaSummary: string
   selectedOption: AnalysisOptionKey | null
-  result: AnalysisResult | null
 }>()
 
 const emit = defineEmits<{
@@ -70,7 +67,7 @@ function handleOpenChange(isOpen: boolean): void {
 
 <template>
   <Sheet
-    :open="props.step === 'choosing' || props.step === 'form' || props.step === 'results'"
+    :open="props.step === 'choosing' || props.step === 'form'"
     @update:open="handleOpenChange"
   >
     <SheetContent side="right" class="w-full gap-0 sm:max-w-lg">
@@ -111,8 +108,6 @@ function handleOpenChange(isOpen: boolean): void {
             @update:valid="isFormValid = $event"
           />
         </template>
-
-        <AnalysisResults v-else-if="props.result" :result="props.result" />
       </div>
 
       <SheetFooter v-if="props.step !== 'choosing'" class="shrink-0 flex-row gap-2">
@@ -120,17 +115,8 @@ function handleOpenChange(isOpen: boolean): void {
           <ArrowLeft class="h-4 w-4" />
           <TypographySmall as="span">Back to options</TypographySmall>
         </Button>
-        <Button
-          v-if="props.step === 'form'"
-          type="submit"
-          form="smart-analysis-form"
-          class="flex-1"
-          :disabled="!isFormValid"
-        >
+        <Button type="submit" form="smart-analysis-form" class="flex-1" :disabled="!isFormValid">
           <TypographySmall as="span">Run analysis</TypographySmall>
-        </Button>
-        <Button v-else class="flex-1" @click="emit('close')">
-          <TypographySmall as="span">Done</TypographySmall>
         </Button>
       </SheetFooter>
     </SheetContent>

@@ -1,6 +1,8 @@
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import type {
+  NearestSpacesReport,
+  NearestSuppliersReport,
   ReportMetric,
   SuitabilityReport,
   TopBusinessesReport,
@@ -117,6 +119,8 @@ function ensureRoom(state: CursorDoc, needed: number): void {
 export interface UseAnalysisReportExportReturn {
   exportSuitabilityToPdf: (report: SuitabilityReport) => void
   exportTopBusinessesToPdf: (report: TopBusinessesReport) => void
+  exportNearestSuppliersToPdf: (report: NearestSuppliersReport) => void
+  exportNearestSpacesToPdf: (report: NearestSpacesReport) => void
 }
 
 export function useAnalysisReportExport(): UseAnalysisReportExportReturn {
@@ -303,5 +307,185 @@ export function useAnalysisReportExport(): UseAnalysisReportExportReturn {
     doc.save(`top-businesses-${report.id}.pdf`)
   }
 
-  return { exportSuitabilityToPdf, exportTopBusinessesToPdf }
+  function exportNearestSuppliersToPdf(report: NearestSuppliersReport): void {
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' })
+    const state: CursorDoc = { doc, y: 0 }
+
+    drawHeader(state, {
+      title: 'Nearest Suppliers',
+      areaSummary: report.areaSummary,
+      generatedAt: report.generatedAt,
+      disclaimer: report.disclaimer,
+      badgeValue: `${report.suppliers.length}`,
+      badgeLabel: 'suppliers matched',
+    })
+
+    drawMetricTable(state, 'Search Criteria', report.criteria)
+    ensureRoom(state, 45)
+    drawMetricTable(state, 'Supply Chain Profile', report.supplyProfile)
+
+    ensureRoom(state, 60)
+    sectionTitle(state, 'Ranked Suppliers')
+    autoTable(doc, {
+      startY: state.y,
+      margin: { left: PAGE_MARGIN, right: PAGE_MARGIN },
+      head: [['#', 'Supplier', 'Trade', 'Distance', 'Match', 'Address', 'Contact', 'Coordinates']],
+      body: report.suppliers.map((match) => [
+        `${match.rank}`,
+        match.record.name,
+        match.record.trade,
+        `${match.distanceKm} km`,
+        `${match.matchScore}/100`,
+        `${match.record.address}
+Brgy. ${match.record.barangay}`,
+        `${match.record.phone}
+${match.record.email}`,
+        `${match.record.lat.toFixed(4)}, ${match.record.lng.toFixed(4)}`,
+      ]),
+      styles: { fontSize: 7.5, cellPadding: 2, valign: 'top' },
+      headStyles: { fillColor: INK, textColor: 255, fontStyle: 'bold' },
+      alternateRowStyles: { fillColor: BAND },
+      columnStyles: {
+        0: { cellWidth: 8, halign: 'center' },
+        1: { cellWidth: 44, fontStyle: 'bold' },
+        2: { cellWidth: 40 },
+        3: { cellWidth: 18, halign: 'center' },
+        4: { cellWidth: 16, halign: 'center' },
+        7: { cellWidth: 30 },
+      },
+    })
+    state.y = lastTableBottom(doc, state.y) + 8
+
+    // Terms and specialties get their own page — the summary table above is
+    // already at the width limit for landscape A4.
+    doc.addPage()
+    state.y = 16
+    sectionTitle(state, 'Supplier Terms & Specialties')
+    autoTable(doc, {
+      startY: state.y,
+      margin: { left: PAGE_MARGIN, right: PAGE_MARGIN },
+      head: [
+        [
+          'Supplier',
+          'Specialties',
+          'Minimum order',
+          'Payment terms',
+          'Delivery',
+          'Lead time',
+          'Hours',
+        ],
+      ],
+      body: report.suppliers.map((match) => [
+        match.record.name,
+        match.record.specialties.join(', '),
+        match.record.minimumOrder,
+        match.record.paymentTerms,
+        match.record.delivery,
+        match.record.leadTime,
+        match.record.operatingHours,
+      ]),
+      styles: { fontSize: 7.5, cellPadding: 2, valign: 'top' },
+      headStyles: { fillColor: INK, textColor: 255, fontStyle: 'bold' },
+      alternateRowStyles: { fillColor: BAND },
+      columnStyles: { 0: { cellWidth: 40, fontStyle: 'bold' } },
+    })
+    state.y = lastTableBottom(doc, state.y) + 8
+
+    ensureRoom(state, 40)
+    drawList(
+      state,
+      'Why each supplier ranks here',
+      report.suppliers.map((match) => `${match.record.name} — ${match.matchReason}`),
+    )
+
+    doc.save(`nearest-suppliers-${report.id}.pdf`)
+  }
+
+  function exportNearestSpacesToPdf(report: NearestSpacesReport): void {
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' })
+    const state: CursorDoc = { doc, y: 0 }
+
+    drawHeader(state, {
+      title: 'Nearest Space for Rent / Sale',
+      areaSummary: report.areaSummary,
+      generatedAt: report.generatedAt,
+      disclaimer: report.disclaimer,
+      badgeValue: `${report.listings.length}`,
+      badgeLabel: 'listings matched',
+    })
+
+    drawMetricTable(state, 'Search Criteria', report.criteria)
+    ensureRoom(state, 45)
+    drawMetricTable(state, 'Market Profile', report.marketProfile)
+
+    ensureRoom(state, 60)
+    sectionTitle(state, 'Ranked Listings')
+    autoTable(doc, {
+      startY: state.y,
+      margin: { left: PAGE_MARGIN, right: PAGE_MARGIN },
+      head: [
+        ['#', 'Space', 'Type', 'Price', 'Floor area', 'Units', 'Distance', 'Address', 'Coordinates'],
+      ],
+      body: report.listings.map((match) => [
+        `${match.rank}`,
+        match.listing.name,
+        match.listing.spaceType,
+        match.priceLabel,
+        match.listing.areaSqmMin === match.listing.areaSqmMax
+          ? `${match.listing.areaSqmMin} sqm`
+          : `${match.listing.areaSqmMin}-${match.listing.areaSqmMax} sqm`,
+        match.unitsInBand > 0
+          ? `${match.listing.unitsAvailable} (${match.unitsInBand} in band)`
+          : `${match.listing.unitsAvailable}`,
+        `${match.distanceKm} km`,
+        `${match.listing.address}, Brgy. ${match.listing.barangay}`,
+        `${match.listing.lat.toFixed(4)}, ${match.listing.lng.toFixed(4)}`,
+      ]),
+      styles: { fontSize: 7.5, cellPadding: 2, valign: 'top' },
+      headStyles: { fillColor: INK, textColor: 255, fontStyle: 'bold' },
+      alternateRowStyles: { fillColor: BAND },
+      columnStyles: {
+        0: { cellWidth: 8, halign: 'center' },
+        1: { cellWidth: 38, fontStyle: 'bold' },
+        2: { cellWidth: 20 },
+        3: { cellWidth: 34 },
+        4: { cellWidth: 24 },
+        5: { cellWidth: 24 },
+        6: { cellWidth: 17, halign: 'center' },
+        8: { cellWidth: 28 },
+      },
+    })
+    state.y = lastTableBottom(doc, state.y) + 8
+
+    // Terms and amenities get their own page — the summary table above is
+    // already at the width limit for landscape A4.
+    doc.addPage()
+    state.y = 16
+    sectionTitle(state, 'Listing Terms & Amenities')
+    autoTable(doc, {
+      startY: state.y,
+      margin: { left: PAGE_MARGIN, right: PAGE_MARGIN },
+      head: [['Space', 'Contact', 'Amenities', 'Terms', 'Why it ranks here']],
+      body: report.listings.map((match) => [
+        match.listing.name,
+        match.listing.contactNumber ?? 'Enquire through the LGU business desk',
+        match.listing.amenities.join(', '),
+        match.listing.terms.map((term) => `${term.label}: ${term.value}`).join('\n'),
+        match.matchReason,
+      ]),
+      styles: { fontSize: 7.5, cellPadding: 2, valign: 'top' },
+      headStyles: { fillColor: INK, textColor: 255, fontStyle: 'bold' },
+      alternateRowStyles: { fillColor: BAND },
+      columnStyles: { 0: { cellWidth: 38, fontStyle: 'bold' }, 1: { cellWidth: 34 } },
+    })
+
+    doc.save(`nearest-spaces-${report.id}.pdf`)
+  }
+
+  return {
+    exportSuitabilityToPdf,
+    exportTopBusinessesToPdf,
+    exportNearestSuppliersToPdf,
+    exportNearestSpacesToPdf,
+  }
 }

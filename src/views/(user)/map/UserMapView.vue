@@ -1,13 +1,24 @@
 <script setup lang="ts">
 import UserMapShell from '@/components/map/UserMapShell.vue'
 import AreaAnalysisDrawer from '@/views/(user)/map/components/AreaAnalysisDrawer.vue'
+import NearestSpacesReportModal from '@/views/(user)/map/components/NearestSpacesReportModal.vue'
+import NearestSuppliersReportModal from '@/views/(user)/map/components/NearestSuppliersReportModal.vue'
 import SmartAnalysisToolbar from '@/views/(user)/map/components/SmartAnalysisToolbar.vue'
 import SuitabilityReportModal from '@/views/(user)/map/components/SuitabilityReportModal.vue'
 import TopBusinessesReportModal from '@/views/(user)/map/components/TopBusinessesReportModal.vue'
 import UserMapRightSideBar from '@/views/(user)/map/components/UserMapRightSideBar.vue'
 import { useSmartAnalysis } from '@/views/(user)/map/composables/useSmartAnalysis'
+import { useAdminMapStore } from '@/stores/admin.map.store'
 
+const adminMapStore = useAdminMapStore()
 const analysis = useSmartAnalysis()
+
+// Jumping to a supplier only makes sense with the map visible, so the report
+// steps aside — the drawn area stays put and the tool stays open.
+function focusOnLocation(payload: { lat: number; lng: number; label: string }): void {
+  analysis.dismissReports()
+  void adminMapStore.mapRef?.focusLocation({ lat: payload.lat, lng: payload.lng }, payload.label)
+}
 
 // The strip toggles the whole tool: on turns drawing straight on, off wipes the
 // area so the map goes back to plain browsing.
@@ -48,7 +59,6 @@ function toggleDraw(): void {
       :step="analysis.step.value"
       :area-summary="analysis.areaSummary.value"
       :selected-option="analysis.selectedOption.value"
-      :result="analysis.result.value"
       @close="analysis.closeFlow"
       @back="analysis.backToOptions"
       @select="analysis.chooseOption"
@@ -68,6 +78,20 @@ function toggleDraw(): void {
       :open="analysis.isTopBusinessesReportOpen.value"
       :report="analysis.topBusinessesReport.value"
       @close="analysis.closeReport"
+    />
+
+    <NearestSuppliersReportModal
+      :open="analysis.isSuppliersReportOpen.value"
+      :report="analysis.suppliersReport.value"
+      @close="analysis.closeReport"
+      @focus="focusOnLocation"
+    />
+
+    <NearestSpacesReportModal
+      :open="analysis.isSpacesReportOpen.value"
+      :report="analysis.spacesReport.value"
+      @close="analysis.closeReport"
+      @focus="focusOnLocation"
     />
 
     <UserMapRightSideBar
