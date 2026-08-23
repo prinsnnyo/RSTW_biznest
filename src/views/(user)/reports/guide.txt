@@ -1,0 +1,19 @@
+Normal-user saved reports feature module.
+
+The route entry is ReportsView.vue at /user/reports: an archive of every
+report the user saved from the map's Smart Analysis tool. Data comes from
+useSavedReports (localStorage) — there is no backend table yet.
+
+The page is a filterable table (search + type funnel, checkbox selection,
+per-row actions, pagination). Opening a row or picking "View report" reopens
+that report's landscape modal; delete asks once via ConfirmDeleteModal and
+supports bulk selection.
+
+  components/             toolbar, table, pagination bar.
+  composables/            useSavedReportsPage (filters, selection, paging,
+                          modal + delete flow).
+  utils/                  reportMeta (kind labels, timestamp formatting).
+
+Report modals themselves live in src/components/smart-analysis/ together with
+the map feature's shared report plumbing. Do not import from (admin)/,
+(space-owner)/, (entrepreneur)/ or (user)/map here.

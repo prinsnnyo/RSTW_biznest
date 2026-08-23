@@ -4,11 +4,13 @@ import { useRoute, useRouter } from 'vue-router'
 import { useAdminMapStore } from '@/stores/admin.map.store'
 import { useAuthStore } from '@/stores/auth.store'
 import Maplibre from '@/views/(admin)/map/components/Maplibre.vue'
+import GoogleMapCanvas from '@/components/map/GoogleMapCanvas.vue'
 import HazardFormModal from '@/views/(admin)/map/components/modals/HazardFormModal.vue'
 import MappedZoneFormModal from '@/views/(admin)/map/components/modals/MappedZoneFormModal.vue'
 import MapRightSideBar from '@/views/(admin)/map/components/MapRightSideBar.vue'
 import { Button } from '@/components/ui/button'
 import { TypographyMuted, TypographySmall } from '@/components/typography'
+import type { MapCanvasApi } from '@/types/map.types'
 
 const adminMapStore = useAdminMapStore()
 
@@ -16,18 +18,32 @@ const adminMapStore = useAdminMapStore()
 const authStore = useAuthStore()
 const canUseAdminTools = computed(() => authStore.isAdmin)
 
+// Admins stay on MapLibre; the plain user map runs on Google. Both canvases
+// expose MapCanvasApi, so the store is unaware of the swap.
+const mapCanvas = computed(() => (canUseAdminTools.value ? Maplibre : GoogleMapCanvas))
+
 // ── Focus map from query params (e.g. chatbot "View on map") ───────────────
 const route = useRoute()
 const router = useRouter()
 const isMapReady = ref(false)
 
 function bindMapRef(instance: unknown): void {
-  adminMapStore.setMapRef(instance as InstanceType<typeof Maplibre> | null)
+  const canvas = (instance as MapCanvasApi | null) ?? null
+
+  if (!canvas) {
+    isMapReady.value = false
+  }
+
+  adminMapStore.setMapRef(canvas)
 }
 
 function handleMapReady(): void {
   isMapReady.value = true
   void adminMapStore.onMapReady()
+}
+
+function handleCameraIdle(center: { lat: number; lng: number }): void {
+  adminMapStore.setMapCenter(center)
 }
 
 async function applyFocusFromQuery(): Promise<void> {
@@ -75,7 +91,13 @@ onBeforeUnmount(() => {
   <div class="relative h-full w-full overflow-hidden">
     <!-- ── Map canvas ────────────────────────────────────────────────── -->
     <div class="relative h-full w-full" :class="{ 'pr-11': canUseAdminTools }">
-      <Maplibre :ref="bindMapRef" :center="adminMapStore.mapCenter" @ready="handleMapReady" />
+      <component
+        :is="mapCanvas"
+        :ref="bindMapRef"
+        :center="adminMapStore.mapCenter"
+        @ready="handleMapReady"
+        @camera-idle="handleCameraIdle"
+      />
 
       <!-- Barangay-border load status (top-left over the map) -->
       <div
@@ -111,6 +133,22 @@ onBeforeUnmount(() => {
               : `Captured ${adminMapStore.hazardDrawPoints.length} points`
           }}
         </TypographyMuted>
+        <div v-if="adminMapStore.hazardPlacementType !== 'point'" class="mt-2 flex gap-1">
+          <Button
+            size="sm"
+            :variant="adminMapStore.drawMode === 'manual' ? 'default' : 'outline'"
+            @click="adminMapStore.setDrawInteractionMode('manual')"
+          >
+            <TypographySmall as="span">Manual</TypographySmall>
+          </Button>
+          <Button
+            size="sm"
+            :variant="adminMapStore.drawMode === 'freehand' ? 'default' : 'outline'"
+            @click="adminMapStore.setDrawInteractionMode('freehand')"
+          >
+            <TypographySmall as="span">Freehand</TypographySmall>
+          </Button>
+        </div>
         <div class="mt-2 flex gap-2">
           <Button
             v-if="adminMapStore.hazardPlacementType !== 'point'"
@@ -155,6 +193,22 @@ onBeforeUnmount(() => {
         <TypographyMuted as="p" class="text-xs"
           >{{ adminMapStore.drawPoints.length }} points</TypographyMuted
         >
+        <div class="mt-2 flex gap-1">
+          <Button
+            size="sm"
+            :variant="adminMapStore.drawMode === 'manual' ? 'default' : 'outline'"
+            @click="adminMapStore.setDrawInteractionMode('manual')"
+          >
+            <TypographySmall as="span">Manual</TypographySmall>
+          </Button>
+          <Button
+            size="sm"
+            :variant="adminMapStore.drawMode === 'freehand' ? 'default' : 'outline'"
+            @click="adminMapStore.setDrawInteractionMode('freehand')"
+          >
+            <TypographySmall as="span">Freehand</TypographySmall>
+          </Button>
+        </div>
         <div class="mt-2 flex gap-2">
           <Button
             size="sm"

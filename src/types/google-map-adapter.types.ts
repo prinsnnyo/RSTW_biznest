@@ -1,12 +1,21 @@
 import type { GooglePolygonPath } from '@/types/map.types'
 
+export type GoogleMapEventName = 'click' | 'idle' | 'mousedown' | 'mousemove' | 'mouseup'
+
 export interface GoogleMapInstance {
   setCenter: (latLng: { lat: number; lng: number }) => void
   setZoom?: (zoom: number) => void
+  getCenter?: () => GoogleLatLng | undefined
+  getZoom?: () => number | undefined
   getDiv: () => HTMLElement
-  setOptions?: (options: { draggableCursor?: string | null; styles?: GoogleMapStyleRule[] }) => void
+  setOptions?: (options: {
+    draggableCursor?: string | null
+    styles?: GoogleMapStyleRule[]
+    draggable?: boolean
+    gestureHandling?: 'auto' | 'cooperative' | 'greedy' | 'none'
+  }) => void
   addListener?: (
-    eventName: 'click',
+    eventName: GoogleMapEventName,
     handler: (event: GoogleMapMouseEvent) => void,
   ) => GoogleMapsEventListener
 }
@@ -85,15 +94,17 @@ export type LegacyMarkerCtor = new (options: {
   title?: string
   draggable?: boolean
   zIndex?: number
-  icon?: {
-    path: string
-    fillColor: string
-    fillOpacity: number
-    strokeColor: string
-    strokeOpacity: number
-    strokeWeight: number
-    scale: number
-  }
+  icon?:
+    | {
+        path: string
+        fillColor: string
+        fillOpacity: number
+        strokeColor: string
+        strokeOpacity: number
+        strokeWeight: number
+        scale: number
+      }
+    | { url: string }
 }) => GoogleMarkerInstance
 
 export interface GoogleMapsAPI {

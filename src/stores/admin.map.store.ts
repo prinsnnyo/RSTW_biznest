@@ -1,6 +1,9 @@
 import { computed, ref, watch } from 'vue'
 import { defineStore } from 'pinia'
+import { createActor } from 'xstate'
+import { useSelector } from '@xstate/vue'
 import { useBarangayBorders } from '@/composables/map/useBarangayBorders.ts'
+import { mapDrawMachine, type MapDrawMode } from '@/machines/mapDraw.machine.ts'
 import {
   createHazard,
   deleteHazard,
@@ -31,7 +34,7 @@ import type {
   HazardId,
   UpdateHazardInput,
 } from '@/types/hazard.types.ts'
-import type { BarangayFeatureCollection } from '@/types/map.types.ts'
+import type { BarangayFeatureCollection, MapCanvasApi } from '@/types/map.types.ts'
 import type {
   CreateMappedZoneInput,
   CreateZoningLayerInput,
@@ -42,16 +45,75 @@ import type {
   ZoningLayer,
 } from '@/types/zoning.types.ts'
 import type { BusinessRole, MapPinMarker, PinnedLocation } from '@/types/pinned-location.types.ts'
-import type Maplibre from '@/views/(admin)/map/components/Maplibre.vue'
 
 export type AdminMapPanelKey = 'zoning' | 'hazard' | 'local-business' | 'reports' | 'poi'
+
+const FOCUS_STORAGE_KEY = 'biznest:admin-map:focus'
+
+interface StoredFocus {
+  lat: number
+  lng: number
+}
+
+function loadStoredFocus(): StoredFocus | null {
+  try {
+    const raw = localStorage.getItem(FOCUS_STORAGE_KEY)
+    if (!raw) {
+      return null
+    }
+
+    const parsed = JSON.parse(raw) as Partial<StoredFocus>
+    if (typeof parsed.lat !== 'number' || typeof parsed.lng !== 'number') {
+      return null
+    }
+
+    return { lat: parsed.lat, lng: parsed.lng }
+  } catch {
+    return null
+  }
+}
+
+function saveStoredFocus(center: StoredFocus): void {
+  try {
+    localStorage.setItem(FOCUS_STORAGE_KEY, JSON.stringify(center))
+  } catch {
+    // Storage unavailable (private mode, quota) — persistence is best-effort.
+  }
+}
+
+const HIDDEN_POI_TYPES_STORAGE_KEY = 'biznest:admin-map:hidden-poi-types'
+
+function loadStoredHiddenPoiTypes(): string[] {
+  try {
+    const raw = localStorage.getItem(HIDDEN_POI_TYPES_STORAGE_KEY)
+    if (!raw) {
+      return []
+    }
+
+    const parsed = JSON.parse(raw)
+    return Array.isArray(parsed) ? parsed.filter((value) => typeof value === 'string') : []
+  } catch {
+    return []
+  }
+}
+
+function saveStoredHiddenPoiTypes(types: string[]): void {
+  try {
+    localStorage.setItem(HIDDEN_POI_TYPES_STORAGE_KEY, JSON.stringify(types))
+  } catch {
+    // Storage unavailable (private mode, quota) — persistence is best-effort.
+  }
+}
 
 export const useAdminMapStore = defineStore('adminMap', () => {
   // ── 1. State ────────────────────────────────────────────────────────────────
 
   // Map
-  const mapRef = ref<InstanceType<typeof Maplibre> | null>(null)
-  const mapCenter = ref({ lat: 8.9475, lng: 125.5406 })
+  const mapRef = ref<MapCanvasApi | null>(null)
+  // A persisted focus (from a prior visit) takes priority over the resolved
+  // city default — restored here, before anything else runs.
+  const storedFocus = loadStoredFocus()
+  const mapCenter = ref<StoredFocus>(storedFocus ?? { lat: 8.9475, lng: 125.5406 })
 
   // Barangay borders
   const { barangayBorders, isLoading, errorMessage, loadBarangayBorders } = useBarangayBorders()
@@ -60,8 +122,9 @@ export const useAdminMapStore = defineStore('adminMap', () => {
   // Sidebar UI
   const activePanel = ref<AdminMapPanelKey | null>(null)
 
-  // Map display
-  const showMapPoi = ref(true)
+  // Map display — built-in basemap POI labels, one entry per style category
+  const poiTypes = ref<string[]>([])
+  const hiddenPoiTypes = ref<string[]>(loadStoredHiddenPoiTypes())
 
   // Zoning
   const isSavingLayer = ref(false)
@@ -71,9 +134,14 @@ export const useAdminMapStore = defineStore('adminMap', () => {
   const mappedZones = ref<MappedZone[]>([])
   const selectedZoningYear = ref<number | null>(null)
 
-  // Draw mode
-  const isDrawMode = ref(false)
-  const drawPoints = ref<MapDrawPoint[]>([])
+  // Draw mode — point-capture mechanics (manual click vs. freehand drag) are
+  // delegated to a shared XState machine; this store only tracks *why* a
+  // drawing session is happening (zone vs. hazard, which layer, editing an
+  // existing zone's shape) — the machine has no idea what it's drawing for.
+  const drawActor = createActor(mapDrawMachine).start()
+  const drawVertices = useSelector(drawActor, (snapshot) => snapshot.context.vertices)
+  const drawMode = useSelector(drawActor, (snapshot) => snapshot.context.mode)
+  const isDrawingActive = useSelector(drawActor, (snapshot) => snapshot.value === 'drawing')
   const showMappedZoneModal = ref(false)
   const selectedMappedZoneId = ref<string | null>(null)
   const editingMappedZoneGeometryId = ref<string | null>(null)
@@ -91,7 +159,6 @@ export const useAdminMapStore = defineStore('adminMap', () => {
   const hiddenCategoryIds = ref<string[]>([])
   const hasLoadedHazards = ref(false)
   const hazardPlacementType = ref<HazardGeometryType | null>(null)
-  const hazardDrawPoints = ref<MapDrawPoint[]>([])
   const showHazardFormModal = ref(false)
   const editingHazard = ref<Hazard | null>(null)
 
@@ -102,6 +169,8 @@ export const useAdminMapStore = defineStore('adminMap', () => {
   const hasLoadedLocalBusinesses = ref(false)
   const hiddenBusinessRoles = ref<BusinessRole[]>([])
   const selectedLocalBusinessId = ref<string | null>(null)
+  // In-memory prototype pins (space-owner pin tool) — not persisted anywhere yet
+  const staticLocalPins = ref<MapPinMarker[]>([])
 
   // Internal-only (not reactive UI state, no need to expose)
   let cityScopedSyncTimer: ReturnType<typeof setInterval> | null = null
@@ -140,15 +209,26 @@ export const useAdminMapStore = defineStore('adminMap', () => {
   )
 
   const isHazardPlacementActive = computed(() => hazardPlacementType.value !== null)
-  const activeDrawPoints = computed(() =>
-    isHazardPlacementActive.value ? hazardDrawPoints.value : drawPoints.value,
+
+  // isDrawMode/drawPoints/hazardDrawPoints/isAnyDrawModeActive/activeDrawPoints
+  // keep their pre-machine names and behavior so nothing consuming the store
+  // needed to change — they're now derived from the shared machine instead
+  // of being independently-mutated refs.
+  const isDrawMode = computed(() => isDrawingActive.value && !isHazardPlacementActive.value)
+  const isAnyDrawModeActive = isDrawingActive
+  const activeDrawPoints = drawVertices
+  const drawPoints = computed(() => (isHazardPlacementActive.value ? [] : drawVertices.value))
+  const hazardDrawPoints = computed(() =>
+    isHazardPlacementActive.value ? drawVertices.value : [],
   )
-  const isAnyDrawModeActive = computed(() => isDrawMode.value || isHazardPlacementActive.value)
+
   const editingMappedZoneGeometry = computed(
     () => mappedZones.value.find((zone) => zone.id === editingMappedZoneGeometryId.value) ?? null,
   )
   const isEditingMappedZoneGeometry = computed(() => editingMappedZoneGeometryId.value !== null)
   const editingMappedZoneGeometryName = computed(() => editingMappedZoneGeometry.value?.name ?? '')
+
+  const hiddenPoiTypeSet = computed(() => new Set(hiddenPoiTypes.value))
 
   const hiddenBusinessRoleSet = computed(() => new Set(hiddenBusinessRoles.value))
 
@@ -156,24 +236,36 @@ export const useAdminMapStore = defineStore('adminMap', () => {
     localBusinesses.value.filter((pin) => !hiddenBusinessRoleSet.value.has(pin.role)),
   )
 
-  const localBusinessMarkers = computed<MapPinMarker[]>(() =>
-    visibleLocalBusinesses.value.map((pin) => ({
+  const localBusinessMarkers = computed<MapPinMarker[]>(() => [
+    ...visibleLocalBusinesses.value.map((pin) => ({
       id: pin.id,
       lat: pin.latitude,
       lng: pin.longitude,
       title: pin.title,
       role: pin.role,
     })),
-  )
+    ...staticLocalPins.value,
+  ])
 
   // ── 3. Actions ──────────────────────────────────────────────────────────────
 
-  function setMapRef(instance: InstanceType<typeof Maplibre> | null): void {
+  function setMapRef(instance: MapCanvasApi | null): void {
     mapRef.value = instance
   }
 
+  function setMapCenter(center: { lat: number; lng: number }): void {
+    mapCenter.value = center
+    saveStoredFocus(center)
+  }
+
   function togglePanel(panel: AdminMapPanelKey): void {
-    activePanel.value = activePanel.value === panel ? null : panel
+    const nextPanel = activePanel.value === panel ? null : panel
+
+    if (activePanel.value === 'local-business' && nextPanel !== 'local-business') {
+      clearSelectedLocalBusiness()
+    }
+
+    activePanel.value = nextPanel
   }
 
   function buildZoningLayersSignature(layers: ZoningLayer[]): string {
@@ -201,6 +293,20 @@ export const useAdminMapStore = defineStore('adminMap', () => {
 
   function setSelectedZoningYear(year: number | null): void {
     selectedZoningYear.value = year
+  }
+
+  // Draw machine helpers — every "start a fresh drawing session" action
+  // sends RESET then START rather than a bare START, because the machine
+  // only handles START from `idle`: if a session is already active (e.g.
+  // switching hazard geometry type mid-placement, or starting a new zone
+  // while already drawing another), a bare START would be silently ignored.
+  function beginDrawSession(initialPoints: MapDrawPoint[] = []): void {
+    drawActor.send({ type: 'RESET' })
+    drawActor.send({ type: 'START', mode: 'manual', initialPoints })
+  }
+
+  function setDrawInteractionMode(mode: MapDrawMode): void {
+    drawActor.send({ type: 'SET_MODE', mode })
   }
 
   // Barangay borders
@@ -283,6 +389,13 @@ export const useAdminMapStore = defineStore('adminMap', () => {
 
       const metadata = (data.user.user_metadata ?? {}) as Record<string, unknown>
       cityId.value = typeof metadata.city_id === 'string' ? metadata.city_id : null
+
+      if (storedFocus) {
+        // A persisted focus already won on init — don't snap back to the
+        // city default underneath the user.
+        return
+      }
+
       const center = await resolveCityCenter({
         cityId: cityId.value,
         cityName: typeof metadata.city_name === 'string' ? metadata.city_name : null,
@@ -293,7 +406,7 @@ export const useAdminMapStore = defineStore('adminMap', () => {
         return
       }
 
-      mapCenter.value = { lat: center.lat, lng: center.lng }
+      setMapCenter({ lat: center.lat, lng: center.lng })
       mapRef.value?.setCenter(mapCenter.value)
     } catch {
       // Keep default map center if city-center lookup data is unavailable.
@@ -432,10 +545,9 @@ export const useAdminMapStore = defineStore('adminMap', () => {
       return
     }
     zoningError.value = ''
-    drawPoints.value = []
     editingMappedZoneGeometryId.value = null
     pendingZoneLayerId.value = layerId ?? null
-    isDrawMode.value = true
+    beginDrawSession()
   }
 
   function handleStartEditMappedZoneGeometry(zoneId: string): void {
@@ -453,8 +565,7 @@ export const useAdminMapStore = defineStore('adminMap', () => {
     selectedMappedZoneId.value = zone.id
     showMappedZoneModal.value = false
     editingMappedZoneGeometryId.value = zone.id
-    drawPoints.value = zone.points.map((point) => ({ lat: point.lat, lng: point.lng }))
-    isDrawMode.value = true
+    beginDrawSession(zone.points.map((point) => ({ lat: point.lat, lng: point.lng })))
 
     if (zone.points.length > 0) {
       void mapRef.value?.focusOnZone(zone.points)
@@ -462,8 +573,7 @@ export const useAdminMapStore = defineStore('adminMap', () => {
   }
 
   function cancelDrawZoneMode(): void {
-    isDrawMode.value = false
-    drawPoints.value = []
+    drawActor.send({ type: 'RESET' })
     showMappedZoneModal.value = false
     editingMappedZoneGeometryId.value = null
     pendingZoneLayerId.value = null
@@ -556,40 +666,14 @@ export const useAdminMapStore = defineStore('adminMap', () => {
     }
     hazardError.value = ''
     hazardPlacementType.value = placementType
-    hazardDrawPoints.value = []
     showHazardFormModal.value = false
+    beginDrawSession()
   }
 
   function cancelHazardPlacement(): void {
     hazardPlacementType.value = null
-    hazardDrawPoints.value = []
     showHazardFormModal.value = false
-  }
-
-  function appendHazardPoint(point: MapDrawPoint): void {
-    if (!hazardPlacementType.value) return
-    if (hazardPlacementType.value === 'point') {
-      hazardDrawPoints.value = [point]
-      showHazardFormModal.value = true
-      return
-    }
-    hazardDrawPoints.value = [...hazardDrawPoints.value, point]
-  }
-
-  function moveHazardPoint(index: number, point: MapDrawPoint): void {
-    if (!hazardPlacementType.value || hazardPlacementType.value === 'point') return
-    hazardDrawPoints.value = hazardDrawPoints.value.map((existing, i) =>
-      i !== index ? existing : point,
-    )
-  }
-
-  function undoLastHazardPoint(): void {
-    if (!hazardPlacementType.value || hazardDrawPoints.value.length === 0) return
-    if (hazardPlacementType.value === 'point') {
-      hazardDrawPoints.value = []
-      return
-    }
-    hazardDrawPoints.value = hazardDrawPoints.value.slice(0, -1)
+    drawActor.send({ type: 'RESET' })
   }
 
   function finishHazardPlacement(): void {
@@ -750,44 +834,58 @@ export const useAdminMapStore = defineStore('adminMap', () => {
     }
   }
 
+  function addStaticLocalPin(pin: MapPinMarker): void {
+    staticLocalPins.value.push(pin)
+  }
+
   function clearSelectedLocalBusiness(): void {
     selectedLocalBusinessId.value = null
+    mapRef.value?.clearFocusMarker()
   }
 
   // Map event handlers
   function handleMapClick(point: MapDrawPoint): void {
-    if (isHazardPlacementActive.value) {
-      appendHazardPoint(point)
-      if (hazardPlacementType.value === 'point') {
-        showHazardFormModal.value = true
-      }
+    if (drawMode.value === 'freehand') {
+      // Freehand owns point-capture via its own mousedown/mouseup handlers —
+      // a plain click here would double-add a point where a drag started.
       return
     }
+
+    if (isHazardPlacementActive.value) {
+      if (hazardPlacementType.value === 'point') {
+        if (drawVertices.value.length > 0) {
+          drawActor.send({ type: 'MOVE_POINT', index: 0, point })
+        } else {
+          drawActor.send({ type: 'ADD_POINT', point })
+        }
+        showHazardFormModal.value = true
+        return
+      }
+      drawActor.send({ type: 'ADD_POINT', point })
+      return
+    }
+
     if (!isDrawMode.value) return
-    drawPoints.value = [...drawPoints.value, point]
+    drawActor.send({ type: 'ADD_POINT', point })
   }
 
   function handleDrawPointMove(index: number, point: MapDrawPoint): void {
-    if (isHazardPlacementActive.value) {
-      moveHazardPoint(index, point)
-      return
-    }
-    if (!isDrawMode.value) return
-    drawPoints.value = drawPoints.value.map((existing, i) => (i !== index ? existing : point))
+    // Point-type hazards never had a draggable vertex — repositioning is
+    // done by clicking again, matching the pre-machine behavior.
+    if (isHazardPlacementActive.value && hazardPlacementType.value === 'point') return
+    if (!isAnyDrawModeActive.value) return
+    drawActor.send({ type: 'MOVE_POINT', index, point })
   }
 
   function undoLastDrawPoint(): void {
-    if (isHazardPlacementActive.value) {
-      undoLastHazardPoint()
-      return
-    }
-    if (!isDrawMode.value || drawPoints.value.length === 0) return
-    drawPoints.value = drawPoints.value.slice(0, -1)
+    if (!isAnyDrawModeActive.value) return
+    drawActor.send({ type: 'UNDO_POINT' })
   }
 
+  const undoLastHazardPoint = undoLastDrawPoint
+
   function handleDrawUndoShortcut(event: KeyboardEvent): void {
-    const activePoints = isHazardPlacementActive.value ? hazardDrawPoints.value : drawPoints.value
-    if (!isAnyDrawModeActive.value || activePoints.length === 0) return
+    if (!isAnyDrawModeActive.value || drawVertices.value.length === 0) return
     if (event.defaultPrevented || event.shiftKey || event.altKey) return
 
     const isUndoShortcut = (event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'z'
@@ -817,17 +915,36 @@ export const useAdminMapStore = defineStore('adminMap', () => {
     )
   }
 
-  function toggleMapPoi(): void {
-    showMapPoi.value = !showMapPoi.value
-    mapRef.value?.setPoisVisible(showMapPoi.value)
+  function togglePoiTypeVisibility(type: string): void {
+    const wasHidden = hiddenPoiTypeSet.value.has(type)
+    if (wasHidden) {
+      hiddenPoiTypes.value = hiddenPoiTypes.value.filter((t) => t !== type)
+    } else {
+      hiddenPoiTypes.value = [...hiddenPoiTypes.value, type]
+    }
+    saveStoredHiddenPoiTypes(hiddenPoiTypes.value)
+    mapRef.value?.setPoiTypeVisible(type, wasHidden)
+  }
+
+  function handleFreehandPoint(point: MapDrawPoint): void {
+    drawActor.send({ type: 'ADD_POINT', point })
+  }
+
+  function syncFreehandHandler(): void {
+    const active = isDrawingActive.value && drawMode.value === 'freehand'
+    mapRef.value?.setFreehandDrawHandler(active ? handleFreehandPoint : null)
   }
 
   async function onMapReady(): Promise<void> {
     mapRef.value?.setCenter(mapCenter.value)
-    mapRef.value?.setPoisVisible(showMapPoi.value)
+    poiTypes.value = mapRef.value?.getPoiTypes() ?? []
+    hiddenPoiTypes.value.forEach((type) => {
+      mapRef.value?.setPoiTypeVisible(type, false)
+    })
     mapRef.value?.setDrawMode(isAnyDrawModeActive.value)
     mapRef.value?.setMapClickHandler(isAnyDrawModeActive.value ? handleMapClick : null)
     mapRef.value?.setDrawPointMoveHandler(isAnyDrawModeActive.value ? handleDrawPointMove : null)
+    syncFreehandHandler()
     await Promise.all([
       mapRef.value?.renderBarangayBorders(
         showBarangayBorders.value,
@@ -919,6 +1036,8 @@ export const useAdminMapStore = defineStore('adminMap', () => {
     await mapRef.value?.renderDrawPreview(activeDrawPoints.value)
   })
 
+  watch([isDrawingActive, drawMode], syncFreehandHandler)
+
   // ── Lifecycle (driven by the view, not Vue's onMounted/onBeforeUnmount —
   //    this store outlives the component that first creates it) ──────────────
   const handleWindowFocusSync = (): void => {
@@ -961,6 +1080,7 @@ export const useAdminMapStore = defineStore('adminMap', () => {
     mapRef,
     mapCenter,
     setMapRef,
+    setMapCenter,
     onMapReady,
     // Barangay borders
     barangayBorders,
@@ -972,8 +1092,9 @@ export const useAdminMapStore = defineStore('adminMap', () => {
     activePanel,
     togglePanel,
     // Map display
-    showMapPoi,
-    toggleMapPoi,
+    poiTypes,
+    hiddenPoiTypes,
+    togglePoiTypeVisibility,
     // Zoning
     isSavingLayer,
     isSavingMappedZone,
@@ -992,6 +1113,8 @@ export const useAdminMapStore = defineStore('adminMap', () => {
     handleToggleLayerVisibility,
     // Draw zone
     isDrawMode,
+    drawMode,
+    setDrawInteractionMode,
     drawPoints,
     showMappedZoneModal,
     selectedMappedZoneId,
@@ -1048,6 +1171,7 @@ export const useAdminMapStore = defineStore('adminMap', () => {
     toggleBusinessRoleVisibility,
     handleSelectLocalBusiness,
     clearSelectedLocalBusiness,
+    addStaticLocalPin,
     // Lifecycle
     initialize,
     dispose,

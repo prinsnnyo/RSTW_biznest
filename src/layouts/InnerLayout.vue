@@ -20,7 +20,7 @@ const isFullScreenMap = computed(
 
 <template>
   <div class="bg-far text-foreground flex h-screen flex-col overflow-hidden">
-    <InnerNavbar v-if="!isFullScreenMap" />
+    <InnerNavbar />
     <SidebarProvider class="h-full min-h-0! flex-1">
       <component :is="props.sidebar ?? AdminSidebar" />
       <SidebarInset :class="isFullScreenMap ? 'min-h-0 overflow-hidden p-0' : 'overflow-y-auto'">

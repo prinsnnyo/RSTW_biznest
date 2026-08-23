@@ -50,4 +50,7 @@ export default defineConfig({
   worker: {
     format: 'es',
   },
+  optimizeDeps: {
+    exclude: ['maplibre-gl'],
+  },
 })

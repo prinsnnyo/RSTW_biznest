@@ -15,6 +15,7 @@ import {
   getFeaturePolygons,
   toLeafletLatLngRings,
 } from '@/utils/map/barangayBorder.utils'
+import { createPinIconSrc } from '@/utils/pin-icon.utils'
 
 interface LeafletAdapterOptions {
   containerRef: Ref<HTMLDivElement | null>
@@ -25,12 +26,6 @@ type MapClickHandler = (point: MapDrawPoint) => void
 type DrawPointMoveHandler = (index: number, point: MapDrawPoint) => void
 type PinClickHandler = (pinId: string) => void
 type MapThemeMode = 'light' | 'dark'
-
-const PIN_ROLE_COLORS: Record<string, string> = {
-  space_owner: '#0ea5e9',
-  entrepreneur: '#f59e0b',
-  supplier: '#10b981',
-}
 
 const LEAFLET_DEFAULT_TILE_URL = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
 const LEAFLET_NO_POI_TILE_URL =
@@ -521,14 +516,12 @@ export function useLeafletMapAdapter(options: LeafletAdapterOptions) {
     const layerGroup = L.layerGroup()
 
     pins.forEach((pin) => {
-      const color = PIN_ROLE_COLORS[pin.role] ?? '#2563eb'
       const marker = L.marker([pin.lat, pin.lng], {
-        icon: L.divIcon({
-          className: '',
-          html: `<span style="display:block;width:22px;height:22px;border-radius:50% 50% 50% 0;background:${color};border:2px solid #ffffff;box-shadow:0 2px 6px rgba(0,0,0,0.35);transform:rotate(-45deg);"></span>`,
-          iconSize: [22, 22],
-          iconAnchor: [11, 24],
-          popupAnchor: [0, -26],
+        icon: L.icon({
+          iconUrl: createPinIconSrc(),
+          iconSize: [28, 40],
+          iconAnchor: [14, 40],
+          popupAnchor: [0, -38],
         }),
         title: pin.title,
       })

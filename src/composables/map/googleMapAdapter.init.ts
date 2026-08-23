@@ -69,9 +69,12 @@ export function loadGoogleMapsScript(
   })
 }
 
+const DEFAULT_ZOOM = 12
+
 export async function initializeGoogleMapInstance(options: {
   container: HTMLElement | null
   center: { lat: number; lng: number }
+  zoom?: number
   mapId?: string
   onMapReady: (map: GoogleMapInstance) => void
 }): Promise<boolean> {
@@ -117,7 +120,7 @@ export async function initializeGoogleMapInstance(options: {
 
   const map = new MapCtor(options.container, {
     center: options.center,
-    zoom: 12,
+    zoom: options.zoom ?? DEFAULT_ZOOM,
     mapId: options.mapId,
     zoomControl: true,
     zoomControlOptions:
