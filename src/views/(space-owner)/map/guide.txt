@@ -1,0 +1,16 @@
+Space-owner map feature module.
+
+The space owner runs the same map shell as the normal user (GoogleMapCanvas +
+admin.map.store layers), plus one thing the user shell does not have: a pin tool
+for recording their own establishments.
+
+  SpaceOwnerMapView.vue   route entry. Layout + wiring only.
+  components/             pin toolbar and the establishment form modal.
+  composables/            placement state and the establishment list.
+  types/                  Establishment shapes, local to this feature.
+
+Do not import anything from (admin)/ or (entrepreneur)/ here. Shared map pieces
+live in src/components/map/ and src/stores/admin.map.store.ts.
+
+Establishments are in-memory only: pinned_locations has no address or
+contact_number column, so nothing here is persisted yet.

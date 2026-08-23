@@ -9,6 +9,8 @@ import InnerLayout from '@/layouts/InnerLayout.vue'
 import EntrepreneurLayout from '@/layouts/EntrepreneurLayout.vue'
 import UserSidebar from '@/components/UserSidebar.vue'
 import SpaceOwnerSidebar from '@/components/SpaceOwnerSidebar.vue'
+import SpaceOwnerMapView from '@/views/(space-owner)/map/SpaceOwnerMapView.vue'
+import UserMapView from '@/views/(user)/map/UserMapView.vue'
 
 //Auth Routes
 import LoginView from '@/views/auth/login/LoginView.vue'
@@ -132,7 +134,7 @@ const router = createRouter({
         {
           path: 'map',
           name: 'space-owner-map',
-          component: AdminMap,
+          component: SpaceOwnerMapView,
           meta: { requiresAuth: true, requiresSpaceOwner: true },
         },
       ],
@@ -150,7 +152,7 @@ const router = createRouter({
         {
           path: 'map',
           name: 'user-map',
-          component: AdminMap,
+          component: UserMapView,
           meta: { requiresAuth: true },
         },
       ],

@@ -4,7 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useAdminMapStore } from '@/stores/admin.map.store'
 import { useAuthStore } from '@/stores/auth.store'
 import Maplibre from '@/views/(admin)/map/components/Maplibre.vue'
-import GoogleMapCanvas from '@/views/(admin)/map/components/GoogleMapCanvas.vue'
+import GoogleMapCanvas from '@/components/map/GoogleMapCanvas.vue'
 import HazardFormModal from '@/views/(admin)/map/components/modals/HazardFormModal.vue'
 import MappedZoneFormModal from '@/views/(admin)/map/components/modals/MappedZoneFormModal.vue'
 import MapRightSideBar from '@/views/(admin)/map/components/MapRightSideBar.vue'
@@ -18,8 +18,8 @@ const adminMapStore = useAdminMapStore()
 const authStore = useAuthStore()
 const canUseAdminTools = computed(() => authStore.isAdmin)
 
-// Admins and space owners stay on MapLibre; the plain user map runs on Google.
-// Both canvases expose MapCanvasApi, so the store is unaware of the swap.
+// Admins stay on MapLibre; the plain user map runs on Google. Both canvases
+// expose MapCanvasApi, so the store is unaware of the swap.
 const mapCanvas = computed(() => (canUseAdminTools.value ? Maplibre : GoogleMapCanvas))
 
 // ── Focus map from query params (e.g. chatbot "View on map") ───────────────

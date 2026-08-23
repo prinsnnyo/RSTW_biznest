@@ -1,0 +1,24 @@
+Normal-user map feature module.
+
+The route entry is UserMapView.vue: the shared UserMapShell plus a right-hand
+icon strip (UserMapRightSideBar) carrying the one tool a normal user gets,
+Smart Analysis.
+
+Smart Analysis flow: click the strip icon -> draw a polygon on the map ->
+Analyze Area -> pick one of four analyses -> fill its form -> read the results.
+The drawer keeps the map on screen the whole time.
+
+  UserMapView.vue         route entry. Shell + strip + tool wiring only.
+  components/             strip, drawing HUD, drawer, option list, four forms, results.
+  composables/            useAreaDrawing (polygon capture), useSmartAnalysis (flow).
+  constants.ts            the category / scale / days / hours / size option sets.
+  types/                  flow and result shapes.
+  utils/                  mock result builders.
+
+ALL ANALYSIS RESULTS ARE STATIC. utils/mockAnalysis.utils.ts derives figures from
+the form input with a seeded hash so a selection always renders the same numbers.
+There is no scoring model, no spatial query and no backend call yet — swap that
+file out when the real engine lands.
+
+Do not import from (admin)/, (space-owner)/ or (entrepreneur)/ here. Shared map
+pieces live in src/components/map/ and src/stores/admin.map.store.ts.

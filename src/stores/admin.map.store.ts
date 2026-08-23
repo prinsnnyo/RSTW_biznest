@@ -169,6 +169,8 @@ export const useAdminMapStore = defineStore('adminMap', () => {
   const hasLoadedLocalBusinesses = ref(false)
   const hiddenBusinessRoles = ref<BusinessRole[]>([])
   const selectedLocalBusinessId = ref<string | null>(null)
+  // In-memory prototype pins (space-owner pin tool) — not persisted anywhere yet
+  const staticLocalPins = ref<MapPinMarker[]>([])
 
   // Internal-only (not reactive UI state, no need to expose)
   let cityScopedSyncTimer: ReturnType<typeof setInterval> | null = null
@@ -234,15 +236,16 @@ export const useAdminMapStore = defineStore('adminMap', () => {
     localBusinesses.value.filter((pin) => !hiddenBusinessRoleSet.value.has(pin.role)),
   )
 
-  const localBusinessMarkers = computed<MapPinMarker[]>(() =>
-    visibleLocalBusinesses.value.map((pin) => ({
+  const localBusinessMarkers = computed<MapPinMarker[]>(() => [
+    ...visibleLocalBusinesses.value.map((pin) => ({
       id: pin.id,
       lat: pin.latitude,
       lng: pin.longitude,
       title: pin.title,
       role: pin.role,
     })),
-  )
+    ...staticLocalPins.value,
+  ])
 
   // ── 3. Actions ──────────────────────────────────────────────────────────────
 
@@ -831,6 +834,10 @@ export const useAdminMapStore = defineStore('adminMap', () => {
     }
   }
 
+  function addStaticLocalPin(pin: MapPinMarker): void {
+    staticLocalPins.value.push(pin)
+  }
+
   function clearSelectedLocalBusiness(): void {
     selectedLocalBusinessId.value = null
     mapRef.value?.clearFocusMarker()
@@ -1164,6 +1171,7 @@ export const useAdminMapStore = defineStore('adminMap', () => {
     toggleBusinessRoleVisibility,
     handleSelectLocalBusiness,
     clearSelectedLocalBusiness,
+    addStaticLocalPin,
     // Lifecycle
     initialize,
     dispose,
