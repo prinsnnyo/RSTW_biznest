@@ -1,5 +1,6 @@
 import type { Ref } from 'vue'
 import type { GeoJSONSourceSpecification, LayerSpecification, Marker } from 'maplibre-gl'
+import { Popup as MapLibrePopup } from 'maplibre-gl'
 import type { BarangayFeatureCollection } from '@/types/map.types'
 import type { Hazard } from '@/types/hazard.types'
 import type { MapDrawPoint, MappedZone } from '@/types/zoning.types'
@@ -7,6 +8,7 @@ import type { MapPinMarker } from '@/types/pinned-location.types'
 import { MapLibreEngine, type MapLibreTheme } from '@/engine/maplibre.egine'
 import { getBarangayLabel, getBorderColor } from '@/utils/map/barangayBorder.utils'
 import { createPinIconSrc } from '@/utils/pin-icon.utils'
+import { buildPinPopupHtml, PIN_POPUP_CLASS } from '@/utils/map/pinPopup.utils'
 
 interface MapLibreAdapterOptions {
   containerRef: Ref<HTMLDivElement | null>
@@ -740,6 +742,15 @@ export function useMapLibreAdapter(options: MapLibreAdapterOptions) {
       if (!marker) {
         return
       }
+
+      const popup = new MapLibrePopup({
+        offset: 36,
+        closeButton: false,
+        closeOnClick: true,
+        className: PIN_POPUP_CLASS,
+        maxWidth: '300px',
+      }).setHTML(buildPinPopupHtml(pin))
+      marker.setPopup(popup)
 
       pinMarkerIds.push(markerId)
       marker.getElement().addEventListener('click', () => {

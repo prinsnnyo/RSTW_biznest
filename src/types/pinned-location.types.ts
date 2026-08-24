@@ -185,4 +185,6 @@ export interface MapPinMarker {
   lng: number
   title: string
   role: BusinessRole
+  description?: string
+  website_url?: string | null
 }
