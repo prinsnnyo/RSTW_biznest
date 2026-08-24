@@ -16,6 +16,7 @@ import {
   toLeafletLatLngRings,
 } from '@/utils/map/barangayBorder.utils'
 import { createPinIconSrc } from '@/utils/pin-icon.utils'
+import { buildPinPopupHtml, PIN_POPUP_CLASS } from '@/utils/map/pinPopup.utils'
 
 interface LeafletAdapterOptions {
   containerRef: Ref<HTMLDivElement | null>
@@ -524,6 +525,13 @@ export function useLeafletMapAdapter(options: LeafletAdapterOptions) {
           popupAnchor: [0, -38],
         }),
         title: pin.title,
+      })
+
+      marker.bindPopup(buildPinPopupHtml(pin), {
+        className: PIN_POPUP_CLASS,
+        closeButton: false,
+        maxWidth: 300,
+        offset: [0, -8],
       })
 
       marker.on('click', () => {

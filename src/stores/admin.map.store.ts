@@ -45,6 +45,7 @@ import type {
   ZoningLayer,
 } from '@/types/zoning.types.ts'
 import type { BusinessRole, MapPinMarker, PinnedLocation } from '@/types/pinned-location.types.ts'
+import { toMapPinMarker } from '@/utils/map/pinPopup.utils.ts'
 
 export type AdminMapPanelKey = 'zoning' | 'hazard' | 'local-business' | 'reports' | 'poi'
 
@@ -237,13 +238,7 @@ export const useAdminMapStore = defineStore('adminMap', () => {
   )
 
   const localBusinessMarkers = computed<MapPinMarker[]>(() => [
-    ...visibleLocalBusinesses.value.map((pin) => ({
-      id: pin.id,
-      lat: pin.latitude,
-      lng: pin.longitude,
-      title: pin.title,
-      role: pin.role,
-    })),
+    ...visibleLocalBusinesses.value.map(toMapPinMarker),
     ...staticLocalPins.value,
   ])
 
@@ -830,7 +825,7 @@ export const useAdminMapStore = defineStore('adminMap', () => {
 
     const pin = localBusinesses.value.find((business) => business.id === pinId)
     if (pin) {
-      void mapRef.value?.focusLocation({ lat: pin.latitude, lng: pin.longitude }, pin.title)
+      mapRef.value?.setCenter({ lat: pin.latitude, lng: pin.longitude }, 16)
     }
   }
 

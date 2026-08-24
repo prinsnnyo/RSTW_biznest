@@ -27,6 +27,7 @@ import {
   toGooglePath,
 } from '@/utils/map/barangayBorder.utils'
 import { createPinIconSrc } from '@/utils/pin-icon.utils'
+import { buildPinPopupHtml } from '@/utils/map/pinPopup.utils'
 
 interface GoogleAdapterOptions {
   containerRef: Ref<HTMLDivElement | null>
@@ -108,6 +109,7 @@ export function useGoogleMapAdapter(options: GoogleAdapterOptions) {
   let googleFreehandListeners: GoogleMapsEventListener[] = []
   let googlePinMarkers: GoogleMarkerInstance[] = []
   let googlePinClickListeners: GoogleMapsEventListener[] = []
+  let googlePinInfoWindow: GoogleInfoWindowInstance | null = null
   let pinClickHandler: PinClickHandler | null = null
   let mapClickHandler: MapClickHandler | null = null
   let drawPointMoveHandler: DrawPointMoveHandler | null = null
@@ -191,6 +193,7 @@ export function useGoogleMapAdapter(options: GoogleAdapterOptions) {
   function destroyGooglePinMarkers(): void {
     googlePinClickListeners.forEach((listener) => listener.remove())
     googlePinClickListeners = []
+    googlePinInfoWindow?.close()
     googlePinMarkers.forEach((marker) => marker.setMap(null))
     googlePinMarkers = []
   }
@@ -744,6 +747,13 @@ export function useGoogleMapAdapter(options: GoogleAdapterOptions) {
 
       if (marker.addListener) {
         const listener = marker.addListener('click', () => {
+          const InfoWindowCtor = googleMaps?.InfoWindow
+          if (InfoWindowCtor) {
+            googlePinInfoWindow = googlePinInfoWindow ?? new InfoWindowCtor()
+            googlePinInfoWindow.setContent(buildPinPopupHtml(pin))
+            googlePinInfoWindow.setPosition({ lat: pin.lat, lng: pin.lng })
+            googlePinInfoWindow.open({ map: googleMap as GoogleMapInstance })
+          }
           pinClickHandler?.(pin.id)
         })
         googlePinClickListeners.push(listener)

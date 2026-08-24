@@ -16,6 +16,7 @@ import {
 import { ensureDefaultSiteSections } from '@/services/site-sections.service'
 import { uploadSiteImage } from '@/services/site-storage.service'
 import type { PinnedLocation, PinnedLocationImage } from '@/types/pinned-location.types'
+import { toMapPinMarker } from '@/utils/map/pinPopup.utils'
 import type { MapProvider } from '@/types/map.types'
 
 const authStore = useAuthStore()
@@ -50,13 +51,7 @@ const loadPins = async (): Promise<void> => {
       myPin.value = await getMyPinnedLocation()
     }
     await mapRef.value?.renderPinnedLocations(
-      pins.value.map((pin) => ({
-        id: pin.id,
-        lat: pin.latitude,
-        lng: pin.longitude,
-        title: pin.title,
-        role: pin.role,
-      })),
+      pins.value.map(toMapPinMarker),
       (pinId) => {
         selectedPin.value = pins.value.find((pin) => pin.id === pinId) ?? null
         sheetOpen.value = true
