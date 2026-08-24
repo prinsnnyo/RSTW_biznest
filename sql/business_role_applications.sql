@@ -205,10 +205,21 @@ begin
   returning * into application_row;
 
   if p_decision = 'approved' then
+    -- Platform role stays user for admins; everyone else gets the approved
+    -- business role so Users Management shows Entrepreneur / Space Owner / Supplier.
     update auth.users
     set raw_user_meta_data = coalesce(raw_user_meta_data, '{}'::jsonb)
-      || jsonb_build_object('business_role', application_row.requested_role)
-    where id = application_row.user_id;
+      || jsonb_build_object(
+        'business_role', application_row.requested_role,
+        'role', application_row.requested_role
+      )
+    where id = application_row.user_id
+      and lower(regexp_replace(
+        coalesce(raw_user_meta_data ->> 'role', 'user'),
+        '[^a-z]',
+        '',
+        'g'
+      )) not in ('admin', 'superadmin');
   end if;
 
   return application_row;

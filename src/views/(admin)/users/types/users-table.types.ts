@@ -19,6 +19,7 @@ export interface RawUserMetaData {
   username?: string
   email?: string
   role?: string
+  business_role?: string
   city?: string
   city_id?: string
   city_name?: string

@@ -120,7 +120,7 @@ const toUserRow = (input: unknown, cityNameById: Map<string, string>): UserRow |
   const meta = toRawUserMetaData(row['raw_user_meta_data'])
   username = meta.username || username
   email = meta.email || email
-  role = normalizeRole(meta.role || role)
+  role = normalizeRole(meta.business_role || meta.role || role)
 
   const cityMeta = getCityMetadata(meta)
   const cityName = cityMeta.cityId
