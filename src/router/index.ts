@@ -12,6 +12,7 @@ import SpaceOwnerSidebar from '@/components/SpaceOwnerSidebar.vue'
 import SpaceOwnerMapView from '@/views/(space-owner)/map/SpaceOwnerMapView.vue'
 import UserMapView from '@/views/(user)/map/UserMapView.vue'
 import UserReportsView from '@/views/(user)/reports/ReportsView.vue'
+import ApplyBusinessView from '@/views/(user)/apply/ApplyBusinessView.vue'
 
 //Auth Routes
 import LoginView from '@/views/auth/login/LoginView.vue'
@@ -23,6 +24,7 @@ import AdminMap from '@/views/(admin)/map/AdminMap.vue'
 import UsersView from '@/views/(admin)/users/UsersView.vue'
 import ReportsView from '@/views/(admin)/reports/ReportsView.vue'
 import RolesView from '@/views/(admin)/roles/RolesView.vue'
+import ApplicationsView from '@/views/(admin)/applications/ApplicationsView.vue'
 
 // Entrepreneur app (also used by supplier until it gets its own shell)
 import EntrepreneurHomeView from '@/views/(entrepreneur)/home/EntrepreneurHomeView.vue'
@@ -162,6 +164,12 @@ const router = createRouter({
           component: UserReportsView,
           meta: { requiresAuth: true },
         },
+        {
+          path: 'apply',
+          name: 'user-apply-business',
+          component: ApplyBusinessView,
+          meta: { requiresAuth: true },
+        },
       ],
     },
     {
@@ -200,6 +208,12 @@ const router = createRouter({
           path: 'roles',
           name: 'roles',
           component: RolesView,
+          meta: { requiresAuth: true, requiresSuperadmin: true },
+        },
+        {
+          path: 'applications',
+          name: 'admin-applications',
+          component: ApplicationsView,
           meta: { requiresAuth: true, requiresSuperadmin: true },
         },
       ],

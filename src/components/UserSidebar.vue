@@ -67,7 +67,7 @@ const isActive = (itemPath: string): boolean => route.path.startsWith(itemPath)
 
 const getNavItemClass = (itemPath: string): string => {
   if (isActive(itemPath)) {
-    return 'bg-foreground/14 text-foreground ring-1 ring-foreground/25'
+    return 'bg-foreground/14 text-foreground ring-1 ring-inset ring-foreground/25'
   }
 
   return 'text-foreground/75 hover:bg-foreground/8 hover:text-foreground'
@@ -76,18 +76,20 @@ const getNavItemClass = (itemPath: string): string => {
 
 <template>
   <Sidebar collapsible="icon" class="border-r bg-card/70 md:top-16 md:h-[calc(100svh-4rem)]">
-    <SidebarHeader class="border-b px-3 py-3">
-      <div class="flex items-start justify-between gap-2">
-        <div class="group-data-[collapsible=icon]:hidden min-w-0">
+    <SidebarHeader class="border-b p-2">
+      <div
+        class="flex items-center justify-between gap-2 group-data-[collapsible=icon]:justify-center"
+      >
+        <div class="min-w-0 group-data-[collapsible=icon]:hidden">
           <TypographyLarge as="p" class="truncate text-base tracking-wide">
             {{ userDisplayName }}
           </TypographyLarge>
         </div>
-        <SidebarTrigger class="mt-0.5" />
+        <SidebarTrigger class="size-8! h-8 w-8 shrink-0" />
       </div>
     </SidebarHeader>
 
-    <SidebarContent class="px-2 py-4">
+    <SidebarContent class="py-2">
       <SidebarGroup>
         <SidebarGroupContent>
           <SidebarMenu>
@@ -98,11 +100,16 @@ const getNavItemClass = (itemPath: string): string => {
                 :tooltip="item.label"
                 :class="getNavItemClass(item.to)"
               >
-                <RouterLink :to="item.to" class="focus-visible:ring-ring focus-visible:ring-2">
-                  <component :is="iconMap[item.icon]" class="h-4 w-4 shrink-0" />
-                  <TypographySmall as="span" class="text-sm text-inherit">{{
-                    item.label
-                  }}</TypographySmall>
+                <RouterLink
+                  :to="item.to"
+                  class="flex items-center gap-2 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:gap-0"
+                >
+                  <component :is="iconMap[item.icon]" class="size-4 shrink-0" />
+                  <TypographySmall
+                    as="span"
+                    class="text-sm text-inherit group-data-[collapsible=icon]:hidden"
+                    >{{ item.label }}</TypographySmall
+                  >
                 </RouterLink>
               </SidebarMenuButton>
             </SidebarMenuItem>
@@ -110,5 +117,6 @@ const getNavItemClass = (itemPath: string): string => {
         </SidebarGroupContent>
       </SidebarGroup>
     </SidebarContent>
+    <slot name="footer" />
   </Sidebar>
 </template>

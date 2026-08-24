@@ -66,10 +66,14 @@ export const useAuthStore = defineStore('auth', () => {
     const supabase = getSupabaseClient()
 
     // Fetch the initial session (crucial for when the user hard-refreshes the page)
-    supabase.auth.getSession().then(({ data }) => {
-      session.value = data.session
-      user.value = data.session?.user ?? null
-      isInitialized.value = true
+    // Refresh so an approved business_role in user metadata is picked up
+    // after a super admin review (JWTs otherwise keep the old claims).
+    supabase.auth.refreshSession().finally(() => {
+      supabase.auth.getSession().then(({ data }) => {
+        session.value = data.session
+        user.value = data.session?.user ?? null
+        isInitialized.value = true
+      })
     })
 
     // Listen for all future auth events (login, logout, token refresh)

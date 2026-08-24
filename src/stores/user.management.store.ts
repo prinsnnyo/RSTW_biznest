@@ -35,7 +35,11 @@ export const useUserManagementStore = defineStore('userManagement', () => {
         id: user.id,
         username: user.full_name ?? user.email ?? 'Unknown',
         email: user.email ?? '',
-        role: user.role ?? 'user',
+        role:
+          (typeof metadata.business_role === 'string' && metadata.business_role) ||
+          (typeof metadata.role === 'string' && metadata.role) ||
+          user.role ||
+          'user',
         city,
         cityId,
       }

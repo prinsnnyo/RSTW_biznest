@@ -9,6 +9,7 @@ export const primaryAdminNavItems: AdminNavItem[] = [
 
 export const managementAdminNavItems: AdminNavItem[] = [
   { label: 'Users', to: '/admin/users', icon: 'users' },
+  { label: 'Applications', to: '/admin/applications', icon: 'roles' },
   { label: 'Roles & Access', to: '/admin/roles', icon: 'roles' },
   { label: 'Notifications', to: '/admin/notifications', icon: 'notifications' },
   { label: 'Settings', to: '/admin/settings', icon: 'settings' },
