@@ -3,6 +3,7 @@ import type {
   LayerGroup as LeafletLayerGroup,
   LeafletMouseEvent,
   Map as LeafletMap,
+  Marker as LeafletMarker,
   TileLayer as LeafletTileLayer,
 } from 'leaflet'
 import type { BarangayFeatureCollection } from '@/types/map.types'
@@ -50,6 +51,7 @@ export function useLeafletMapAdapter(options: LeafletAdapterOptions) {
   let leafletDrawPreviewLayer: LeafletLayerGroup | null = null
   let leafletFocusMarkerLayer: LeafletLayerGroup | null = null
   let leafletPinnedLocationsLayer: LeafletLayerGroup | null = null
+  const leafletPinMarkers = new Map<string, LeafletMarker>()
   let mapClickHandler: MapClickHandler | null = null
   let drawPointMoveHandler: DrawPointMoveHandler | null = null
   let pinClickHandler: PinClickHandler | null = null
@@ -171,6 +173,7 @@ export function useLeafletMapAdapter(options: LeafletAdapterOptions) {
       leafletPinnedLocationsLayer.remove()
       leafletPinnedLocationsLayer = null
     }
+    leafletPinMarkers.clear()
   }
 
   function clearLeafletClickListener(): void {
@@ -539,10 +542,24 @@ export function useLeafletMapAdapter(options: LeafletAdapterOptions) {
       })
 
       marker.addTo(layerGroup)
+      leafletPinMarkers.set(pin.id, marker)
     })
 
     layerGroup.addTo(leafletMap)
     leafletPinnedLocationsLayer = layerGroup
+  }
+
+  function openPinnedLocation(pinId: string): boolean {
+    const marker = leafletPinMarkers.get(pinId)
+    if (!marker || !leafletMap) {
+      return false
+    }
+
+    const latLng = marker.getLatLng()
+    leafletMap.flyTo(latLng, 17, { duration: 0.8 })
+    marker.openPopup()
+    pinClickHandler?.(pinId)
+    return true
   }
 
   return {
@@ -561,5 +578,6 @@ export function useLeafletMapAdapter(options: LeafletAdapterOptions) {
     focusOnZone,
     showLocationMarker,
     renderPinnedLocations,
+    openPinnedLocation,
   }
 }

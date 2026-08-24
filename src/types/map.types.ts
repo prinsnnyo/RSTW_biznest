@@ -61,4 +61,5 @@ export interface MapCanvasApi {
     pins: MapPinMarker[],
     onPinClick?: ((pinId: string) => void) | null,
   ): Promise<void>
+  openPinnedLocation(pinId: string): boolean
 }

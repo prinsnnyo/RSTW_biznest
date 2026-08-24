@@ -1,4 +1,10 @@
 import { getSupabaseClient } from '@/services/supabase.client'
+import {
+  getCatalogPinnedLocation,
+  saveCatalogPinnedLocation,
+} from '@/services/catalog-sites.service'
+import { siteLookFromId } from '@/utils/site-design'
+import { isCatalogSpaceId } from '@/utils/catalog-spaces.utils'
 import type {
   CreatePinnedLocationInput,
   PinnedLocation,
@@ -30,8 +36,22 @@ const parseImages = (value: unknown): PinnedLocationImage[] => {
 }
 
 const toPinnedLocation = (row: Record<string, unknown>): PinnedLocation => {
+  const id = String(row.id)
+  const layoutStyle = (row.layout_style as PinnedLocation['layout_style']) ?? 'corporate'
+  const themeColor = (row.theme_color as PinnedLocation['theme_color']) ?? 'ocean'
+  const fontPrimary = (row.font_primary as PinnedLocation['font_primary']) ?? 'fraunces'
+  const fontSecondary = (row.font_secondary as PinnedLocation['font_secondary']) ?? 'source_sans'
+  const fontTertiary = (row.font_tertiary as PinnedLocation['font_tertiary']) ?? 'jetbrains_mono'
+  const stillOnFactoryLook =
+    layoutStyle === 'corporate' &&
+    themeColor === 'ocean' &&
+    fontPrimary === 'fraunces' &&
+    fontSecondary === 'source_sans' &&
+    fontTertiary === 'jetbrains_mono'
+  const look = stillOnFactoryLook ? siteLookFromId(id) : null
+
   return {
-    id: String(row.id),
+    id,
     user_id: String(row.user_id),
     role: row.role as PinnedLocation['role'],
     title: String(row.title ?? ''),
@@ -39,11 +59,11 @@ const toPinnedLocation = (row: Record<string, unknown>): PinnedLocation => {
     latitude: Number(row.latitude),
     longitude: Number(row.longitude),
     website_url: typeof row.website_url === 'string' ? row.website_url : null,
-    theme_color: (row.theme_color as PinnedLocation['theme_color']) ?? 'ocean',
-    layout_style: (row.layout_style as PinnedLocation['layout_style']) ?? 'corporate',
-    font_primary: (row.font_primary as PinnedLocation['font_primary']) ?? 'fraunces',
-    font_secondary: (row.font_secondary as PinnedLocation['font_secondary']) ?? 'source_sans',
-    font_tertiary: (row.font_tertiary as PinnedLocation['font_tertiary']) ?? 'jetbrains_mono',
+    theme_color: look?.theme_color ?? themeColor,
+    layout_style: look?.layout_style ?? layoutStyle,
+    font_primary: look?.font_primary ?? fontPrimary,
+    font_secondary: look?.font_secondary ?? fontSecondary,
+    font_tertiary: look?.font_tertiary ?? fontTertiary,
     images: parseImages(row.images),
     map_images: parseImages(row.map_images),
     is_published: Boolean(row.is_published),
@@ -68,6 +88,10 @@ export const listPublishedPins = async (): Promise<PinnedLocation[]> => {
 }
 
 export const getPinnedLocationById = async (id: string): Promise<PinnedLocation | null> => {
+  if (isCatalogSpaceId(id)) {
+    return getCatalogPinnedLocation(id)
+  }
+
   const supabase = getSupabaseClient()
   const { data, error } = await supabase.from(TABLE).select('*').eq('id', id).maybeSingle()
 
@@ -142,11 +166,19 @@ export const createPinnedLocation = async (
   }
 
   const pin = toPinnedLocation(data as Record<string, unknown>)
+  const look = siteLookFromId(pin.id)
   const websiteUrl = `/sites/${pin.id}`
 
   const { data: updated, error: updateError } = await supabase
     .from(TABLE)
-    .update({ website_url: websiteUrl })
+    .update({
+      website_url: websiteUrl,
+      layout_style: look.layout_style,
+      theme_color: look.theme_color,
+      font_primary: look.font_primary,
+      font_secondary: look.font_secondary,
+      font_tertiary: look.font_tertiary,
+    })
     .eq('id', pin.id)
     .select('*')
     .single()
@@ -162,6 +194,10 @@ export const updatePinnedLocation = async (
   id: string,
   input: UpdatePinnedLocationInput,
 ): Promise<PinnedLocation> => {
+  if (isCatalogSpaceId(id)) {
+    return saveCatalogPinnedLocation(id, input)
+  }
+
   const supabase = getSupabaseClient()
   const { data, error } = await supabase
     .from(TABLE)

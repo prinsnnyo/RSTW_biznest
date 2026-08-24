@@ -55,6 +55,15 @@ async function applyFocusFromQuery(): Promise<void> {
     return
   }
 
+  const pinId = typeof route.query.pin === 'string' ? route.query.pin : ''
+  if (pinId) {
+    const opened = adminMapStore.mapRef?.openPinnedLocation(pinId) ?? false
+    if (opened) {
+      await router.replace({ query: {} })
+      return
+    }
+  }
+
   const lat = Number(route.query.lat)
   const lng = Number(route.query.lng)
   const label = typeof route.query.label === 'string' ? route.query.label : undefined

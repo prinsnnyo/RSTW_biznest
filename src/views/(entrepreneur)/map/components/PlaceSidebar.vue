@@ -261,9 +261,6 @@ const openDirections = (): void => {
             <p class="text-muted-foreground mt-4 text-xs">
               Coordinates: {{ pin.latitude.toFixed(5) }}, {{ pin.longitude.toFixed(5) }}
             </p>
-            <Button as-child variant="link" class="text-secondary mt-2 h-auto px-0">
-              <RouterLink :to="websitePath">Visit site</RouterLink>
-            </Button>
           </template>
 
           <template v-else>

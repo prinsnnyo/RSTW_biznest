@@ -200,6 +200,10 @@ async function renderPinnedLocations(
   await mapLibreAdapter.renderPinnedLocations(pins, onPinClick)
 }
 
+function openPinnedLocation(pinId: string): boolean {
+  return mapLibreAdapter.openPinnedLocation(pinId)
+}
+
 defineExpose({
   renderBarangayBorders,
   renderMappedZones,
@@ -216,6 +220,7 @@ defineExpose({
   getPoiTypes,
   setPoiTypeVisible,
   renderPinnedLocations,
+  openPinnedLocation,
 })
 </script>
 

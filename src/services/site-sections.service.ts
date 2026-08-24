@@ -1,5 +1,10 @@
 import { getSupabaseClient } from '@/services/supabase.client'
 import {
+  listCatalogSiteSections,
+  saveCatalogSiteSections,
+} from '@/services/catalog-sites.service'
+import { isCatalogSpaceId } from '@/utils/catalog-spaces.utils'
+import {
   DEFAULT_SITE_SECTIONS,
   type PinnedLocationImage,
   type SiteSection,
@@ -47,6 +52,10 @@ const toSection = (row: Record<string, unknown>): SiteSection => {
 }
 
 export const listSiteSections = async (pinnedLocationId: string): Promise<SiteSection[]> => {
+  if (isCatalogSpaceId(pinnedLocationId)) {
+    return listCatalogSiteSections(pinnedLocationId)
+  }
+
   const supabase = getSupabaseClient()
   const { data, error } = await supabase
     .from(TABLE)
@@ -92,6 +101,10 @@ export const upsertSiteSections = async (
   pinnedLocationId: string,
   sections: UpsertSiteSectionInput[],
 ): Promise<SiteSection[]> => {
+  if (isCatalogSpaceId(pinnedLocationId)) {
+    return saveCatalogSiteSections(pinnedLocationId, sections)
+  }
+
   const supabase = getSupabaseClient()
   const rows = sections.map((section) => ({
     pinned_location_id: pinnedLocationId,

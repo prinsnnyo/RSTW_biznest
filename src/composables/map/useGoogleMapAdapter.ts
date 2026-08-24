@@ -108,6 +108,7 @@ export function useGoogleMapAdapter(options: GoogleAdapterOptions) {
   let googleCameraIdleListener: GoogleMapsEventListener | null = null
   let googleFreehandListeners: GoogleMapsEventListener[] = []
   let googlePinMarkers: GoogleMarkerInstance[] = []
+  let googlePinRecords: Array<{ id: string; pin: MapPinMarker; marker: GoogleMarkerInstance }> = []
   let googlePinClickListeners: GoogleMapsEventListener[] = []
   let googlePinInfoWindow: GoogleInfoWindowInstance | null = null
   let pinClickHandler: PinClickHandler | null = null
@@ -196,6 +197,7 @@ export function useGoogleMapAdapter(options: GoogleAdapterOptions) {
     googlePinInfoWindow?.close()
     googlePinMarkers.forEach((marker) => marker.setMap(null))
     googlePinMarkers = []
+    googlePinRecords = []
   }
 
   function clearGoogleMapClickListener(): void {
@@ -760,7 +762,29 @@ export function useGoogleMapAdapter(options: GoogleAdapterOptions) {
       }
 
       googlePinMarkers.push(marker)
+      googlePinRecords.push({ id: pin.id, pin, marker })
     })
+  }
+
+  function openPinnedLocation(pinId: string): boolean {
+    const record = googlePinRecords.find((entry) => entry.id === pinId)
+    if (!record || !googleMap) {
+      return false
+    }
+
+    const googleMaps = (window as GoogleWindow).google?.maps
+    const InfoWindowCtor = googleMaps?.InfoWindow
+    if (InfoWindowCtor) {
+      googlePinInfoWindow = googlePinInfoWindow ?? new InfoWindowCtor()
+      googlePinInfoWindow.setContent(buildPinPopupHtml(record.pin))
+      googlePinInfoWindow.setPosition({ lat: record.pin.lat, lng: record.pin.lng })
+      googlePinInfoWindow.open({ map: googleMap as GoogleMapInstance })
+    }
+
+    googleMap.setCenter({ lat: record.pin.lat, lng: record.pin.lng })
+    googleMap.setZoom?.(17)
+    pinClickHandler?.(pinId)
+    return true
   }
 
   function loadGoogleMaps(): Promise<void> {
@@ -837,5 +861,6 @@ export function useGoogleMapAdapter(options: GoogleAdapterOptions) {
     showLocationMarker,
     clearFocusMarker: destroyGoogleFocusMarker,
     renderPinnedLocations,
+    openPinnedLocation,
   }
 }

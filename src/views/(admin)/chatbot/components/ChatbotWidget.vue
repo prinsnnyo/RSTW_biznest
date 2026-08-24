@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/auth.store'
 import { Button } from '@/components/ui/button'
 import { MessageCircle, X } from 'lucide-vue-next'
 import { useChatbot } from '../composables/useChatbot'
@@ -24,6 +25,7 @@ interface DragState {
 }
 
 const router = useRouter()
+const authStore = useAuthStore()
 const isOpen = ref(false)
 
 const { messages, isThinking, sendMessage, reset } = useChatbot({
@@ -134,11 +136,16 @@ function handlePointerCancel(event: PointerEvent): void {
   }
 }
 
-function handleViewOnMap(location: { lat: number; lng: number; name: string }): void {
+function handleViewOnMap(location: { lat: number; lng: number; name: string; id?: string }): void {
   isOpen.value = false
   void router.push({
-    name: 'admin-map',
-    query: { lat: String(location.lat), lng: String(location.lng), label: location.name },
+    name: authStore.homeRouteName,
+    query: {
+      lat: String(location.lat),
+      lng: String(location.lng),
+      label: location.name,
+      ...(location.id ? { pin: location.id } : {}),
+    },
   })
 }
 </script>
