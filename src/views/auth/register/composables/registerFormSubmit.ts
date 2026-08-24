@@ -247,7 +247,7 @@ export function useRegisterFormSubmit({
         if (inviteToken) {
           await router.push('/admin/map')
         } else {
-          await router.push('/user/map')
+          await router.push('/app/map')
         }
         return
       }

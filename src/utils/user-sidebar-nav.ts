@@ -4,5 +4,5 @@ import type { AdminNavItem } from '@/types/admin-sidebar.types'
 export const primaryUserNavItems: AdminNavItem[] = [
   { label: 'Map', to: '/user/map', icon: 'map' },
   { label: 'Reports', to: '/user/reports', icon: 'report' },
-  { label: 'Become a partner', to: '/user/apply', icon: 'settings' },
+  { label: 'Become a partner', to: '/app/apply', icon: 'settings' },
 ]
