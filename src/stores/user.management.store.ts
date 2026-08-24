@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { listUsers } from '@/services/user-management.service'
 import type { UserRow } from '@/views/(admin)/users/types/users-table.types'
+import { resolveDisplayRole } from '@/utils/roles.utils'
 
 export const useUserManagementStore = defineStore('userManagement', () => {
   const users = ref<UserRow[]>([])
@@ -35,11 +36,10 @@ export const useUserManagementStore = defineStore('userManagement', () => {
         id: user.id,
         username: user.full_name ?? user.email ?? 'Unknown',
         email: user.email ?? '',
-        role:
-          (typeof metadata.business_role === 'string' && metadata.business_role) ||
-          (typeof metadata.role === 'string' && metadata.role) ||
-          user.role ||
-          'user',
+        role: resolveDisplayRole(
+          typeof metadata.role === 'string' ? metadata.role : user.role,
+          typeof metadata.business_role === 'string' ? metadata.business_role : null,
+        ),
         city,
         cityId,
       }
