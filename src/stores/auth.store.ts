@@ -47,19 +47,10 @@ export const useAuthStore = defineStore('auth', () => {
       parseBusinessRole(user.value?.user_metadata?.role),
   )
   const isBusinessUser = computed(() => businessRole.value !== null)
-  // Space owners run the normal-user shell; entrepreneurs and suppliers share
-  // the business shell under /app.
   const isSpaceOwner = computed(() => businessRole.value === 'space_owner')
-  const usesBusinessShell = computed(() => isBusinessUser.value && !isSpaceOwner.value)
-  const homeRouteName = computed(() => {
-    if (isAdmin.value) {
-      return 'admin-map'
-    }
-    if (isSpaceOwner.value) {
-      return 'space-owner-map'
-    }
-    return usesBusinessShell.value ? 'entrepreneur-map' : 'user-map'
-  })
+  // Non-admin accounts share Map / Home / My Site / Messages under /app.
+  const usesBusinessShell = computed(() => isLoggedIn.value && !isAdmin.value)
+  const homeRouteName = computed(() => (isAdmin.value ? 'admin-map' : 'entrepreneur-map'))
 
   // 3. Actions
   const initializeAuthListener = () => {

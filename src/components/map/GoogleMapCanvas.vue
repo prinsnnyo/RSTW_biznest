@@ -191,6 +191,10 @@ async function renderPinnedLocations(
   googleMapAdapter.renderPinnedLocations(pins, onPinClick)
 }
 
+function openPinnedLocation(pinId: string): boolean {
+  return googleMapAdapter.openPinnedLocation(pinId)
+}
+
 defineExpose({
   renderBarangayBorders,
   renderMappedZones,
@@ -207,6 +211,7 @@ defineExpose({
   getPoiTypes,
   setPoiTypeVisible,
   renderPinnedLocations,
+  openPinnedLocation,
 })
 </script>
 

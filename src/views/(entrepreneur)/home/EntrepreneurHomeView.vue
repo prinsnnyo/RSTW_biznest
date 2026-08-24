@@ -32,15 +32,15 @@ const roleMeta = computed(() => {
     }
   }
   return {
-    title: 'Space Owner workspace',
-    blurb: 'Pin your rentable space in Butuan and publish a site visitors can open from the map.',
-    action: 'List a space on the map',
+    title: 'Explore Butuan',
+    blurb: 'Browse spaces on the map. Become a partner to publish your own site.',
+    action: 'Open the map',
   }
 })
 
 const roleLabel = computed(() => {
   const role = authStore.businessRole
-  return BUSINESS_ROLE_OPTIONS.find((option) => option.value === role)?.label ?? 'Space Owner'
+  return BUSINESS_ROLE_OPTIONS.find((option) => option.value === role)?.label ?? 'Member'
 })
 </script>
 
@@ -61,11 +61,20 @@ const roleLabel = computed(() => {
           <RouterLink to="/app/map">{{ roleMeta.action }}</RouterLink>
         </Button>
         <Button
+          v-if="authStore.isBusinessUser"
           as-child
           variant="outline"
           class="border-primary-foreground/30 bg-transparent text-primary-foreground hover:bg-primary-foreground/10"
         >
           <RouterLink to="/app/my-site">Open site builder</RouterLink>
+        </Button>
+        <Button
+          v-else
+          as-child
+          variant="outline"
+          class="border-primary-foreground/30 bg-transparent text-primary-foreground hover:bg-primary-foreground/10"
+        >
+          <RouterLink to="/app/apply">Become a partner</RouterLink>
         </Button>
       </div>
     </section>
@@ -84,7 +93,7 @@ const roleLabel = computed(() => {
           </Button>
         </CardContent>
       </Card>
-      <Card>
+      <Card v-if="authStore.isBusinessUser">
         <CardHeader>
           <CardTitle>Build</CardTitle>
           <CardDescription>Customize themes, layouts, fonts, and CMS sections.</CardDescription>

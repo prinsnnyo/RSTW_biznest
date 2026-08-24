@@ -8,7 +8,7 @@ import ChatRecommendationCard from './ChatRecommendationCard.vue'
 defineProps<{ message: ChatMessage }>()
 
 const emit = defineEmits<{
-  'view-on-map': [location: { lat: number; lng: number; name: string }]
+  'view-on-map': [location: { lat: number; lng: number; name: string; id?: string }]
 }>()
 </script>
 

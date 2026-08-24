@@ -16,7 +16,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   close: []
   send: [text: string]
-  'view-on-map': [location: { lat: number; lng: number; name: string }]
+  'view-on-map': [location: { lat: number; lng: number; name: string; id?: string }]
 }>()
 
 const draft = ref('')

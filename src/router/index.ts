@@ -8,9 +8,6 @@ import AuthLayout from '@/layouts/AuthLayout.vue'
 import InnerLayout from '@/layouts/InnerLayout.vue'
 import EntrepreneurLayout from '@/layouts/EntrepreneurLayout.vue'
 import UserSidebar from '@/components/UserSidebar.vue'
-import SpaceOwnerSidebar from '@/components/SpaceOwnerSidebar.vue'
-import SpaceOwnerMapView from '@/views/(space-owner)/map/SpaceOwnerMapView.vue'
-import UserMapView from '@/views/(user)/map/UserMapView.vue'
 import UserReportsView from '@/views/(user)/reports/ReportsView.vue'
 import ApplyBusinessView from '@/views/(user)/apply/ApplyBusinessView.vue'
 
@@ -112,7 +109,7 @@ const router = createRouter({
           path: 'my-site',
           name: 'entrepreneur-site-builder',
           component: SiteBuilderView,
-          meta: { requiresAuth: true, requiresBusinessShell: true },
+          meta: { requiresAuth: true, requiresBusinessShell: true, requiresPartner: true },
         },
         {
           path: 'messages',
@@ -120,27 +117,21 @@ const router = createRouter({
           component: MessagesView,
           meta: { requiresAuth: true, requiresBusinessShell: true },
         },
+        {
+          path: 'apply',
+          name: 'user-apply-business',
+          component: ApplyBusinessView,
+          meta: { requiresAuth: true, requiresBusinessShell: true },
+        },
       ],
     },
     {
-      // Space owners get the normal-user shell, on their own routes so the two
-      // can diverge later without touching each other.
       path: '/space-owner',
-      component: InnerLayout,
-      props: { sidebar: SpaceOwnerSidebar },
-      meta: { requiresAuth: true, requiresSpaceOwner: true },
-      children: [
-        {
-          path: '',
-          redirect: { name: 'space-owner-map' },
-        },
-        {
-          path: 'map',
-          name: 'space-owner-map',
-          component: SpaceOwnerMapView,
-          meta: { requiresAuth: true, requiresSpaceOwner: true },
-        },
-      ],
+      redirect: { name: 'entrepreneur-map' },
+    },
+    {
+      path: '/space-owner/:pathMatch(.*)*',
+      redirect: { name: 'entrepreneur-map' },
     },
     {
       path: '/user',
@@ -150,13 +141,11 @@ const router = createRouter({
       children: [
         {
           path: '',
-          redirect: { name: 'user-map' },
+          redirect: { name: 'entrepreneur-map' },
         },
         {
           path: 'map',
-          name: 'user-map',
-          component: UserMapView,
-          meta: { requiresAuth: true },
+          redirect: { name: 'entrepreneur-map' },
         },
         {
           path: 'reports',
@@ -166,9 +155,7 @@ const router = createRouter({
         },
         {
           path: 'apply',
-          name: 'user-apply-business',
-          component: ApplyBusinessView,
-          meta: { requiresAuth: true },
+          redirect: { name: 'user-apply-business' },
         },
       ],
     },
@@ -253,8 +240,8 @@ router.beforeEach(async (to) => {
     return { name: authStore.homeRouteName }
   }
 
-  if (to.meta.requiresSpaceOwner && !authStore.isSpaceOwner) {
-    return { name: authStore.homeRouteName }
+  if (to.meta.requiresPartner && !authStore.isBusinessUser) {
+    return { name: 'entrepreneur-map' }
   }
 
   return true

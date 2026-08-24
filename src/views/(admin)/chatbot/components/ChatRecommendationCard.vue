@@ -9,7 +9,9 @@ import { Building2, ImageOff, MapPin, Phone, Star, Store } from 'lucide-vue-next
 
 const props = defineProps<{ recommendation: ChatRecommendation }>()
 
-const emit = defineEmits<{ 'view-on-map': [location: { lat: number; lng: number; name: string }] }>()
+const emit = defineEmits<{
+  'view-on-map': [location: { lat: number; lng: number; name: string; id?: string }]
+}>()
 
 const hasImageError = ref(false)
 
@@ -30,7 +32,7 @@ function formatRent(rent: number): string {
 function handleViewOnMap(): void {
   if (props.recommendation.kind === 'rental-space') {
     const { location, name } = props.recommendation.space
-    emit('view-on-map', { lat: location.lat, lng: location.lng, name })
+    emit('view-on-map', { lat: location.lat, lng: location.lng, name, id: props.recommendation.space.id })
     return
   }
 

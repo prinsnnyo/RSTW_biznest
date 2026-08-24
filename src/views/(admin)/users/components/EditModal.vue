@@ -23,7 +23,7 @@ import { useAlertContext } from '@/composables/useAlert'
 import { fetchPhilippineCities } from '@/services/cities.service'
 import type { CityOption } from '@/services/cities.service'
 import { useRolesStore } from '@/stores/roles.store'
-import { formatRoleLabel } from '@/utils/roles.utils'
+import { canonicalizeRole, formatRoleLabel, toRoleKey } from '@/utils/roles.utils'
 import { Loader2 } from 'lucide-vue-next'
 import { storeToRefs } from 'pinia'
 
@@ -61,14 +61,14 @@ const roleOptions = computed<string[]>(() => {
 
   const addOption = (value: string): void => {
     const trimmed = value.trim()
-    const key = trimmed.toLowerCase()
+    const key = toRoleKey(trimmed)
 
     if (!trimmed || seen.has(key)) {
       return
     }
 
     seen.add(key)
-    options.push(trimmed)
+    options.push(canonicalizeRole(trimmed))
   }
 
   addOption(role.value)
@@ -78,7 +78,7 @@ const roleOptions = computed<string[]>(() => {
 })
 
 const selectRole = (nextRole: string): void => {
-  role.value = nextRole.trim().toLowerCase()
+  role.value = canonicalizeRole(nextRole)
 }
 
 const selectedCityName = computed(() => {
@@ -145,7 +145,7 @@ watch(
     if (user) {
       username.value = user.username
       email.value = user.email
-      role.value = user.role.trim().toLowerCase()
+      role.value = canonicalizeRole(user.role)
       syncCityIdFromUser(user)
     } else {
       username.value = ''

@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import MapCanvas from '@/components/map/Map.vue'
 import PlaceSidebar from '@/views/(entrepreneur)/map/components/PlaceSidebar.vue'
 import { Button } from '@/components/ui/button'
@@ -17,10 +18,13 @@ import { ensureDefaultSiteSections } from '@/services/site-sections.service'
 import { uploadSiteImage } from '@/services/site-storage.service'
 import type { PinnedLocation, PinnedLocationImage } from '@/types/pinned-location.types'
 import { toMapPinMarker } from '@/utils/map/pinPopup.utils'
+import { mergePublishedWithCatalogPins, isCatalogSpaceId } from '@/utils/catalog-spaces.utils'
 import type { MapProvider } from '@/types/map.types'
 
 const authStore = useAuthStore()
 const { showAlert, showSuccess } = useAlertContext()
+const route = useRoute()
+const router = useRouter()
 
 const mapRef = ref<InstanceType<typeof MapCanvas> | null>(null)
 const pins = ref<PinnedLocation[]>([])
@@ -46,7 +50,13 @@ const canPin = computed(() => authStore.isBusinessUser)
 const loadPins = async (): Promise<void> => {
   isLoading.value = true
   try {
-    pins.value = await listPublishedPins()
+    let published: PinnedLocation[] = []
+    try {
+      published = await listPublishedPins()
+    } catch {
+      published = []
+    }
+    pins.value = mergePublishedWithCatalogPins(published)
     if (authStore.isBusinessUser) {
       myPin.value = await getMyPinnedLocation()
     }
@@ -54,9 +64,10 @@ const loadPins = async (): Promise<void> => {
       pins.value.map(toMapPinMarker),
       (pinId) => {
         selectedPin.value = pins.value.find((pin) => pin.id === pinId) ?? null
-        sheetOpen.value = true
+        sheetOpen.value = !isCatalogSpaceId(pinId)
       },
     )
+    await focusFromQuery()
   } catch (error) {
     showAlert({
       title: 'Unable to load pins',
@@ -78,6 +89,35 @@ const onMapReady = async (): Promise<void> => {
     mapRef.value?.focusLocation(point, 'New pin')
   })
 }
+
+const focusFromQuery = async (): Promise<void> => {
+  const pinId = typeof route.query.pin === 'string' ? route.query.pin : ''
+  const lat = Number(route.query.lat)
+  const lng = Number(route.query.lng)
+
+  if (pinId) {
+    const opened = mapRef.value?.openPinnedLocation(pinId) ?? false
+    if (opened) {
+      selectedPin.value = pins.value.find((pin) => pin.id === pinId) ?? null
+      sheetOpen.value = false
+      await router.replace({ query: {} })
+      return
+    }
+  }
+
+  if (Number.isFinite(lat) && Number.isFinite(lng)) {
+    const label = typeof route.query.label === 'string' ? route.query.label : undefined
+    await mapRef.value?.focusLocation({ lat, lng }, label)
+    await router.replace({ query: {} })
+  }
+}
+
+watch(
+  () => route.query,
+  () => {
+    void focusFromQuery()
+  },
+)
 
 const startPinMode = (): void => {
   if (!canPin.value) {

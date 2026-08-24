@@ -16,7 +16,15 @@ const router = useRouter()
 const { showAlert, showSuccess } = useAlertContext()
 
 const navItems = computed<AdminNavItem[]>(() => {
-  const items = [...primaryEntrepreneurNavItems]
+  const items = primaryEntrepreneurNavItems.filter((item) => {
+    if (item.to === '/app/my-site') {
+      return authStore.isBusinessUser
+    }
+    return true
+  })
+  if (!authStore.isBusinessUser) {
+    items.push({ label: 'Become a partner', to: '/app/apply', icon: 'users' })
+  }
   if (authStore.isAdmin) {
     items.push({ label: 'Admin', to: '/admin/map', icon: 'roles' })
   }

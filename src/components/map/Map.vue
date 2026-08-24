@@ -272,6 +272,13 @@ async function renderPinnedLocations(
   googleMapAdapter.renderPinnedLocations(pins, onPinClick)
 }
 
+function openPinnedLocation(pinId: string): boolean {
+  if (props.provider === 'leaflet') {
+    return leafletMapAdapter.openPinnedLocation(pinId)
+  }
+  return googleMapAdapter.openPinnedLocation(pinId)
+}
+
 defineExpose({
   renderBarangayBorders,
   renderMappedZones,
@@ -285,6 +292,7 @@ defineExpose({
   setCenter,
   setPoisVisible,
   renderPinnedLocations,
+  openPinnedLocation,
 })
 </script>
 

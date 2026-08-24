@@ -1,6 +1,7 @@
 import type { UserRow, RawUserMetaData } from '@/views/(admin)/users/types/users-table.types'
 import { getSupabaseClient } from '@/services/supabase.client'
 import { fetchPhilippineCities, toCityNameMap } from '@/services/cities.service'
+import { canonicalizeRole, isBusinessRoleKey, resolveDisplayRole } from '@/utils/roles.utils'
 
 type GenericDbRow = Record<string, unknown>
 
@@ -33,14 +34,6 @@ const getText = (row: GenericDbRow, keys: string[]): string => {
   }
 
   return ''
-}
-
-// Roles are user-defined in the `roles` table, so any non-empty value is kept
-// as-is (lower-cased) rather than being collapsed into the three built-ins.
-const normalizeRole = (value: string): string => {
-  const normalized = value.trim().toLowerCase()
-
-  return normalized.length > 0 ? normalized : 'user'
 }
 
 const getOptionalText = (value: unknown): string | null => {
@@ -120,7 +113,7 @@ const toUserRow = (input: unknown, cityNameById: Map<string, string>): UserRow |
   const meta = toRawUserMetaData(row['raw_user_meta_data'])
   username = meta.username || username
   email = meta.email || email
-  role = normalizeRole(meta.business_role || meta.role || role)
+  role = resolveDisplayRole(meta.role, meta.business_role)
 
   const cityMeta = getCityMetadata(meta)
   const cityName = cityMeta.cityId
@@ -210,7 +203,9 @@ export const updateUserProfile = async (
   }
 
   if (updates.role !== undefined) {
-    metadataUpdates.role = updates.role
+    const canonicalRole = canonicalizeRole(updates.role)
+    metadataUpdates.role = canonicalRole
+    metadataUpdates.business_role = isBusinessRoleKey(canonicalRole) ? canonicalRole : ''
   }
 
   if (resolvedCityName !== undefined) {

@@ -1,13 +1,15 @@
 ﻿<script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { RouterLink, useRoute } from 'vue-router'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { useAlertContext } from '@/composables/useAlert'
+import { useAuthStore } from '@/stores/auth.store'
 import { createContactMessage } from '@/services/contact-messages.service'
 import { getPinnedLocationById } from '@/services/pinned-locations.service'
 import { listSiteSections } from '@/services/site-sections.service'
+import { isCatalogSpaceId } from '@/utils/catalog-spaces.utils'
 import {
   BUSINESS_ROLE_OPTIONS,
   type PinnedLocation,
@@ -16,6 +18,7 @@ import {
 import { siteFontStacks, SITE_FONT_STACK } from '@/utils/site-design'
 
 const route = useRoute()
+const authStore = useAuthStore()
 const { showAlert, showSuccess } = useAlertContext()
 
 const pin = ref<PinnedLocation | null>(null)
@@ -145,6 +148,23 @@ const designStyle = computed(() => {
 const roleLabel = computed(() => {
   if (!pin.value) return ''
   return BUSINESS_ROLE_OPTIONS.find((option) => option.value === pin.value?.role)?.label ?? ''
+})
+
+const canEditThisSite = computed(
+  () =>
+    Boolean(pin.value) &&
+    authStore.isBusinessUser &&
+    (isCatalogSpaceId(pin.value?.id ?? '') || pin.value?.user_id === authStore.user?.id),
+)
+
+const editSitePath = computed(() => {
+  if (!pin.value) {
+    return '/app/my-site'
+  }
+  if (isCatalogSpaceId(pin.value.id)) {
+    return `/app/my-site?listing=${encodeURIComponent(pin.value.id)}`
+  }
+  return '/app/my-site'
 })
 
 const sectionByKey = (key: SiteSection['section_key']): SiteSection | undefined =>
@@ -280,6 +300,14 @@ const submitContact = async (): Promise<void> => {
     return
   }
 
+  if (isCatalogSpaceId(pin.value.id)) {
+    showAlert({
+      title: 'Edit this listing in My Site',
+      description: 'Open My Site from the banner above to update this space website.',
+    })
+    return
+  }
+
   isSending.value = true
   try {
     await createContactMessage({
@@ -317,6 +345,13 @@ watch(
 
 <template>
   <div class="bg-background text-foreground min-h-screen">
+    <div
+      v-if="!isLoading && pin && canEditThisSite"
+      class="bg-card text-foreground border-border sticky top-0 z-40 flex items-center justify-between gap-3 border-b px-4 py-2 text-sm"
+    >
+      <span>This website is editable.</span>
+      <RouterLink class="text-primary font-medium underline" :to="editSitePath">Edit in My Site</RouterLink>
+    </div>
     <div v-if="isLoading" class="text-muted-foreground p-10 text-center text-sm">Loading site…</div>
     <div v-else-if="!pin" class="text-muted-foreground p-10 text-center text-sm">Site not found.</div>
 

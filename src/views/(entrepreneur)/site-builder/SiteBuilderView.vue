@@ -1,6 +1,6 @@
 ﻿<script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { RouterLink } from 'vue-router'
+import { RouterLink, useRoute } from 'vue-router'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -14,10 +14,11 @@ import {
 } from '@/components/ui/select'
 import { useAlertContext } from '@/composables/useAlert'
 import { useAuthStore } from '@/stores/auth.store'
-import { getMyPinnedLocation, updatePinnedLocation } from '@/services/pinned-locations.service'
+import { getMyPinnedLocation, getPinnedLocationById, updatePinnedLocation } from '@/services/pinned-locations.service'
 import {
   ensureDefaultSiteSections,
   upsertSiteSections,
+  listSiteSections,
 } from '@/services/site-sections.service'
 import { uploadSiteImage } from '@/services/site-storage.service'
 import {
@@ -40,8 +41,10 @@ import {
   SITE_FONT_STACK,
   siteFontStacks,
 } from '@/utils/site-design'
+import { isCatalogSpaceId } from '@/utils/catalog-spaces.utils'
 
 const authStore = useAuthStore()
+const route = useRoute()
 const { showAlert, showSuccess } = useAlertContext()
 
 const pin = ref<PinnedLocation | null>(null)
@@ -193,7 +196,10 @@ const previewHeroLines = computed(() => {
 const load = async (): Promise<void> => {
   isLoading.value = true
   try {
-    pin.value = await getMyPinnedLocation()
+    const listingId = typeof route.query.listing === 'string' ? route.query.listing : ''
+    pin.value = isCatalogSpaceId(listingId)
+      ? await getPinnedLocationById(listingId)
+      : await getMyPinnedLocation()
     if (!pin.value) {
       return
     }
@@ -205,7 +211,9 @@ const load = async (): Promise<void> => {
     fontSecondary.value = pin.value.font_secondary
     fontTertiary.value = pin.value.font_tertiary
     isPublished.value = pin.value.is_published
-    sections.value = await ensureDefaultSiteSections(pin.value.id)
+    sections.value = isCatalogSpaceId(pin.value.id)
+      ? await listSiteSections(pin.value.id)
+      : await ensureDefaultSiteSections(pin.value.id)
   } catch (error) {
     showAlert({
       title: 'Unable to load site',

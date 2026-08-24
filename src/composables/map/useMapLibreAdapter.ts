@@ -87,6 +87,7 @@ export function useMapLibreAdapter(options: MapLibreAdapterOptions) {
   let hazardsClickCleanup: (() => void) | null = null
   let drawPreviewVertexIds: string[] = []
   let pinMarkerIds: string[] = []
+  const pinMarkers = new Map<string, Marker>()
   let poiLayerIds: string[] = []
   let isDrawMode = false
   let currentTheme: MapLibreTheme = 'light'
@@ -274,6 +275,7 @@ export function useMapLibreAdapter(options: MapLibreAdapterOptions) {
   function destroyPinMarkers(): void {
     pinMarkerIds.forEach((id) => engine?.removeMarker(id))
     pinMarkerIds = []
+    pinMarkers.clear()
   }
 
   async function init(): Promise<void> {
@@ -753,10 +755,24 @@ export function useMapLibreAdapter(options: MapLibreAdapterOptions) {
       marker.setPopup(popup)
 
       pinMarkerIds.push(markerId)
+      pinMarkers.set(pin.id, marker)
       marker.getElement().addEventListener('click', () => {
         handler?.(pin.id)
       })
     })
+  }
+
+  function openPinnedLocation(pinId: string): boolean {
+    const pin = lastPins?.pins.find((entry) => entry.id === pinId)
+    const marker = pinMarkers.get(pinId)
+    if (!pin || !marker || !engine) {
+      return false
+    }
+
+    engine.flyTo({ lat: pin.lat, lng: pin.lng }, { zoom: 17, duration: 800 })
+    marker.togglePopup()
+    lastPins?.handler?.(pinId)
+    return true
   }
 
   return {
@@ -779,5 +795,6 @@ export function useMapLibreAdapter(options: MapLibreAdapterOptions) {
     showLocationMarker,
     clearFocusMarker: destroyFocusMarker,
     renderPinnedLocations,
+    openPinnedLocation,
   }
 }
