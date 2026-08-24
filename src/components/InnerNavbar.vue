@@ -19,6 +19,15 @@ import {
 } from '@/components/ui/dropdown-menu'
 import logoImage from '@/assets/images/logo.png'
 
+const props = withDefaults(
+  defineProps<{
+    showLogout?: boolean
+  }>(),
+  {
+    showLogout: true,
+  },
+)
+
 const authStore = useAuthStore()
 const router = useRouter()
 const { showAlert, showSuccess } = useAlertContext()
@@ -115,8 +124,9 @@ const handleLogout = async (): Promise<void> => {
             >
               {{ userEmail }}
             </DropdownMenuLabel>
-            <DropdownMenuSeparator />
+            <DropdownMenuSeparator v-if="props.showLogout" />
             <DropdownMenuItem
+              v-if="props.showLogout"
               :disabled="!authStore.isLoggedIn || isLoggingOut"
               @select="handleLogout"
             >
