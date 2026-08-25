@@ -10,6 +10,7 @@ import EntrepreneurLayout from '@/layouts/EntrepreneurLayout.vue'
 import UserSidebar from '@/components/UserSidebar.vue'
 import UserReportsView from '@/views/(user)/reports/ReportsView.vue'
 import ApplyBusinessView from '@/views/(user)/apply/ApplyBusinessView.vue'
+import PartnerBillingView from '@/views/(user)/billing/PartnerBillingView.vue'
 
 //Auth Routes
 import LoginView from '@/views/auth/login/LoginView.vue'
@@ -116,6 +117,12 @@ const router = createRouter({
           name: 'entrepreneur-messages',
           component: MessagesView,
           meta: { requiresAuth: true, requiresBusinessShell: true },
+        },
+        {
+          path: 'billing',
+          name: 'user-partner-billing',
+          component: PartnerBillingView,
+          meta: { requiresAuth: true, requiresBusinessShell: true, requiresRegularUser: true },
         },
         {
           path: 'apply',
@@ -242,6 +249,10 @@ router.beforeEach(async (to) => {
 
   if (to.meta.requiresPartner && !authStore.isBusinessUser) {
     return { name: 'entrepreneur-map' }
+  }
+
+  if (to.meta.requiresRegularUser && authStore.isBusinessUser) {
+    return { name: 'entrepreneur-home' }
   }
 
   return true

@@ -74,7 +74,7 @@ const roleLabel = computed(() => {
           variant="outline"
           class="border-primary-foreground/30 bg-transparent text-primary-foreground hover:bg-primary-foreground/10"
         >
-          <RouterLink to="/app/apply">Become a partner</RouterLink>
+          <RouterLink to="/app/billing">Become a partner</RouterLink>
         </Button>
       </div>
     </section>
