@@ -36,7 +36,7 @@ import logoImage from '@/assets/images/logo.png'
           <RouterLink to="/about">About</RouterLink>
         </Button>
         <ModeToggle />
-        <Button as-child size="sm">
+        <Button as-child size="sm" class="rounded-full px-5 shadow-md shadow-accent/20">
           <RouterLink to="/login">Get Started</RouterLink>
         </Button>
       </div>
