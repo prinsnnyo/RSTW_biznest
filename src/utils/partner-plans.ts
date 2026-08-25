@@ -54,3 +54,15 @@ export const PARTNER_PLANS: PartnerPlan[] = [
 
 export const formatPlanPrice = (price: number): string =>
   `₱${price.toLocaleString('en-PH')}`
+
+export const getPartnerPlan = (id: PartnerPlanId): PartnerPlan => {
+  const match = PARTNER_PLANS.find((plan) => plan.id === id)
+  if (match) {
+    return match
+  }
+  const growth = PARTNER_PLANS.find((plan) => plan.id === 'growth')
+  if (growth) {
+    return growth
+  }
+  throw new Error('Partner plans are missing')
+}
