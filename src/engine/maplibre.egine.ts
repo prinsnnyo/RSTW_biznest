@@ -6,7 +6,9 @@ import {
   GeolocateControl,
   ScaleControl,
   AttributionControl,
+  setWorkerUrl,
 } from 'maplibre-gl'
+import maplibreWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url'
 import type {
   ControlPosition,
   FitBoundsOptions,
@@ -61,6 +63,16 @@ export function buildMaptilerStyleUrl(styleId: string, apiKey: string): string {
 
 function toLngLat(point: LatLng): [number, number] {
   return [point.lng, point.lat]
+}
+
+let maplibreWorkerReady = false
+
+function ensureMapLibreWorker(): void {
+  if (maplibreWorkerReady) {
+    return
+  }
+  setWorkerUrl(maplibreWorkerUrl)
+  maplibreWorkerReady = true
 }
 
 export class MapLibreEngine {
@@ -118,6 +130,8 @@ export class MapLibreEngine {
     const center = overrides?.center ?? this.options.center ?? DEFAULT_CENTER
     const zoom = overrides?.zoom ?? this.options.zoom ?? DEFAULT_ZOOM
     const pitch = overrides?.pitch ?? this.options.pitch ?? DEFAULT_PITCH
+
+    ensureMapLibreWorker()
 
     this.map = new MapLibreMap({
       container: this.options.container,
