@@ -4,6 +4,73 @@ import type { MapDrawPoint, MappedZone } from '@/types/zoning.types'
 
 export type MapProvider = 'google' | 'leaflet'
 
+/**
+ * Mirrors the category grouping MapTiler's own layer-visibility UI uses for
+ * an OpenMapTiles-schema style (what `streets-v2` is built on).
+ */
+export type MapLayerCategory =
+  | 'poi'
+  | 'administrative'
+  | 'built-up'
+  | 'roads'
+  | 'transit'
+  | 'water'
+  | 'nature'
+  | 'background'
+
+export interface MapLayerInfo {
+  id: string
+  label: string
+  category: MapLayerCategory
+}
+
+export type MapProjectionType = 'globe' | 'mercator'
+
+/**
+ * MapLibre's globe projection has no native starfield/atmosphere-image
+ * support — these presets are rendered by our own canvas overlay
+ * (`globeSpaceOverlay.utils.ts`), not the MapLibre style spec.
+ */
+export type MapSpacePreset =
+  | 'none'
+  | 'space'
+  | 'stars'
+  | 'milky-way'
+  | 'subtle-milky-way'
+  | 'bright-milky-way'
+  | 'colored-milky-way'
+
+export interface MapSpaceSettings {
+  preset: MapSpacePreset
+  haloColor: string
+  haloOpacity: number
+  haloScale: number
+}
+
+export type MapLightAnchor = 'map' | 'viewport'
+
+export interface MapLightSettings {
+  anchor: MapLightAnchor
+  color: string
+  /** `[radial distance, azimuthal angle°, polar angle°]` — the raw MapLibre light-position triple. */
+  position: [number, number, number]
+  intensity: number
+}
+
+export interface MapSkySettings {
+  skyColor: string
+  horizonColor: string
+  fogColor: string
+}
+
+export interface MapSettings {
+  projection: MapProjectionType
+  terrainEnabled: boolean
+  space: MapSpaceSettings
+  light: MapLightSettings
+  sky: MapSkySettings
+}
+
 export type BarangayLngLat = [number, number]
 
 export interface BarangayPolygonGeometry {
@@ -57,6 +124,13 @@ export interface MapCanvasApi {
   setCenter(center: { lat: number; lng: number }, zoom?: number): void
   getPoiTypes(): string[]
   setPoiTypeVisible(type: string, visible: boolean): void
+  getMapLayers?(): MapLayerInfo[]
+  setMapLayerVisible?(id: string, visible: boolean): void
+  setMapProjection?(type: MapProjectionType): void
+  setMapTerrain?(enabled: boolean): void
+  setMapLight?(light: MapLightSettings): void
+  setMapSky?(sky: MapSkySettings): void
+  setMapSpace?(space: MapSpaceSettings): void
   renderPinnedLocations(
     pins: MapPinMarker[],
     onPinClick?: ((pinId: string) => void) | null,

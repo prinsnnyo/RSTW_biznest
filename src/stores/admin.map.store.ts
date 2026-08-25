@@ -34,7 +34,19 @@ import type {
   HazardId,
   UpdateHazardInput,
 } from '@/types/hazard.types.ts'
-import type { BarangayFeatureCollection, MapCanvasApi } from '@/types/map.types.ts'
+import type {
+  BarangayFeatureCollection,
+  MapCanvasApi,
+  MapLayerCategory,
+  MapLayerInfo,
+  MapLightAnchor,
+  MapLightSettings,
+  MapProjectionType,
+  MapSettings,
+  MapSkySettings,
+  MapSpacePreset,
+  MapSpaceSettings,
+} from '@/types/map.types.ts'
 import type {
   CreateMappedZoneInput,
   CreateZoningLayerInput,
@@ -47,7 +59,13 @@ import type {
 import type { BusinessRole, MapPinMarker, PinnedLocation } from '@/types/pinned-location.types.ts'
 import { toMapPinMarker } from '@/utils/map/pinPopup.utils.ts'
 
-export type AdminMapPanelKey = 'zoning' | 'hazard' | 'local-business' | 'reports' | 'poi'
+export type AdminMapPanelKey =
+  | 'zoning'
+  | 'hazard'
+  | 'local-business'
+  | 'reports'
+  | 'poi'
+  | 'map-settings'
 
 const FOCUS_STORAGE_KEY = 'biznest:admin-map:focus'
 
@@ -106,6 +124,103 @@ function saveStoredHiddenPoiTypes(types: string[]): void {
   }
 }
 
+const HIDDEN_MAP_LAYERS_STORAGE_KEY = 'biznest:admin-map:hidden-map-layers'
+
+function loadStoredHiddenMapLayerIds(): string[] {
+  try {
+    const raw = localStorage.getItem(HIDDEN_MAP_LAYERS_STORAGE_KEY)
+    if (!raw) {
+      return []
+    }
+
+    const parsed = JSON.parse(raw)
+    return Array.isArray(parsed) ? parsed.filter((value) => typeof value === 'string') : []
+  } catch {
+    return []
+  }
+}
+
+function saveStoredHiddenMapLayerIds(ids: string[]): void {
+  try {
+    localStorage.setItem(HIDDEN_MAP_LAYERS_STORAGE_KEY, JSON.stringify(ids))
+  } catch {
+    // Storage unavailable (private mode, quota) — persistence is best-effort.
+  }
+}
+
+// MapTiler's own layer-visibility UI lists categories in this order.
+const MAP_LAYER_CATEGORY_ORDER: MapLayerCategory[] = [
+  'poi',
+  'administrative',
+  'built-up',
+  'roads',
+  'transit',
+  'water',
+  'nature',
+  'background',
+]
+
+const MAP_SETTINGS_STORAGE_KEY = 'biznest:admin-map:map-settings'
+
+// Mirrors MapLibre's own style-spec defaults for light/sky, so leaving a
+// control untouched matches what the basemap already renders.
+function defaultMapSettings(): MapSettings {
+  return {
+    projection: 'mercator',
+    terrainEnabled: false,
+    space: {
+      preset: 'none',
+      haloColor: '#88c6fc',
+      haloOpacity: 0.35,
+      haloScale: 1.15,
+    },
+    light: {
+      anchor: 'viewport',
+      color: '#ffffff',
+      position: [1.15, 210, 30],
+      intensity: 0.5,
+    },
+    sky: {
+      skyColor: '#88c6fc',
+      horizonColor: '#ffffff',
+      fogColor: '#ffffff',
+    },
+  }
+}
+
+function loadStoredMapSettings(): MapSettings {
+  const defaults = defaultMapSettings()
+  try {
+    const raw = localStorage.getItem(MAP_SETTINGS_STORAGE_KEY)
+    if (!raw) {
+      return defaults
+    }
+
+    const parsed = JSON.parse(raw) as Partial<MapSettings> | null
+    if (!parsed || typeof parsed !== 'object') {
+      return defaults
+    }
+
+    return {
+      projection: parsed.projection === 'globe' ? 'globe' : defaults.projection,
+      terrainEnabled: typeof parsed.terrainEnabled === 'boolean' ? parsed.terrainEnabled : defaults.terrainEnabled,
+      space: { ...defaults.space, ...parsed.space },
+      light: { ...defaults.light, ...parsed.light },
+      sky: { ...defaults.sky, ...parsed.sky },
+    }
+  } catch {
+    return defaults
+  }
+}
+
+function saveStoredMapSettings(settings: MapSettings): void {
+  try {
+    localStorage.setItem(MAP_SETTINGS_STORAGE_KEY, JSON.stringify(settings))
+  } catch {
+    // Storage unavailable (private mode, quota) — persistence is best-effort.
+  }
+}
+
 export const useAdminMapStore = defineStore('adminMap', () => {
   // ── 1. State ────────────────────────────────────────────────────────────────
 
@@ -126,6 +241,16 @@ export const useAdminMapStore = defineStore('adminMap', () => {
   // Map display — built-in basemap POI labels, one entry per style category
   const poiTypes = ref<string[]>([])
   const hiddenPoiTypes = ref<string[]>(loadStoredHiddenPoiTypes())
+
+  // Map display — full MapTiler-style layer catalog (POI/Administrative/
+  // Built-up/Roads/Transit/Water/Nature/Background), grouped horizontally by
+  // category with each category's individual labels listed vertically.
+  const mapLayers = ref<MapLayerInfo[]>([])
+  const hiddenMapLayerIds = ref<string[]>(loadStoredHiddenMapLayerIds())
+  const activeLayerCategory = ref<MapLayerCategory>('poi')
+
+  // Map Settings — Projection / Space / 3D Terrain / Global Light / Sky.
+  const mapSettings = ref<MapSettings>(loadStoredMapSettings())
 
   // Zoning
   const isSavingLayer = ref(false)
@@ -230,6 +355,17 @@ export const useAdminMapStore = defineStore('adminMap', () => {
   const editingMappedZoneGeometryName = computed(() => editingMappedZoneGeometry.value?.name ?? '')
 
   const hiddenPoiTypeSet = computed(() => new Set(hiddenPoiTypes.value))
+
+  const hiddenMapLayerIdSet = computed(() => new Set(hiddenMapLayerIds.value))
+
+  const mapLayerCategories = computed<MapLayerCategory[]>(() => {
+    const present = new Set(mapLayers.value.map((layer) => layer.category))
+    return MAP_LAYER_CATEGORY_ORDER.filter((category) => present.has(category))
+  })
+
+  const activeMapLayers = computed(() =>
+    mapLayers.value.filter((layer) => layer.category === activeLayerCategory.value),
+  )
 
   const hiddenBusinessRoleSet = computed(() => new Set(hiddenBusinessRoles.value))
 
@@ -921,6 +1057,131 @@ export const useAdminMapStore = defineStore('adminMap', () => {
     mapRef.value?.setPoiTypeVisible(type, wasHidden)
   }
 
+  function isMapLayerHidden(id: string): boolean {
+    return hiddenMapLayerIdSet.value.has(id)
+  }
+
+  function isMapLayerCategoryHidden(category: MapLayerCategory): boolean {
+    const layers = mapLayers.value.filter((layer) => layer.category === category)
+    return layers.length > 0 && layers.every((layer) => hiddenMapLayerIdSet.value.has(layer.id))
+  }
+
+  function setMapLayerHidden(id: string, hidden: boolean): void {
+    const alreadyHidden = hiddenMapLayerIdSet.value.has(id)
+    if (hidden === alreadyHidden) {
+      return
+    }
+
+    hiddenMapLayerIds.value = hidden
+      ? [...hiddenMapLayerIds.value, id]
+      : hiddenMapLayerIds.value.filter((existing) => existing !== id)
+    saveStoredHiddenMapLayerIds(hiddenMapLayerIds.value)
+    mapRef.value?.setMapLayerVisible?.(id, !hidden)
+  }
+
+  function toggleMapLayerVisibility(id: string): void {
+    setMapLayerHidden(id, !isMapLayerHidden(id))
+  }
+
+  function toggleMapLayerCategoryVisibility(category: MapLayerCategory): void {
+    const hide = !isMapLayerCategoryHidden(category)
+    mapLayers.value
+      .filter((layer) => layer.category === category)
+      .forEach((layer) => setMapLayerHidden(layer.id, hide))
+  }
+
+  function setActiveLayerCategory(category: MapLayerCategory): void {
+    activeLayerCategory.value = category
+  }
+
+  function persistMapSettings(): void {
+    saveStoredMapSettings(mapSettings.value)
+  }
+
+  function setProjectionType(type: MapProjectionType): void {
+    mapSettings.value.projection = type
+    persistMapSettings()
+    mapRef.value?.setMapProjection?.(type)
+  }
+
+  function setTerrainEnabled(enabled: boolean): void {
+    mapSettings.value.terrainEnabled = enabled
+    persistMapSettings()
+    mapRef.value?.setMapTerrain?.(enabled)
+  }
+
+  function updateSpaceSettings(patch: Partial<MapSpaceSettings>): void {
+    mapSettings.value.space = { ...mapSettings.value.space, ...patch }
+    persistMapSettings()
+    mapRef.value?.setMapSpace?.(mapSettings.value.space)
+  }
+
+  function setSpacePreset(preset: MapSpacePreset): void {
+    updateSpaceSettings({ preset })
+  }
+
+  function setHaloColor(color: string): void {
+    updateSpaceSettings({ haloColor: color })
+  }
+
+  function setHaloOpacity(opacity: number): void {
+    updateSpaceSettings({ haloOpacity: opacity })
+  }
+
+  function setHaloScale(scale: number): void {
+    updateSpaceSettings({ haloScale: scale })
+  }
+
+  function updateLightSettings(patch: Partial<MapLightSettings>): void {
+    mapSettings.value.light = { ...mapSettings.value.light, ...patch }
+    persistMapSettings()
+    mapRef.value?.setMapLight?.(mapSettings.value.light)
+  }
+
+  function setLightAnchor(anchor: MapLightAnchor): void {
+    updateLightSettings({ anchor })
+  }
+
+  function setLightColor(color: string): void {
+    updateLightSettings({ color })
+  }
+
+  function setLightIntensity(intensity: number): void {
+    updateLightSettings({ intensity })
+  }
+
+  function setLightPositionComponent(index: 0 | 1 | 2, value: number): void {
+    const position = [...mapSettings.value.light.position] as [number, number, number]
+    position[index] = value
+    updateLightSettings({ position })
+  }
+
+  function updateSkySettings(patch: Partial<MapSkySettings>): void {
+    mapSettings.value.sky = { ...mapSettings.value.sky, ...patch }
+    persistMapSettings()
+    mapRef.value?.setMapSky?.(mapSettings.value.sky)
+  }
+
+  function setSkyColor(color: string): void {
+    updateSkySettings({ skyColor: color })
+  }
+
+  function setHorizonColor(color: string): void {
+    updateSkySettings({ horizonColor: color })
+  }
+
+  function setFogColor(color: string): void {
+    updateSkySettings({ fogColor: color })
+  }
+
+  function applyMapSettingsToCanvas(): void {
+    mapRef.value?.setMapProjection?.(mapSettings.value.projection)
+    mapRef.value?.setMapTerrain?.(mapSettings.value.terrainEnabled)
+    mapRef.value?.setMapLight?.(mapSettings.value.light)
+    mapRef.value?.setMapSky?.(mapSettings.value.sky)
+    mapRef.value?.setMapSpace?.(mapSettings.value.space)
+  }
+
   function handleFreehandPoint(point: MapDrawPoint): void {
     drawActor.send({ type: 'ADD_POINT', point })
   }
@@ -936,6 +1197,19 @@ export const useAdminMapStore = defineStore('adminMap', () => {
     hiddenPoiTypes.value.forEach((type) => {
       mapRef.value?.setPoiTypeVisible(type, false)
     })
+
+    mapLayers.value = mapRef.value?.getMapLayers?.() ?? []
+    if (
+      mapLayers.value.length > 0 &&
+      !mapLayers.value.some((layer) => layer.category === activeLayerCategory.value)
+    ) {
+      activeLayerCategory.value = mapLayers.value[0]!.category
+    }
+    hiddenMapLayerIds.value.forEach((id) => {
+      mapRef.value?.setMapLayerVisible?.(id, false)
+    })
+
+    applyMapSettingsToCanvas()
     mapRef.value?.setDrawMode(isAnyDrawModeActive.value)
     mapRef.value?.setMapClickHandler(isAnyDrawModeActive.value ? handleMapClick : null)
     mapRef.value?.setDrawPointMoveHandler(isAnyDrawModeActive.value ? handleDrawPointMove : null)
@@ -1090,6 +1364,29 @@ export const useAdminMapStore = defineStore('adminMap', () => {
     poiTypes,
     hiddenPoiTypes,
     togglePoiTypeVisibility,
+    mapLayers,
+    mapLayerCategories,
+    activeLayerCategory,
+    activeMapLayers,
+    isMapLayerHidden,
+    isMapLayerCategoryHidden,
+    toggleMapLayerVisibility,
+    toggleMapLayerCategoryVisibility,
+    setActiveLayerCategory,
+    mapSettings,
+    setProjectionType,
+    setTerrainEnabled,
+    setSpacePreset,
+    setHaloColor,
+    setHaloOpacity,
+    setHaloScale,
+    setLightAnchor,
+    setLightColor,
+    setLightIntensity,
+    setLightPositionComponent,
+    setSkyColor,
+    setHorizonColor,
+    setFogColor,
     // Zoning
     isSavingLayer,
     isSavingMappedZone,
