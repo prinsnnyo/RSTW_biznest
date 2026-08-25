@@ -49,7 +49,6 @@ const zones = computed(() => {
           :disabled="isSubmitting"
           @click="emit('edit-mapped-zone-geometry', zone.id)"
         >
-          <span class="text-[10px] font-semibold">Shape</span>
         </Button>
         <Button
           variant="ghost"
