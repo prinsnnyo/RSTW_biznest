@@ -195,7 +195,8 @@ onMounted(async () => {
       flyToStop(0)
       scheduleNext()
     }
-  } catch {
+  } catch (error) {
+    console.warn('Auth login map preview failed', error)
     startFallback()
   }
 })
@@ -212,7 +213,7 @@ onBeforeUnmount(() => {
 <template>
   <div class="absolute inset-0 z-10">
     <div class="absolute inset-0">
-      <div ref="mapContainer" class="h-full w-full" />
+      <div ref="mapContainer" class="h-full min-h-[28rem] w-full" />
     </div>
 
     <div

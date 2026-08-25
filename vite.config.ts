@@ -28,7 +28,9 @@ function maplibreWorkerPlugin(): Plugin {
       copyMaplibreWorkers(path.resolve(server.config.cacheDir, 'deps'))
     },
     closeBundle() {
-      copyMaplibreWorkers(path.resolve(__dirname, 'dist'))
+      const dist = path.resolve(__dirname, 'dist')
+      copyMaplibreWorkers(dist)
+      copyMaplibreWorkers(path.join(dist, 'assets'))
     },
   }
 }
