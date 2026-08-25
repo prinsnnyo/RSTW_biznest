@@ -246,19 +246,17 @@ onMounted(() => {
 
 <template>
   <div class="relative h-full min-h-0 w-full overflow-hidden">
-    <div class="absolute inset-x-0 top-3 z-20 mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-2 px-4">
-      <div class="bg-card/90 rounded-full px-4 py-2 shadow-sm backdrop-blur">
-        <p class="text-foreground text-sm font-semibold">Explore Butuan</p>
-      </div>
-      <div class="flex flex-wrap gap-2">
-        <Button v-if="canPin && !pinMode" @click="startPinMode">
-          {{ myPin ? 'Move / update pin' : 'Pin my location' }}
-        </Button>
-        <template v-if="pinMode">
-          <Button variant="outline" :disabled="isSaving" @click="cancelPinMode">Cancel</Button>
-          <Button :disabled="isSaving" @click="savePin">Save pin</Button>
-        </template>
-      </div>
+    <div
+      v-if="canPin || pinMode"
+      class="absolute top-3 right-4 z-20 flex flex-wrap justify-end gap-2"
+    >
+      <Button v-if="canPin && !pinMode" @click="startPinMode">
+        {{ myPin ? 'Move / update pin' : 'Pin my location' }}
+      </Button>
+      <template v-if="pinMode">
+        <Button variant="outline" :disabled="isSaving" @click="cancelPinMode">Cancel</Button>
+        <Button :disabled="isSaving" @click="savePin">Save pin</Button>
+      </template>
     </div>
 
     <div

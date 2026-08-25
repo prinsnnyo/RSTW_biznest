@@ -19,7 +19,7 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Check, Eye, EyeOff, Loader2 } from 'lucide-vue-next'
 import AuthSplitCard from '@/views/auth/components/AuthSplitCard.vue'
-import logoImage from '/register.png'
+import AuthRegisterMapPreview from '@/views/auth/components/AuthRegisterMapPreview.vue'
 
 const AUTH_INPUT = 'h-11 rounded-xl bg-background/50 px-3.5'
 
@@ -79,11 +79,11 @@ onMounted(() => {
 </script>
 
 <template>
-  <div :class="cn('flex flex-col gap-6', props.class)">
+  <div :class="cn('register-page flex flex-col gap-6', props.class)">
     <AuthSplitCard>
       <template #form>
-        <form @submit.prevent="handleSubmit">
-          <FieldGroup>
+        <form class="register-form" @submit.prevent="handleSubmit">
+          <FieldGroup class="register-stagger">
             <div class="mb-1 space-y-2">
               <p class="text-primary text-xs font-semibold tracking-[0.22em] uppercase">Join BizNest</p>
               <h1 class="text-foreground text-3xl font-semibold tracking-tight">Create your account</h1>
@@ -227,7 +227,7 @@ onMounted(() => {
               <Button
                 type="submit"
                 :disabled="isSubmitting"
-                class="h-12 w-full rounded-full text-base font-semibold shadow-lg shadow-accent/25 transition hover:scale-[1.015]"
+                class="register-cta h-12 w-full rounded-full text-base font-semibold shadow-lg shadow-accent/25 transition hover:scale-[1.02]"
               >
                 {{ isSubmitting ? 'Creating your account…' : 'Create account' }}
               </Button>
@@ -246,14 +246,10 @@ onMounted(() => {
         </form>
       </template>
       <template #visual>
-        <img
-          :src="logoImage"
-          alt="BizNest mascot"
-          class="relative z-10 mx-auto h-full w-full max-w-md object-contain p-8 drop-shadow-xl"
-        />
+        <AuthRegisterMapPreview />
       </template>
     </AuthSplitCard>
-    <FieldDescription class="px-2 text-center">
+    <FieldDescription class="register-legal px-2 text-center">
       By continuing you agree to our
       <a href="#" class="text-foreground font-medium underline-offset-4 hover:underline">Terms</a>
       and
@@ -261,3 +257,82 @@ onMounted(() => {
     </FieldDescription>
   </div>
 </template>
+
+<style scoped>
+.register-page {
+  animation: register-fade 0.45s ease both;
+}
+
+.register-stagger > * {
+  animation: register-rise 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.register-stagger > *:nth-child(1) {
+  animation-delay: 0.05s;
+}
+.register-stagger > *:nth-child(2) {
+  animation-delay: 0.11s;
+}
+.register-stagger > *:nth-child(3) {
+  animation-delay: 0.17s;
+}
+.register-stagger > *:nth-child(4) {
+  animation-delay: 0.23s;
+}
+.register-stagger > *:nth-child(5) {
+  animation-delay: 0.29s;
+}
+.register-stagger > *:nth-child(6) {
+  animation-delay: 0.35s;
+}
+.register-stagger > *:nth-child(7) {
+  animation-delay: 0.41s;
+}
+
+.register-legal {
+  animation: register-fade 0.5s ease 0.5s both;
+}
+
+.register-cta {
+  animation: register-glow 2.8s ease-in-out infinite;
+}
+
+@keyframes register-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes register-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes register-glow {
+  0%,
+  100% {
+    box-shadow: 0 12px 28px -8px color-mix(in oklab, var(--accent) 35%, transparent);
+  }
+  50% {
+    box-shadow: 0 16px 36px -6px color-mix(in oklab, var(--accent) 55%, transparent);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .register-page,
+  .register-stagger > *,
+  .register-legal,
+  .register-cta {
+    animation: none;
+  }
+}
+</style>

@@ -6,12 +6,27 @@ import { createPinIconSrc } from '@/utils/pin-icon.utils'
 import { Skeleton } from '@/components/ui/skeleton'
 import 'maplibre-gl/dist/maplibre-gl.css'
 
+const props = withDefaults(
+  defineProps<{
+    showPins?: boolean
+  }>(),
+  { showPins: true },
+)
+
 const OVERVIEW_ZOOM = 12.55
 const PIN_REVEAL_ZOOM = 14.2
 const CLOSE_DEG = 0.0075
 
 const TOUR = [
-  { lat: CITY_CENTER.lat, lng: CITY_CENTER.lng, zoom: OVERVIEW_ZOOM, pitch: 38, bearing: -12, duration: 6200 },
+  {
+    lat: CITY_CENTER.lat,
+    lng: CITY_CENTER.lng,
+    zoom: OVERVIEW_ZOOM,
+    pitch: 38,
+    bearing: -12,
+    duration: 6200,
+    label: 'Butuan City',
+  },
   ...RENTAL_SPACES.map((space, index) => ({
     lat: space.location.lat,
     lng: space.location.lng,
@@ -19,6 +34,7 @@ const TOUR = [
     pitch: 50 + (index % 2) * 4,
     bearing: -28 + index * 22,
     duration: 7800,
+    label: space.name,
   })),
 ]
 
@@ -64,9 +80,9 @@ const syncPinsToCamera = (): void => {
   for (const space of RENTAL_SPACES) {
     const closeEnough =
       Math.hypot(center.lat - space.location.lat, center.lng - space.location.lng) < CLOSE_DEG
-    const shown = zoom >= PIN_REVEAL_ZOOM && closeEnough
+    const shown = props.showPins && zoom >= PIN_REVEAL_ZOOM && closeEnough
     setPinShown(space.id, shown)
-    if (shown) {
+    if (zoom >= PIN_REVEAL_ZOOM && closeEnough) {
       activeName = space.name
     }
   }
@@ -80,6 +96,7 @@ const flyToStop = (index: number): void => {
     return
   }
 
+  caption.value = stop.label
   engine.flyTo(
     { lat: stop.lat, lng: stop.lng },
     {
@@ -153,13 +170,15 @@ onMounted(async () => {
     await Promise.race([engine.init(), timeout])
     engine.resize()
 
-    for (const space of RENTAL_SPACES) {
-      const element = createSpacePin(space.name)
-      pinElements.set(space.id, element)
-      engine.addMarker(space.id, [space.location.lng, space.location.lat], {
-        element,
-        anchor: 'bottom',
-      })
+    if (props.showPins) {
+      for (const space of RENTAL_SPACES) {
+        const element = createSpacePin(space.name)
+        pinElements.set(space.id, element)
+        engine.addMarker(space.id, [space.location.lng, space.location.lat], {
+          element,
+          anchor: 'bottom',
+        })
+      }
     }
 
     const map = engine.getMap()
