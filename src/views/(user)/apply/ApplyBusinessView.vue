@@ -31,7 +31,7 @@ import {
   type BusinessRoleApplication,
 } from '@/types/business-role-application.types'
 
-import { PARTNER_PLANS, formatPlanPrice } from '@/utils/partner-plans'
+import { PARTNER_PLANS, canonicalizePlanId, formatPlanRate } from '@/utils/partner-plans'
 
 const authStore = useAuthStore()
 const route = useRoute()
@@ -57,9 +57,8 @@ const latestApplication = computed(() => applications.value[0] ?? null)
 const alreadyBusinessUser = computed(() => authStore.isBusinessUser)
 
 const selectedPlan = computed(() => {
-  const value = route.query.plan
-  const id = Array.isArray(value) ? value[0] : value
-  return PARTNER_PLANS.find((plan) => plan.id === id) ?? null
+  const id = canonicalizePlanId(route.query.plan)
+  return id ? PARTNER_PLANS.find((plan) => plan.id === id) ?? null : null
 })
 
 const statusLabel = (status: BusinessRoleApplication['status']): string => {
@@ -151,7 +150,7 @@ onMounted(() => {
     <Card v-if="selectedPlan && !alreadyBusinessUser" class="p-5">
       <TypographySmall class="font-medium">Selected plan</TypographySmall>
       <p class="text-foreground mt-1 text-sm">
-        {{ selectedPlan.name }} · {{ formatPlanPrice(selectedPlan.price) }}/month
+        {{ selectedPlan.name }} · {{ formatPlanRate(selectedPlan) }}
       </p>
       <p class="text-muted-foreground mt-1 text-sm">{{ selectedPlan.tagline }}</p>
     </Card>

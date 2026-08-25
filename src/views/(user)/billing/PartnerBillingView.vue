@@ -3,15 +3,18 @@ import { computed, ref } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import { Check, Sparkles } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
-import { PARTNER_PLANS, formatPlanPrice, getPartnerPlan, type PartnerPlanId } from '@/utils/partner-plans'
+import {
+  PARTNER_PLANS,
+  canonicalizePlanId,
+  formatPlanPrice,
+  formatPlanRate,
+  getPartnerPlan,
+  type PartnerPlanId,
+} from '@/utils/partner-plans'
 
 const route = useRoute()
 
-const planFromQuery = (): PartnerPlanId => {
-  const value = route.query.plan
-  const id = Array.isArray(value) ? value[0] : value
-  return PARTNER_PLANS.some((plan) => plan.id === id) ? (id as PartnerPlanId) : 'growth'
-}
+const planFromQuery = (): PartnerPlanId => canonicalizePlanId(route.query.plan) ?? 'presence'
 
 const selectedPlanId = ref<PartnerPlanId>(planFromQuery())
 
@@ -35,8 +38,8 @@ const applyHref = computed(() => ({
         Pick a plan, then apply.
       </h1>
       <p class="text-muted-foreground mt-3 text-sm leading-relaxed md:text-base">
-        Regular members can browse the city for free. A partner subscription unlocks your pin, public
-        site, and the application form for space owners, entrepreneurs, and suppliers.
+        Regular members can browse the city for free. Partners can stay on the Free Be Found listing
+        or subscribe for a managed profile (₱299/month) or featured visibility (₱599/month).
       </p>
     </header>
 
@@ -62,7 +65,7 @@ const applyHref = computed(() => ({
         <p class="text-muted-foreground text-sm font-medium">{{ plan.name }}</p>
         <p class="text-foreground mt-2 flex items-end gap-1">
           <span class="text-4xl font-semibold tracking-tight">{{ formatPlanPrice(plan.price) }}</span>
-          <span class="text-muted-foreground mb-1 text-sm">/ month</span>
+          <span v-if="plan.price > 0" class="text-muted-foreground mb-1 text-sm">/ month</span>
         </p>
         <p class="text-muted-foreground mt-2 min-h-10 text-sm">{{ plan.tagline }}</p>
 
@@ -97,11 +100,12 @@ const applyHref = computed(() => ({
       <div>
         <p class="text-muted-foreground text-xs font-semibold tracking-[0.18em] uppercase">Next</p>
         <p class="text-foreground mt-1 text-lg font-semibold">
-          {{ selectedPlan.name }} · {{ formatPlanPrice(selectedPlan.price) }}/mo
+          {{ selectedPlan.name }} · {{ formatPlanRate(selectedPlan) }}
         </p>
         <p class="text-muted-foreground mt-1 max-w-xl text-sm">
-          Continue to the partner application. Superadmin reviews your documents before the
-          subscription benefits go live.
+          Continue to the partner application. Superadmin reviews your documents before paid
+          subscription benefits go live. BizNest is currently pre-revenue: LGUs can be charged
+          ₱1.5 million per deployment, while partners use Free, ₱299/month, or ₱599/month plans.
         </p>
       </div>
       <Button as-child class="h-12 w-full rounded-full px-8 text-base md:w-auto">
