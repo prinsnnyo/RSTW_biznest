@@ -1,12 +1,13 @@
 <script setup lang="ts">
-import { Building2, FileText, Globe, Layers, MapPin, TriangleAlert } from 'lucide-vue-next'
+import { Building2, FileText, Globe, Layers, MapPin, Settings, TriangleAlert } from 'lucide-vue-next'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { useAdminMapStore } from '@/stores/admin.map.store'
 import ZoningPanel from '@/views/(admin)/map/components/panels/ZoningPanel.vue'
 import HazardPanel from '@/views/(admin)/map/components/panels/HazardPanel.vue'
 import LocalBusinessPanel from '@/views/(admin)/map/components/panels/LocalBusinessPanel.vue'
 import ReportsPanel from '@/views/(admin)/map/components/panels/ReportsPanel.vue'
-import POIPanel from '@/views/(admin)/map/components/panels/POIPanel.vue'
+import LayerPanel from '@/views/(admin)/map/components/panels/LayerPanel.vue'
+import MapSettingsPanel from '@/views/(admin)/map/components/panels/MapSettingsPanel.vue'
 
 defineProps<{
   visible: boolean
@@ -23,7 +24,8 @@ const adminMapStore = useAdminMapStore()
       <HazardPanel v-else-if="adminMapStore.activePanel === 'hazard'" />
       <LocalBusinessPanel v-else-if="adminMapStore.activePanel === 'local-business'" />
       <ReportsPanel v-else-if="adminMapStore.activePanel === 'reports'" />
-      <POIPanel v-else-if="adminMapStore.activePanel === 'poi'" />
+      <LayerPanel v-else-if="adminMapStore.activePanel === 'poi'" />
+      <MapSettingsPanel v-else-if="adminMapStore.activePanel === 'map-settings'" />
     </div>
 
     <!-- ── Vertical icon strip ──────────────────────────────────────── -->
@@ -137,7 +139,7 @@ const adminMapStore = useAdminMapStore()
 
         <div class="h-px bg-border" />
 
-        <!-- POI -->
+        <!-- Layer Panel -->
         <Tooltip>
           <TooltipTrigger as-child>
             <button
@@ -153,7 +155,28 @@ const adminMapStore = useAdminMapStore()
               <MapPin class="h-4 w-4" />
             </button>
           </TooltipTrigger>
-          <TooltipContent side="left">Map Labels</TooltipContent>
+          <TooltipContent side="left">Map Layers</TooltipContent>
+        </Tooltip>
+
+        <div class="h-px bg-border" />
+
+        <!-- Map Settings -->
+        <Tooltip>
+          <TooltipTrigger as-child>
+            <button
+              type="button"
+              class="flex h-11 w-full items-center justify-center transition-colors hover:bg-muted"
+              :class="
+                adminMapStore.activePanel === 'map-settings'
+                  ? 'bg-muted text-foreground'
+                  : 'text-muted-foreground'
+              "
+              @click="adminMapStore.togglePanel('map-settings')"
+            >
+              <Settings class="h-4 w-4" />
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="left">Map Settings</TooltipContent>
         </Tooltip>
       </TooltipProvider>
     </div>

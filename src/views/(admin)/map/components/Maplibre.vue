@@ -2,11 +2,24 @@
 <!-- eslint-disable vue/multi-word-component-names -->
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref } from 'vue'
-import type { BarangayFeatureCollection } from '@/types/map.types'
+import type {
+  BarangayFeatureCollection,
+  MapLayerInfo,
+  MapLightSettings,
+  MapProjectionType,
+  MapSkySettings,
+  MapSpaceSettings,
+} from '@/types/map.types'
 import type { Hazard } from '@/types/hazard.types'
 import type { MapDrawPoint, MappedZone } from '@/types/zoning.types'
 import type { MapPinMarker } from '@/types/pinned-location.types'
 import { useMapLibreAdapter } from '@/composables/map/useMapLibreAdapter'
+import {
+  drawGlobeSpaceOverlay,
+  generateStarField,
+  SPACE_PRESET_STAR_DENSITY,
+  type StarPoint,
+} from '@/utils/map/globeSpaceOverlay.utils'
 import 'maplibre-gl/dist/maplibre-gl.css'
 
 defineOptions({
@@ -64,6 +77,70 @@ const mapContainer = ref<HTMLDivElement | null>(null)
 const mapError = ref('')
 let themeObserver: MutationObserver | null = null
 
+// ── Globe "Space"/"Halo" overlay ────────────────────────────────────────────
+// MapLibre's globe projection has no native starfield/atmosphere-image
+// support, so Space Color + Halo are drawn ourselves on a canvas layered on
+// top of the map, with a transparent hole punched over the rendered globe.
+const spaceCanvas = ref<HTMLCanvasElement | null>(null)
+let spaceResizeObserver: ResizeObserver | null = null
+let starField: StarPoint[] = []
+let mapProjection: MapProjectionType = 'mercator'
+let spaceSettings: MapSpaceSettings = {
+  preset: 'none',
+  haloColor: '#88c6fc',
+  haloOpacity: 0,
+  haloScale: 1.15,
+}
+
+function drawSpaceOverlay(): void {
+  const canvas = spaceCanvas.value
+  if (!canvas) {
+    return
+  }
+
+  const ctx = canvas.getContext('2d')
+  if (!ctx) {
+    return
+  }
+
+  if (mapProjection !== 'globe') {
+    ctx.clearRect(0, 0, canvas.width, canvas.height)
+    return
+  }
+
+  const dpr = window.devicePixelRatio || 1
+  const geometry = mapLibreAdapter.getGlobeScreenGeometry()
+
+  drawGlobeSpaceOverlay(ctx, canvas.width, canvas.height, {
+    preset: spaceSettings.preset,
+    haloColor: spaceSettings.haloColor,
+    haloOpacity: spaceSettings.haloOpacity,
+    haloScale: spaceSettings.haloScale,
+    globe: geometry
+      ? {
+          center: { x: geometry.center.x * dpr, y: geometry.center.y * dpr },
+          radius: geometry.radius * dpr,
+        }
+      : null,
+    stars: starField,
+  })
+}
+
+function resizeSpaceCanvas(): void {
+  const canvas = spaceCanvas.value
+  const container = mapContainer.value
+  if (!canvas || !container) {
+    return
+  }
+
+  const rect = container.getBoundingClientRect()
+  const dpr = window.devicePixelRatio || 1
+  canvas.width = Math.max(1, Math.round(rect.width * dpr))
+  canvas.height = Math.max(1, Math.round(rect.height * dpr))
+  starField = generateStarField(canvas.width, canvas.height, SPACE_PRESET_STAR_DENSITY[spaceSettings.preset])
+  drawSpaceOverlay()
+}
+
 const maptilerApiKey = import.meta.env.VITE_MAPTILER_KEY ?? ''
 const storedCamera = loadStoredCamera()
 
@@ -92,6 +169,7 @@ async function initMap(): Promise<void> {
       saveStoredCamera({ zoom: camera.zoom, pitch: camera.pitch })
       emit('camera-idle', camera.center)
     })
+    mapLibreAdapter.setRenderHandler(drawSpaceOverlay)
     emit('ready')
   } catch (error) {
     console.warn('MapLibre unavailable', error)
@@ -117,6 +195,12 @@ onMounted(async () => {
     attributeFilter: ['class'],
   })
 
+  spaceResizeObserver = new ResizeObserver(() => resizeSpaceCanvas())
+  if (mapContainer.value) {
+    spaceResizeObserver.observe(mapContainer.value)
+  }
+  resizeSpaceCanvas()
+
   await initMap()
 })
 
@@ -126,7 +210,11 @@ onBeforeUnmount(() => {
     themeObserver = null
   }
 
+  spaceResizeObserver?.disconnect()
+  spaceResizeObserver = null
+
   mapLibreAdapter.setCameraIdleHandler(null)
+  mapLibreAdapter.setRenderHandler(null)
   mapLibreAdapter.destroy()
 })
 
@@ -193,6 +281,42 @@ function setPoiTypeVisible(type: string, visible: boolean): void {
   mapLibreAdapter.setPoiTypeVisible(type, visible)
 }
 
+function getMapLayers(): MapLayerInfo[] {
+  return mapLibreAdapter.getMapLayers()
+}
+
+function setMapLayerVisible(id: string, visible: boolean): void {
+  mapLibreAdapter.setMapLayerVisible(id, visible)
+}
+
+function setMapProjection(type: MapProjectionType): void {
+  mapProjection = type
+  mapLibreAdapter.setMapProjection(type)
+  drawSpaceOverlay()
+}
+
+function setMapTerrain(enabled: boolean): void {
+  mapLibreAdapter.setMapTerrain(enabled)
+}
+
+function setMapLight(light: MapLightSettings): void {
+  mapLibreAdapter.setMapLight(light)
+}
+
+function setMapSky(sky: MapSkySettings): void {
+  mapLibreAdapter.setMapSky(sky)
+}
+
+function setMapSpace(space: MapSpaceSettings): void {
+  const densityChanged =
+    SPACE_PRESET_STAR_DENSITY[space.preset] !== SPACE_PRESET_STAR_DENSITY[spaceSettings.preset]
+  spaceSettings = space
+  if (densityChanged && spaceCanvas.value) {
+    starField = generateStarField(spaceCanvas.value.width, spaceCanvas.value.height, SPACE_PRESET_STAR_DENSITY[space.preset])
+  }
+  drawSpaceOverlay()
+}
+
 async function renderPinnedLocations(
   pins: MapPinMarker[],
   onPinClick?: ((pinId: string) => void) | null,
@@ -219,6 +343,13 @@ defineExpose({
   setCenter,
   getPoiTypes,
   setPoiTypeVisible,
+  getMapLayers,
+  setMapLayerVisible,
+  setMapProjection,
+  setMapTerrain,
+  setMapLight,
+  setMapSky,
+  setMapSpace,
   renderPinnedLocations,
   openPinnedLocation,
 })
@@ -243,8 +374,16 @@ defineExpose({
     -->
     <div class="absolute inset-0 z-0">
       <div ref="mapContainer" class="h-full w-full"></div>
+      <!-- Globe Space/Halo overlay — sits above the WebGL canvas, below controls. -->
+      <canvas ref="spaceCanvas" class="pointer-events-none absolute inset-0 z-10 h-full w-full"></canvas>
     </div>
   </div>
 </template>
 
 <style scoped src="@/components/map/Map.css"></style>
+<style scoped>
+:deep(.maplibregl-control-container) {
+  position: relative;
+  z-index: 20;
+}
+</style>

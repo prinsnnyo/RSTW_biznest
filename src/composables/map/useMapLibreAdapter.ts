@@ -1,7 +1,14 @@
 import type { Ref } from 'vue'
 import type { GeoJSONSourceSpecification, LayerSpecification, Marker } from 'maplibre-gl'
 import { Popup as MapLibrePopup } from 'maplibre-gl'
-import type { BarangayFeatureCollection } from '@/types/map.types'
+import type {
+  BarangayFeatureCollection,
+  MapLayerCategory,
+  MapLayerInfo,
+  MapLightSettings,
+  MapProjectionType,
+  MapSkySettings,
+} from '@/types/map.types'
 import type { Hazard } from '@/types/hazard.types'
 import type { MapDrawPoint, MappedZone } from '@/types/zoning.types'
 import type { MapPinMarker } from '@/types/pinned-location.types'
@@ -63,6 +70,71 @@ const FOCUS_MARKER_ID = 'ml-focus-marker'
 const FOCUS_POPUP_ID = 'ml-focus-popup'
 const PIN_MARKER_ID_PREFIX = 'ml-pin-'
 
+const TERRAIN_SOURCE_ID = 'ml-terrain-rgb'
+const TERRAIN_TILES_URL = 'https://api.maptiler.com/tiles/terrain-rgb-v2/tiles.json'
+
+// OpenMapTiles source-layer → MapTiler-style category, matching the grouping
+// MapTiler's own layer-visibility UI uses for a `streets-v2`-based style.
+const TRANSIT_ID_PATTERN = /rail|subway|tram|aerialway|ferry|station/i
+const NATURE_LANDUSE_ID_PATTERN =
+  /wood|forest|grass|park|farmland|meadow|orchard|vineyard|scrub|wetland|glacier|nature_reserve|cemetery/i
+
+function categorizeStyleLayer(layer: LayerSpecification): MapLayerCategory | null {
+  if (layer.type === 'background') {
+    return 'background'
+  }
+
+  const sourceLayer = 'source-layer' in layer ? layer['source-layer'] : undefined
+
+  switch (sourceLayer) {
+    case 'poi':
+      return 'poi'
+    case 'place':
+    case 'boundary':
+      return 'administrative'
+    case 'building':
+    case 'housenumber':
+      return 'built-up'
+    case 'landcover':
+    case 'park':
+      return 'nature'
+    case 'landuse':
+      return NATURE_LANDUSE_ID_PATTERN.test(layer.id) ? 'nature' : 'built-up'
+    case 'water':
+    case 'water_name':
+    case 'waterway':
+      return 'water'
+    case 'aeroway':
+      return 'transit'
+    case 'transportation':
+    case 'transportation_name':
+      return TRANSIT_ID_PATTERN.test(layer.id) ? 'transit' : 'roads'
+    default:
+      return null
+  }
+}
+
+function prettifyLayerLabel(layer: LayerSpecification, sourceLayer?: string): string {
+  let name = layer.id
+  if (sourceLayer && name.startsWith(sourceLayer)) {
+    name = name.slice(sourceLayer.length)
+  }
+  name = name.replace(/^[-_]+/, '').replace(/[-_]+/g, ' ').trim()
+  if (!name) {
+    name = sourceLayer ?? layer.id
+  }
+  name = name.replace(/\b\w/g, (char) => char.toUpperCase())
+
+  const isLabelLayer =
+    layer.type === 'symbol' &&
+    !!(layer.layout as Record<string, unknown> | undefined)?.['text-field']
+  if (isLabelLayer && !/label/i.test(name)) {
+    name = `${name} Label`
+  }
+
+  return name
+}
+
 function buildHtmlFromNode(build: (container: HTMLDivElement) => void): string {
   const container = document.createElement('div')
   build(container)
@@ -88,10 +160,19 @@ export function useMapLibreAdapter(options: MapLibreAdapterOptions) {
   let drawPreviewVertexIds: string[] = []
   let pinMarkerIds: string[] = []
   const pinMarkers = new Map<string, Marker>()
-  let poiLayerIds: string[] = []
+  let styleLayerInfos: MapLayerInfo[] = []
   let isDrawMode = false
   let currentTheme: MapLibreTheme = 'light'
-  const hiddenPoiTypes = new Set<string>()
+  const hiddenLayerIds = new Set<string>()
+
+  // Map Settings — cached so a style swap (theme toggle) can re-apply them;
+  // the engine itself forgets these the moment a new style.json loads.
+  let currentProjection: MapProjectionType = 'mercator'
+  let currentTerrainEnabled = false
+  let currentLight: MapLightSettings | null = null
+  let currentSky: MapSkySettings | null = null
+  let renderUnsubscribe: (() => void) | null = null
+  let renderHandler: (() => void) | null = null
 
   let lastBarangayArgs: [boolean, BarangayFeatureCollection | null] | null = null
   let lastMappedZones: MappedZone[] | null = null
@@ -103,28 +184,143 @@ export function useMapLibreAdapter(options: MapLibreAdapterOptions) {
     engine?.setCursor(isDrawMode ? DRAW_MODE_CURSOR : '')
   }
 
-  function cachePoiLayerIds(): void {
+  function cacheStyleLayers(): void {
     const styleLayers = engine?.getMap()?.getStyle()?.layers ?? []
-    poiLayerIds = styleLayers
-      .filter((layer) => 'source-layer' in layer && layer['source-layer'] === 'poi')
-      .map((layer) => layer.id)
+    styleLayerInfos = styleLayers.reduce<MapLayerInfo[]>((infos, layer) => {
+      const category = categorizeStyleLayer(layer)
+      if (!category) {
+        return infos
+      }
+      const sourceLayer = 'source-layer' in layer ? layer['source-layer'] : undefined
+      infos.push({ id: layer.id, label: prettifyLayerLabel(layer, sourceLayer), category })
+      return infos
+    }, [])
+  }
+
+  function getMapLayers(): MapLayerInfo[] {
+    return [...styleLayerInfos]
+  }
+
+  function applyLayerVisibility(): void {
+    styleLayerInfos.forEach((info) => engine?.setLayerVisibility(info.id, !hiddenLayerIds.has(info.id)))
+  }
+
+  function setMapLayerVisible(id: string, visible: boolean): void {
+    if (visible) {
+      hiddenLayerIds.delete(id)
+    } else {
+      hiddenLayerIds.add(id)
+    }
+    engine?.setLayerVisibility(id, visible)
   }
 
   function getPoiTypes(): string[] {
-    return [...poiLayerIds]
-  }
-
-  function applyPoiVisibility(): void {
-    poiLayerIds.forEach((id) => engine?.setLayerVisibility(id, !hiddenPoiTypes.has(id)))
+    return styleLayerInfos.filter((info) => info.category === 'poi').map((info) => info.id)
   }
 
   function setPoiTypeVisible(type: string, visible: boolean): void {
-    if (visible) {
-      hiddenPoiTypes.delete(type)
-    } else {
-      hiddenPoiTypes.add(type)
+    setMapLayerVisible(type, visible)
+  }
+
+  function setMapProjection(type: MapProjectionType): void {
+    currentProjection = type
+    engine?.getMap()?.setProjection({ type })
+  }
+
+  function ensureTerrainSource(): void {
+    if (!engine || engine.hasSource(TERRAIN_SOURCE_ID)) {
+      return
     }
-    engine?.setLayerVisibility(type, visible)
+
+    const apiKey = options.getApiKey?.()
+    if (!apiKey) {
+      return
+    }
+
+    engine.addSource(TERRAIN_SOURCE_ID, {
+      type: 'raster-dem',
+      url: `${TERRAIN_TILES_URL}?key=${apiKey}`,
+      tileSize: 256,
+    })
+  }
+
+  function setMapTerrain(enabled: boolean): void {
+    currentTerrainEnabled = enabled
+    const map = engine?.getMap()
+    if (!map) {
+      return
+    }
+
+    if (!enabled) {
+      map.setTerrain(null)
+      return
+    }
+
+    ensureTerrainSource()
+    map.setTerrain({ source: TERRAIN_SOURCE_ID, exaggeration: 1 })
+  }
+
+  function setMapLight(light: MapLightSettings): void {
+    currentLight = light
+    engine?.getMap()?.setLight({
+      anchor: light.anchor,
+      color: light.color,
+      position: light.position,
+      intensity: light.intensity,
+    })
+  }
+
+  function setMapSky(sky: MapSkySettings): void {
+    currentSky = sky
+    engine?.getMap()?.setSky({
+      'sky-color': sky.skyColor,
+      'horizon-color': sky.horizonColor,
+      'fog-color': sky.fogColor,
+    })
+  }
+
+  function reapplyMapSettings(): void {
+    setMapProjection(currentProjection)
+    setMapTerrain(currentTerrainEnabled)
+    if (currentLight) {
+      setMapLight(currentLight)
+    }
+    if (currentSky) {
+      setMapSky(currentSky)
+    }
+  }
+
+  function getGlobeScreenGeometry(): { center: { x: number; y: number }; radius: number } | null {
+    const map = engine?.getMap()
+    const center = engine?.getCenter()
+    const zoom = engine?.getZoom()
+    if (!map || !center || zoom == null) {
+      return null
+    }
+
+    const point = map.project([center.lng, center.lat])
+    const worldSize = 512 * Math.pow(2, zoom)
+    return { center: { x: point.x, y: point.y }, radius: worldSize / (2 * Math.PI) }
+  }
+
+  function clearRenderListener(): void {
+    renderUnsubscribe?.()
+    renderUnsubscribe = null
+  }
+
+  function syncRenderListener(): void {
+    clearRenderListener()
+
+    if (!engine || !renderHandler) {
+      return
+    }
+
+    renderUnsubscribe = engine.on('render', () => renderHandler?.())
+  }
+
+  function setRenderHandler(handler: (() => void) | null): void {
+    renderHandler = handler
+    syncRenderListener()
   }
 
   function clearClickListener(): void {
@@ -299,10 +495,11 @@ export function useMapLibreAdapter(options: MapLibreAdapterOptions) {
     engine.addAttributionControl('bottom-right', true)
 
     applyCursor()
-    cachePoiLayerIds()
-    applyPoiVisibility()
+    cacheStyleLayers()
+    applyLayerVisibility()
     syncClickListener()
     syncCameraIdleListener()
+    syncRenderListener()
   }
 
   function setCameraIdleHandler(handler: CameraIdleHandler | null): void {
@@ -314,6 +511,7 @@ export function useMapLibreAdapter(options: MapLibreAdapterOptions) {
     clearClickListener()
     clearFreehandListeners()
     clearCameraIdleListener()
+    clearRenderListener()
     removeBarangayLayers()
     removeMappedZonesLayers()
     removeHazardsLayers()
@@ -342,8 +540,9 @@ export function useMapLibreAdapter(options: MapLibreAdapterOptions) {
 
     engine.setTheme(theme)
     engine.getMap()?.once('styledata', () => {
-      cachePoiLayerIds()
-      applyPoiVisibility()
+      cacheStyleLayers()
+      applyLayerVisibility()
+      reapplyMapSettings()
       reapplyOverlays()
     })
   }
@@ -789,6 +988,14 @@ export function useMapLibreAdapter(options: MapLibreAdapterOptions) {
     setTheme,
     getPoiTypes,
     setPoiTypeVisible,
+    getMapLayers,
+    setMapLayerVisible,
+    setMapProjection,
+    setMapTerrain,
+    setMapLight,
+    setMapSky,
+    getGlobeScreenGeometry,
+    setRenderHandler,
     setDrawPointMoveHandler,
     setCameraIdleHandler,
     focusOnZone,
