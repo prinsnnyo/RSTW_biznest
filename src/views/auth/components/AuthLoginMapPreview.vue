@@ -163,7 +163,7 @@ onMounted(async () => {
   })
 
   const timeout = new Promise<never>((_, reject) => {
-    window.setTimeout(() => reject(new Error('Map preview timed out')), 8000)
+    window.setTimeout(() => reject(new Error('Map preview timed out')), 20000)
   })
 
   try {

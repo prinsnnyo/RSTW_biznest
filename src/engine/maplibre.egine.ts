@@ -130,10 +130,42 @@ export class MapLibreEngine {
     })
 
     await new Promise<void>((resolve, reject) => {
-      this.map?.once('load', () => resolve())
-      this.map?.once('error', (event) =>
-        reject(event.error ?? new Error('MapLibre failed to load')),
-      )
+      const map = this.map
+      if (!map) {
+        reject(new Error('MapLibre failed to create'))
+        return
+      }
+
+      const isFatalStyleError = (message: string): boolean =>
+        /401|403|unauthorized|forbidden|not authorized|failed to fetch/i.test(message)
+
+      const onLoad = (): void => {
+        cleanup()
+        resolve()
+      }
+
+      const onError = (event: { error?: Error }): void => {
+        const message = String(event.error?.message ?? event.error ?? '')
+        if (!isFatalStyleError(message)) {
+          return
+        }
+        cleanup()
+        reject(event.error ?? new Error('MapLibre failed to load'))
+      }
+
+      const timer = setTimeout(() => {
+        cleanup()
+        reject(new Error('MapLibre load timeout'))
+      }, 20000)
+
+      const cleanup = (): void => {
+        clearTimeout(timer)
+        map.off('load', onLoad)
+        map.off('error', onError)
+      }
+
+      map.once('load', onLoad)
+      map.on('error', onError)
     })
   }
 
