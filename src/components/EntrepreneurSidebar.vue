@@ -23,7 +23,7 @@ const navItems = computed<AdminNavItem[]>(() => {
     return true
   })
   if (!authStore.isBusinessUser) {
-    items.push({ label: 'Become a partner', to: '/app/apply', icon: 'users' })
+    items.push({ label: 'Become a partner', to: '/app/billing', icon: 'users' })
   }
   if (authStore.isAdmin) {
     items.push({ label: 'Admin', to: '/admin/map', icon: 'roles' })

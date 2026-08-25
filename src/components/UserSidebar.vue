@@ -63,7 +63,12 @@ const iconMap: Record<AdminSidebarIconName, Component> = {
   settings: Settings,
 }
 
-const isActive = (itemPath: string): boolean => route.path.startsWith(itemPath)
+const isActive = (itemPath: string): boolean => {
+  if (itemPath === '/app/billing') {
+    return route.path === '/app/billing' || route.path === '/app/apply'
+  }
+  return route.path.startsWith(itemPath)
+}
 
 const getNavItemClass = (itemPath: string): string => {
   if (isActive(itemPath)) {

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import { useRoute } from 'vue-router'
 import { Building2 } from 'lucide-vue-next'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -30,7 +31,10 @@ import {
   type BusinessRoleApplication,
 } from '@/types/business-role-application.types'
 
+import { PARTNER_PLANS, formatPlanPrice } from '@/utils/partner-plans'
+
 const authStore = useAuthStore()
+const route = useRoute()
 const { showSuccess, showAlert } = useAlertContext()
 
 const applications = ref<BusinessRoleApplication[]>([])
@@ -51,6 +55,12 @@ const pendingApplication = computed(() =>
 )
 const latestApplication = computed(() => applications.value[0] ?? null)
 const alreadyBusinessUser = computed(() => authStore.isBusinessUser)
+
+const selectedPlan = computed(() => {
+  const value = route.query.plan
+  const id = Array.isArray(value) ? value[0] : value
+  return PARTNER_PLANS.find((plan) => plan.id === id) ?? null
+})
 
 const statusLabel = (status: BusinessRoleApplication['status']): string => {
   if (status === 'pending') return 'Pending review'
@@ -137,6 +147,14 @@ onMounted(() => {
         </TypographyMuted>
       </div>
     </div>
+
+    <Card v-if="selectedPlan && !alreadyBusinessUser" class="p-5">
+      <TypographySmall class="font-medium">Selected plan</TypographySmall>
+      <p class="text-foreground mt-1 text-sm">
+        {{ selectedPlan.name }} · {{ formatPlanPrice(selectedPlan.price) }}/month
+      </p>
+      <p class="text-muted-foreground mt-1 text-sm">{{ selectedPlan.tagline }}</p>
+    </Card>
 
     <Card v-if="alreadyBusinessUser" class="p-5">
       <p class="text-sm">
