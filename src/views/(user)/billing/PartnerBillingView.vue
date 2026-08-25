@@ -3,7 +3,7 @@ import { computed, ref } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import { Check, Sparkles } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
-import { PARTNER_PLANS, formatPlanPrice, type PartnerPlanId } from '@/utils/partner-plans'
+import { PARTNER_PLANS, formatPlanPrice, getPartnerPlan, type PartnerPlanId } from '@/utils/partner-plans'
 
 const route = useRoute()
 
@@ -15,9 +15,7 @@ const planFromQuery = (): PartnerPlanId => {
 
 const selectedPlanId = ref<PartnerPlanId>(planFromQuery())
 
-const selectedPlan = computed(
-  () => PARTNER_PLANS.find((plan) => plan.id === selectedPlanId.value) ?? PARTNER_PLANS[1],
-)
+const selectedPlan = computed(() => getPartnerPlan(selectedPlanId.value))
 
 const applyHref = computed(() => ({
   name: 'user-apply-business',
