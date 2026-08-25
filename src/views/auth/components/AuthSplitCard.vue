@@ -14,7 +14,7 @@ defineSlots<{
         <slot name="form" />
       </div>
       <div
-        class="relative hidden min-h-80 overflow-hidden bg-linear-to-br from-primary/25 via-secondary/20 to-accent/15 md:block"
+        class="relative hidden min-h-[28rem] overflow-hidden bg-linear-to-br from-primary/25 via-secondary/20 to-accent/15 md:block"
       >
         <div class="auth-orb auth-orb-accent absolute -top-16 -right-10 size-56 rounded-full bg-accent/25 blur-3xl" />
         <div class="auth-orb auth-orb-primary absolute -bottom-20 -left-10 size-64 rounded-full bg-primary/30 blur-3xl" />
