@@ -6,6 +6,7 @@ import { useAuthStore } from '@/stores/auth.store'
 import Maplibre from '@/views/(admin)/map/components/Maplibre.vue'
 import GoogleMapCanvas from '@/components/map/GoogleMapCanvas.vue'
 import HazardFormModal from '@/views/(admin)/map/components/modals/HazardFormModal.vue'
+import HazardUploadModal from '@/views/(admin)/map/components/modals/HazardUploadModal.vue'
 import MappedZoneFormModal from '@/views/(admin)/map/components/modals/MappedZoneFormModal.vue'
 import MapRightSideBar from '@/views/(admin)/map/components/MapRightSideBar.vue'
 import { Button } from '@/components/ui/button'
@@ -252,6 +253,7 @@ onBeforeUnmount(() => {
 
       <!-- Portaled modals (Sheet — renders in <body>). Both read/write the store directly. -->
       <HazardFormModal />
+      <HazardUploadModal />
       <MappedZoneFormModal />
     </div>
 

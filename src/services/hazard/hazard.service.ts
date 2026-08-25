@@ -37,6 +37,23 @@ const assertValidGeometry = (geometry: HazardGeometry): void => {
   ) {
     throw new Error('Polygon hazard need at least 4 points')
   }
+
+  if (
+    geometry.type === 'MultiLineString' &&
+    (geometry.coordinates.length === 0 || geometry.coordinates.some((line) => line.length < 2))
+  ) {
+    throw new Error('Every line in a MultiLineString hazard needs at least 2 points')
+  }
+
+  if (
+    geometry.type === 'MultiPolygon' &&
+    (geometry.coordinates.length === 0 ||
+      geometry.coordinates.some(
+        (polygon) => polygon.length === 0 || polygon.some((ring) => normalizeRing(ring).length < 4),
+      ))
+  ) {
+    throw new Error('Every polygon in a MultiPolygon hazard needs at least 4 points per ring')
+  }
 }
 
 const toGeometryType = (geometry: HazardGeometry): HazardGeometryType => {
@@ -67,6 +84,13 @@ const normalizeRing = (ring: [number, number][]): [number, number][] => {
   return [...ring, firstPoint]
 }
 
+const formatPolygonRings = (rings: [number, number][][]): string => {
+  return rings
+    .map((ring) => normalizeRing(ring).map(formatPoint).join(', '))
+    .map((ring) => `(${ring})`)
+    .join(', ')
+}
+
 const toPostgisGeometry = (geometry: HazardGeometry): string => {
   assertValidGeometry(geometry)
 
@@ -79,12 +103,27 @@ const toPostgisGeometry = (geometry: HazardGeometry): string => {
     return `SRID=4326;LINESTRING(${coordinates})`
   }
 
-  const rings = geometry.coordinates
-    .map((ring) => normalizeRing(ring).map(formatPoint).join(', '))
-    .map((ring) => `(${ring})`)
+  if (geometry.type === 'Polygon') {
+    return `SRID=4326;POLYGON(${formatPolygonRings(geometry.coordinates)})`
+  }
+
+  if (geometry.type === 'MultiPoint') {
+    const points = geometry.coordinates.map((point) => `(${formatPoint(point)})`).join(', ')
+    return `SRID=4326;MULTIPOINT(${points})`
+  }
+
+  if (geometry.type === 'MultiLineString') {
+    const lines = geometry.coordinates
+      .map((line) => `(${line.map(formatPoint).join(', ')})`)
+      .join(', ')
+    return `SRID=4326;MULTILINESTRING(${lines})`
+  }
+
+  const polygons = geometry.coordinates
+    .map((rings) => `(${formatPolygonRings(rings)})`)
     .join(', ')
 
-  return `SRID=4326;POLYGON(${rings})`
+  return `SRID=4326;MULTIPOLYGON(${polygons})`
 }
 
 // Row shape returned by Supabase when joining hazard_categories
@@ -93,7 +132,14 @@ type HazardRow = Omit<Hazard, 'geometry' | 'category'> & {
   hazard_categories: HazardCategory | null
 }
 
-const GEOMETRY_TYPES = ['Point', 'LineString', 'Polygon'] as const
+const GEOMETRY_TYPES = [
+  'Point',
+  'LineString',
+  'Polygon',
+  'MultiPoint',
+  'MultiLineString',
+  'MultiPolygon',
+] as const
 type RawGeometryType = (typeof GEOMETRY_TYPES)[number]
 
 const isGeometryType = (value: unknown): value is RawGeometryType =>
@@ -288,8 +334,12 @@ export const createHazard = async (input: CreateHazardInput): Promise<Hazard> =>
 
   const payload = {
     ...input,
-    geometry: toPostgisGeometry(input.geometry),
-    geometry_type: input.geometry_type ?? toGeometryType(input.geometry),
+    ...(input.geometry
+      ? {
+          geometry: toPostgisGeometry(input.geometry),
+          geometry_type: input.geometry_type ?? toGeometryType(input.geometry),
+        }
+      : {}),
   }
 
   const { data, error } = await supabase

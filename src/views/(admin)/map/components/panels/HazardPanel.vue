@@ -6,20 +6,14 @@ import {
   Eye,
   EyeOff,
   Pencil,
-  Plus,
   RefreshCcw,
   Trash2,
+  Upload,
   X,
 } from 'lucide-vue-next'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
 import { TypographyMuted, TypographyP, TypographySmall } from '@/components/typography'
 import { useAdminMapStore } from '@/stores/admin.map.store'
 import ZoningLayerDeleteDialog from '@/views/(admin)/map/components/modals/ZoningLayerDeleteDialog.vue'
@@ -135,27 +129,14 @@ function close(): void {
               <RefreshCcw class="h-4 w-4" />
             </Button>
 
-            <DropdownMenu>
-              <DropdownMenuTrigger as-child>
-                <Button
-                  size="icon-sm"
-                  :disabled="adminMapStore.isLoadingHazards || adminMapStore.isSavingHazard"
-                >
-                  <Plus class="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" class="z-10002">
-                <DropdownMenuItem @click="adminMapStore.handleStartCreateHazard('point')"
-                  >Pin</DropdownMenuItem
-                >
-                <DropdownMenuItem @click="adminMapStore.handleStartCreateHazard('linestring')"
-                  >Draw Line</DropdownMenuItem
-                >
-                <DropdownMenuItem @click="adminMapStore.handleStartCreateHazard('polygon')"
-                  >Draw Polygon</DropdownMenuItem
-                >
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <Button
+              size="icon-sm"
+              title="Upload hazard"
+              :disabled="adminMapStore.isLoadingHazards || adminMapStore.isSavingHazard"
+              @click="adminMapStore.openHazardUploadModal()"
+            >
+              <Upload class="h-4 w-4" />
+            </Button>
 
             <Button variant="ghost" size="icon-sm" @click="close">
               <X class="h-4 w-4" />

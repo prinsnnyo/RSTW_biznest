@@ -11,6 +11,7 @@ import {
   listHazards,
   updateHazard,
 } from '@/services/hazard/hazard.service.ts'
+import { useAuthStore } from '@/stores/auth.store.ts'
 import {
   createMappedZone,
   createZoningLayer,
@@ -33,6 +34,7 @@ import type {
   HazardGeometryType,
   HazardId,
   UpdateHazardInput,
+  UploadHazardFormInput,
 } from '@/types/hazard.types.ts'
 import type {
   BarangayFeatureCollection,
@@ -287,6 +289,9 @@ export const useAdminMapStore = defineStore('adminMap', () => {
   const hazardPlacementType = ref<HazardGeometryType | null>(null)
   const showHazardFormModal = ref(false)
   const editingHazard = ref<Hazard | null>(null)
+  const showHazardUploadModal = ref(false)
+  const isUploadingHazard = ref(false)
+  const hazardUploadError = ref('')
 
   // Local businesses (pinned locations)
   const localBusinesses = ref<PinnedLocation[]>([])
@@ -882,6 +887,54 @@ export const useAdminMapStore = defineStore('adminMap', () => {
     startHazardPlacement(placementType)
   }
 
+  function openHazardUploadModal(): void {
+    hazardUploadError.value = ''
+    showHazardUploadModal.value = true
+  }
+
+  function closeHazardUploadModal(): void {
+    showHazardUploadModal.value = false
+  }
+
+  async function handleUploadHazard(payload: UploadHazardFormInput): Promise<void> {
+    isUploadingHazard.value = true
+    hazardUploadError.value = ''
+    try {
+      const authStore = useAuthStore()
+
+      const createdHazard = await createHazard({
+        name: payload.name,
+        category_id: payload.category_id,
+        severity: payload.severity,
+        status: payload.status,
+        description: payload.description || null,
+        location_name: payload.location_name || null,
+        address: payload.address || null,
+        barangay: payload.barangay || null,
+        city: payload.city || null,
+        province: payload.province || null,
+        region: payload.region || null,
+        reported_by: authStore.user?.id ?? null,
+        city_id: cityId.value ?? '',
+        geometry: payload.geometry,
+        geometry_type: payload.geometry_type,
+        images: payload.images,
+        attachments: payload.attachments,
+        pmtiles_url: payload.pmtiles_url ?? null,
+      })
+
+      hazards.value = [createdHazard, ...hazards.value]
+      hasLoadedHazards.value = true
+      selectedHazardId.value = createdHazard.id
+      closeHazardUploadModal()
+    } catch (error) {
+      hazardUploadError.value =
+        error instanceof Error ? error.message : 'Failed to upload hazard.'
+    } finally {
+      isUploadingHazard.value = false
+    }
+  }
+
   function handleSelectHazard(hazardId: HazardId): void {
     selectedHazardId.value = hazardId
   }
@@ -1034,15 +1087,26 @@ export const useAdminMapStore = defineStore('adminMap', () => {
 
   // Map ref helpers
   function getHazardFocusPoints(hazard: Hazard): MapDrawPoint[] {
-    if (hazard.geometry.type === 'Point') {
-      const [lng, lat] = hazard.geometry.coordinates
-      return [{ lat, lng }]
+    const geometry = hazard.geometry
+    const toPoint = (point: [number, number]): MapDrawPoint => ({ lat: point[1], lng: point[0] })
+
+    if (geometry.type === 'Point') {
+      return [toPoint(geometry.coordinates)]
     }
-    if (hazard.geometry.type === 'LineString') {
-      return hazard.geometry.coordinates.map((point) => ({ lat: point[1], lng: point[0] }))
+    if (geometry.type === 'MultiPoint') {
+      return geometry.coordinates.map(toPoint)
     }
-    return hazard.geometry.coordinates.flatMap((ring) =>
-      ring.map((point) => ({ lat: point[1], lng: point[0] })),
+    if (geometry.type === 'LineString') {
+      return geometry.coordinates.map(toPoint)
+    }
+    if (geometry.type === 'MultiLineString') {
+      return geometry.coordinates.flatMap((line) => line.map(toPoint))
+    }
+    if (geometry.type === 'Polygon') {
+      return geometry.coordinates.flatMap((ring) => ring.map(toPoint))
+    }
+    return geometry.coordinates.flatMap((polygon) =>
+      polygon.flatMap((ring) => ring.map(toPoint)),
     )
   }
 
@@ -1452,6 +1516,12 @@ export const useAdminMapStore = defineStore('adminMap', () => {
     editingHazard,
     openEditHazardModal,
     closeEditHazardModal,
+    showHazardUploadModal,
+    isUploadingHazard,
+    hazardUploadError,
+    openHazardUploadModal,
+    closeHazardUploadModal,
+    handleUploadHazard,
     // Local businesses
     localBusinesses,
     isLoadingLocalBusinesses,
