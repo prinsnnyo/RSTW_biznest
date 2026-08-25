@@ -144,13 +144,13 @@ export class MapLibreEngine {
         resolve()
       }
 
-      const onError = (event: { error?: Error }): void => {
+      const onError = (event: MapEventType['error']): void => {
         const message = String(event.error?.message ?? event.error ?? '')
         if (!isFatalStyleError(message)) {
           return
         }
         cleanup()
-        reject(event.error ?? new Error('MapLibre failed to load'))
+        reject(new Error(message || 'MapLibre failed to load'))
       }
 
       const timer = setTimeout(() => {
