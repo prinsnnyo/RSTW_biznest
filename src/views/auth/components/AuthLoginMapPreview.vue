@@ -146,15 +146,15 @@ onMounted(async () => {
   await nextTick()
 
   const apiKey = String(import.meta.env.VITE_MAPTILER_KEY ?? '').trim()
-  if (!apiKey || !mapContainer.value) {
+  if (!mapContainer.value) {
     startFallback()
     return
   }
 
   engine = new MapLibreEngine({
     container: mapContainer.value,
-    apiKey,
-    styleUrl: buildMaptilerStyleUrl('streets-v2-dark', apiKey),
+    apiKey: apiKey || undefined,
+    styleUrl: apiKey ? buildMaptilerStyleUrl('streets-v2-dark', apiKey) : undefined,
     center: CITY_CENTER,
     zoom: OVERVIEW_ZOOM,
     pitch: 38,
@@ -162,12 +162,8 @@ onMounted(async () => {
     theme: 'dark',
   })
 
-  const timeout = new Promise<never>((_, reject) => {
-    window.setTimeout(() => reject(new Error('Map preview timed out')), 20000)
-  })
-
   try {
-    await Promise.race([engine.init(), timeout])
+    await engine.init()
     engine.resize()
 
     if (props.showPins) {

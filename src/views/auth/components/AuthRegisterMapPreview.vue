@@ -79,7 +79,7 @@ onMounted(async () => {
   await nextTick()
 
   const apiKey = String(import.meta.env.VITE_MAPTILER_KEY ?? '').trim()
-  if (!apiKey || !mapContainer.value) {
+  if (!mapContainer.value) {
     startFallback()
     return
   }
@@ -88,8 +88,8 @@ onMounted(async () => {
 
   engine = new MapLibreEngine({
     container: mapContainer.value,
-    apiKey,
-    styleUrl: buildMaptilerStyleUrl('streets-v2-dark', apiKey),
+    apiKey: apiKey || undefined,
+    styleUrl: apiKey ? buildMaptilerStyleUrl('streets-v2-dark', apiKey) : undefined,
     center: { lat: start.lat, lng: start.lng },
     zoom: ORBIT_ZOOM,
     pitch: ORBIT_PITCH,
@@ -97,12 +97,8 @@ onMounted(async () => {
     theme: 'dark',
   })
 
-  const timeout = new Promise<never>((_, reject) => {
-    window.setTimeout(() => reject(new Error('Map preview timed out')), 20000)
-  })
-
   try {
-    await Promise.race([engine.init(), timeout])
+    await engine.init()
     engine.resize()
     engine.getMap()?.setBearing(start.bearing)
 

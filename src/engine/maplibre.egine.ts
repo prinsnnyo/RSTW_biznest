@@ -61,6 +61,26 @@ export function buildMaptilerStyleUrl(styleId: string, apiKey: string): string {
   return `${MAPTILER_STYLE_BASE_URL}/${styleId}/style.json?key=${apiKey}`
 }
 
+function fallbackRasterStyle(theme: MapLibreTheme): StyleSpecification {
+  const variant = theme === 'dark' ? 'dark_all' : 'light_all'
+  return {
+    version: 8,
+    sources: {
+      carto: {
+        type: 'raster',
+        tiles: [
+          `https://a.basemaps.cartocdn.com/${variant}/{z}/{x}/{y}@2x.png`,
+          `https://b.basemaps.cartocdn.com/${variant}/{z}/{x}/{y}@2x.png`,
+          `https://c.basemaps.cartocdn.com/${variant}/{z}/{x}/{y}@2x.png`,
+        ],
+        tileSize: 256,
+        attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
+      },
+    },
+    layers: [{ id: 'carto-basemap', type: 'raster', source: 'carto' }],
+  }
+}
+
 function toLngLat(point: LatLng): [number, number] {
   return [point.lng, point.lat]
 }
@@ -90,21 +110,43 @@ export class MapLibreEngine {
   private resolveStyle(
     overrides?: MapLibreInitOverrides,
     theme: MapLibreTheme = this.currentTheme,
-  ): string {
+  ): string | StyleSpecification {
     const styleUrl = overrides?.styleUrl ?? this.options.styleUrl
     if (styleUrl) {
       return styleUrl
     }
 
     const apiKey = overrides?.apiKey ?? this.options.apiKey
-    if (!apiKey) {
-      throw new Error('MapLibreEngine: missing MapTiler apiKey or styleUrl')
+    if (apiKey) {
+      return buildMaptilerStyleUrl(
+        theme === 'dark' ? MAPTILER_DARK_STYLE : MAPTILER_LIGHT_STYLE,
+        apiKey,
+      )
     }
 
-    return buildMaptilerStyleUrl(
-      theme === 'dark' ? MAPTILER_DARK_STYLE : MAPTILER_LIGHT_STYLE,
-      apiKey,
-    )
+    return fallbackRasterStyle(theme)
+  }
+
+  private async loadStyle(
+    overrides?: MapLibreInitOverrides,
+    theme: MapLibreTheme = this.currentTheme,
+  ): Promise<string | StyleSpecification> {
+    const resolved = this.resolveStyle(overrides, theme)
+    if (typeof resolved !== 'string' || !resolved.includes('api.maptiler.com')) {
+      return resolved
+    }
+
+    try {
+      const response = await fetch(resolved)
+      if (!response.ok) {
+        console.warn('MapTiler style rejected', response.status, response.statusText)
+        return fallbackRasterStyle(theme)
+      }
+      return (await response.json()) as StyleSpecification
+    } catch (error) {
+      console.warn('MapTiler style fetch failed', error)
+      return fallbackRasterStyle(theme)
+    }
   }
 
   private requireMap(): MapLibreMap {
@@ -133,9 +175,11 @@ export class MapLibreEngine {
 
     ensureMapLibreWorker()
 
+    const style = await this.loadStyle(overrides)
+
     this.map = new MapLibreMap({
       container: this.options.container,
-      style: this.resolveStyle(overrides),
+      style,
       center: toLngLat(center),
       zoom,
       pitch,
@@ -143,43 +187,39 @@ export class MapLibreEngine {
       attributionControl: false,
     })
 
-    await new Promise<void>((resolve, reject) => {
-      const map = this.map
-      if (!map) {
-        reject(new Error('MapLibre failed to create'))
-        return
+    const loaded = await this.waitForLoad(12000)
+    if (!loaded && this.map) {
+      this.map.setStyle(fallbackRasterStyle(this.currentTheme))
+      const fallbackLoaded = await this.waitForLoad(12000)
+      if (!fallbackLoaded) {
+        throw new Error('MapLibre load timeout')
       }
+    }
+  }
 
-      const isFatalStyleError = (message: string): boolean =>
-        /401|403|unauthorized|forbidden|not authorized|failed to fetch/i.test(message)
+  private waitForLoad(timeoutMs: number): Promise<boolean> {
+    const map = this.map
+    if (!map) {
+      return Promise.resolve(false)
+    }
+    if (map.loaded()) {
+      return Promise.resolve(true)
+    }
 
+    return new Promise((resolve) => {
       const onLoad = (): void => {
         cleanup()
-        resolve()
+        resolve(true)
       }
-
-      const onError = (event: MapEventType['error']): void => {
-        const message = String(event.error?.message ?? event.error ?? '')
-        if (!isFatalStyleError(message)) {
-          return
-        }
-        cleanup()
-        reject(new Error(message || 'MapLibre failed to load'))
-      }
-
       const timer = setTimeout(() => {
         cleanup()
-        reject(new Error('MapLibre load timeout'))
-      }, 20000)
-
+        resolve(false)
+      }, timeoutMs)
       const cleanup = (): void => {
         clearTimeout(timer)
         map.off('load', onLoad)
-        map.off('error', onError)
       }
-
       map.once('load', onLoad)
-      map.on('error', onError)
     })
   }
 
