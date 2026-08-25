@@ -10,11 +10,20 @@ export type HazardStatus =
   | 'mitigated'
   | 'resolved'
   | (string & {})
-export type HazardGeometryType = 'point' | 'linestring' | 'polygon'
+export type HazardGeometryType =
+  | 'point'
+  | 'linestring'
+  | 'polygon'
+  | 'multipoint'
+  | 'multilinestring'
+  | 'multipolygon'
 
 export type HazardCoordinatesPoint = [number, number]
 export type HazardCoordinatesLineString = HazardCoordinatesPoint[]
 export type HazardCoordinatesPolygon = HazardCoordinatesPoint[][]
+export type HazardCoordinatesMultiPoint = HazardCoordinatesPoint[]
+export type HazardCoordinatesMultiLineString = HazardCoordinatesLineString[]
+export type HazardCoordinatesMultiPolygon = HazardCoordinatesPolygon[]
 
 export interface HazardPointGeometry {
   type: 'Point'
@@ -31,7 +40,28 @@ export interface HazardPolygonGeometry {
   coordinates: HazardCoordinatesPolygon
 }
 
-export type HazardGeometry = HazardPointGeometry | HazardLineStringGeometry | HazardPolygonGeometry
+export interface HazardMultiPointGeometry {
+  type: 'MultiPoint'
+  coordinates: HazardCoordinatesMultiPoint
+}
+
+export interface HazardMultiLineStringGeometry {
+  type: 'MultiLineString'
+  coordinates: HazardCoordinatesMultiLineString
+}
+
+export interface HazardMultiPolygonGeometry {
+  type: 'MultiPolygon'
+  coordinates: HazardCoordinatesMultiPolygon
+}
+
+export type HazardGeometry =
+  | HazardPointGeometry
+  | HazardLineStringGeometry
+  | HazardPolygonGeometry
+  | HazardMultiPointGeometry
+  | HazardMultiLineStringGeometry
+  | HazardMultiPolygonGeometry
 
 export interface HazardCategory {
   id: Uuid
@@ -69,6 +99,7 @@ export interface Hazard {
   verified_at: IsoDateTimeString | null
   images: string[] | null
   attachments: string[] | null
+  pmtiles_url: string | null
   occurred_at: IsoDateTimeString | null
   expires_at: IsoDateTimeString | null
   created_at: IsoDateTimeString
@@ -78,8 +109,8 @@ export interface Hazard {
 export interface CreateHazardInput {
   name: string
   category_id: Uuid
-  geometry: HazardGeometry
-  geometry_type: HazardGeometryType
+  geometry?: HazardGeometry
+  geometry_type?: HazardGeometryType
   city_id: string
   description?: string | null
   severity?: HazardSeverity
@@ -90,10 +121,31 @@ export interface CreateHazardInput {
   city?: string | null
   province?: string | null
   region?: string | null
+  reported_by?: Uuid | null
   occurred_at?: IsoDateTimeString | null
   expires_at?: IsoDateTimeString | null
   images?: string[]
   attachments?: string[]
+  pmtiles_url?: string | null
+}
+
+export interface UploadHazardFormInput {
+  name: string
+  category_id: Uuid
+  severity: HazardSeverity
+  status: HazardStatus
+  description?: string | null
+  location_name?: string | null
+  address?: string | null
+  barangay?: string | null
+  city?: string | null
+  province?: string | null
+  region?: string | null
+  geometry?: HazardGeometry
+  geometry_type?: HazardGeometryType
+  images: string[]
+  attachments: string[]
+  pmtiles_url?: string | null
 }
 
 export type CreateHazardFormInput = Omit<

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { BookmarkCheck } from 'lucide-vue-next'
+import { BookmarkCheck, FileText } from 'lucide-vue-next'
 import NearestSpacesReportModal from '@/components/smart-analysis/NearestSpacesReportModal.vue'
 import NearestSuppliersReportModal from '@/components/smart-analysis/NearestSuppliersReportModal.vue'
 import SuitabilityReportModal from '@/components/smart-analysis/SuitabilityReportModal.vue'
@@ -8,6 +8,9 @@ import ConfirmDeleteModal from '@/components/ConfirmDeleteModal.vue'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { TypographyH2, TypographyMuted } from '@/components/typography'
+import { useBusinessReports } from '@/composables/useBusinessReports'
+import TabAndExportButtons from '@/views/(admin)/reports/components/TabAndExportButtons.vue'
+import ReportTable from '@/views/(admin)/reports/components/ReportTable.vue'
 import SavedReportsPagination from './components/SavedReportsPagination.vue'
 import SavedReportsTable from './components/SavedReportsTable.vue'
 import SavedReportsToolbar from './components/SavedReportsToolbar.vue'
@@ -16,6 +19,10 @@ import { useSavedReportsPage } from './composables/useSavedReportsPage'
 // Archive of the four smart-analysis result types. Reports stay in
 // localStorage; this page only reads, reopens and deletes them.
 const page = useSavedReportsPage()
+
+// Same static business/zoning report rows shown on the admin side — see
+// src/data/reports.data.ts.
+const businessReports = useBusinessReports()
 </script>
 
 <template>
@@ -50,6 +57,32 @@ const page = useSavedReportsPage()
       <SavedReportsPagination
         v-if="page.filteredCount.value > 0"
         :table="page.table"
+      />
+    </Card>
+
+    <div class="flex items-start gap-3">
+      <span class="bg-primary/10 text-primary mt-0.5 rounded-lg p-2.5">
+        <FileText class="h-5 w-5" />
+      </span>
+      <div class="space-y-1">
+        <TypographyH2>Business & Zoning Reports</TypographyH2>
+        <TypographyMuted>
+          Business suitability, supplier, and space reports for your area.
+        </TypographyMuted>
+      </div>
+    </div>
+
+    <Card class="gap-4 rounded-xl p-4 md:p-5">
+      <TabAndExportButtons
+        :tabs="businessReports.tabs"
+        :value="businessReports.value.value"
+        :can-export="businessReports.canExport.value"
+        @change="businessReports.handleTabChange"
+        @export="businessReports.handleExport"
+      />
+      <ReportTable
+        :table-data="businessReports.currentTab.value?.tableData"
+        :content="businessReports.currentTab.value?.content"
       />
     </Card>
 

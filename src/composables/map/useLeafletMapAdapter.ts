@@ -385,9 +385,11 @@ export function useLeafletMapAdapter(options: LeafletAdapterOptions) {
         return container
       }
 
-      if (hazard.geometry.type === 'Point') {
-        const [lng, lat] = hazard.geometry.coordinates
-        L.circleMarker([lat, lng], {
+      const toLatLng = (point: [number, number]) => [point[1], point[0]] as [number, number]
+      const geometry = hazard.geometry
+
+      const addMarker = (point: [number, number]): void => {
+        L.circleMarker(toLatLng(point), {
           radius: 7,
           color: '#ef4444',
           weight: 2,
@@ -396,12 +398,26 @@ export function useLeafletMapAdapter(options: LeafletAdapterOptions) {
         })
           .bindPopup(buildPopupContent)
           .addTo(layerGroup)
+      }
+
+      if (geometry.type === 'Point') {
+        addMarker(geometry.coordinates)
         return
       }
 
-      if (hazard.geometry.type === 'LineString') {
+      if (geometry.type === 'MultiPoint') {
+        geometry.coordinates.forEach(addMarker)
+        return
+      }
+
+      if (geometry.type === 'LineString' || geometry.type === 'MultiLineString') {
+        // Leaflet's polyline() natively accepts either a single path
+        // (LatLng[]) or multiple disjoint paths (LatLng[][]) — both shapes
+        // line up with GeoJSON's LineString/MultiLineString coordinates.
         L.polyline(
-          hazard.geometry.coordinates.map((point) => [point[1], point[0]] as [number, number]),
+          geometry.type === 'LineString'
+            ? geometry.coordinates.map(toLatLng)
+            : geometry.coordinates.map((line) => line.map(toLatLng)),
           {
             color: '#f97316',
             weight: 3,
@@ -413,10 +429,12 @@ export function useLeafletMapAdapter(options: LeafletAdapterOptions) {
         return
       }
 
+      // Same deal for polygon() — LatLng[][] (rings) or LatLng[][][]
+      // (multi-polygon parts, each with its own rings) both work natively.
       L.polygon(
-        hazard.geometry.coordinates.map((ring) =>
-          ring.map((point) => [point[1], point[0]] as [number, number]),
-        ),
+        geometry.type === 'Polygon'
+          ? geometry.coordinates.map((ring) => ring.map(toLatLng))
+          : geometry.coordinates.map((rings) => rings.map((ring) => ring.map(toLatLng))),
         {
           color: '#ef4444',
           weight: 2,

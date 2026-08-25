@@ -566,56 +566,68 @@ export function useGoogleMapAdapter(options: GoogleAdapterOptions) {
     const PolygonCtor = googleMaps.Polygon
     const PolylineCtor = googleMaps.Polyline
 
-    hazards.forEach((hazard) => {
-      if (hazard.geometry.type === 'Point' && MarkerCtor) {
-        const [lng, lat] = hazard.geometry.coordinates
+    const toLatLng = (point: [number, number]) => ({ lat: point[1], lng: point[0] })
 
-        const marker = new MarkerCtor({
-          position: { lat, lng },
-          map: googleMap as GoogleMapInstance,
-          title: hazard.name,
-          icon: {
-            path: 'M 0,0 m -5,0 a 5,5 0 1,0 10,0 a 5,5 0 1,0 -10,0',
-            fillColor: '#ef4444',
-            fillOpacity: 1,
-            strokeColor: '#7f1d1d',
-            strokeOpacity: 1,
-            strokeWeight: 1,
-            scale: 1,
-          },
-        })
-
-        googleHazardMarkers.push(marker)
-        return
-      }
-
-      if (hazard.geometry.type === 'LineString' && PolylineCtor) {
-        const polyline = new PolylineCtor({
-          path: hazard.geometry.coordinates.map((point) => ({ lat: point[1], lng: point[0] })),
-          strokeColor: '#f97316',
-          strokeOpacity: 1,
-          strokeWeight: 3,
-          map: googleMap as GoogleMapInstance,
-        })
-
-        googleHazardPolylines.push(polyline)
-        return
-      }
-
-      if (hazard.geometry.type === 'Polygon' && PolygonCtor) {
-        const polygon = new PolygonCtor({
-          paths: hazard.geometry.coordinates.map((ring) =>
-            ring.map((point) => ({ lat: point[1], lng: point[0] })),
-          ),
-          strokeColor: '#ef4444',
-          strokeOpacity: 1,
-          strokeWeight: 2,
+    const addMarker = (point: [number, number], title: string): void => {
+      if (!MarkerCtor) return
+      const marker = new MarkerCtor({
+        position: toLatLng(point),
+        map: googleMap as GoogleMapInstance,
+        title,
+        icon: {
+          path: 'M 0,0 m -5,0 a 5,5 0 1,0 10,0 a 5,5 0 1,0 -10,0',
           fillColor: '#ef4444',
-          fillOpacity: 0.2,
-          map: googleMap as GoogleMapInstance,
-        })
+          fillOpacity: 1,
+          strokeColor: '#7f1d1d',
+          strokeOpacity: 1,
+          strokeWeight: 1,
+          scale: 1,
+        },
+      })
+      googleHazardMarkers.push(marker)
+    }
 
-        googleHazardPolygons.push(polygon)
+    const addPolyline = (line: [number, number][]): void => {
+      if (!PolylineCtor) return
+      const polyline = new PolylineCtor({
+        path: line.map(toLatLng),
+        strokeColor: '#f97316',
+        strokeOpacity: 1,
+        strokeWeight: 3,
+        map: googleMap as GoogleMapInstance,
+      })
+      googleHazardPolylines.push(polyline)
+    }
+
+    const addPolygon = (rings: [number, number][][]): void => {
+      if (!PolygonCtor) return
+      const polygon = new PolygonCtor({
+        paths: rings.map((ring) => ring.map(toLatLng)),
+        strokeColor: '#ef4444',
+        strokeOpacity: 1,
+        strokeWeight: 2,
+        fillColor: '#ef4444',
+        fillOpacity: 0.2,
+        map: googleMap as GoogleMapInstance,
+      })
+      googleHazardPolygons.push(polygon)
+    }
+
+    hazards.forEach((hazard) => {
+      const geometry = hazard.geometry
+
+      if (geometry.type === 'Point') {
+        addMarker(geometry.coordinates, hazard.name)
+      } else if (geometry.type === 'MultiPoint') {
+        geometry.coordinates.forEach((point) => addMarker(point, hazard.name))
+      } else if (geometry.type === 'LineString') {
+        addPolyline(geometry.coordinates)
+      } else if (geometry.type === 'MultiLineString') {
+        geometry.coordinates.forEach(addPolyline)
+      } else if (geometry.type === 'Polygon') {
+        addPolygon(geometry.coordinates)
+      } else if (geometry.type === 'MultiPolygon') {
+        geometry.coordinates.forEach(addPolygon)
       }
     })
   }

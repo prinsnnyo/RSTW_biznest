@@ -8,33 +8,15 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { TypographyMuted, TypographyP, TypographySmall } from '@/components/typography'
+import { TypographyP } from '@/components/typography'
 import { useAdminMapStore } from '@/stores/admin.map.store'
-import { useReports } from '@/views/(admin)/reports/composables/useReports'
-import { useReportExport } from '@/views/(admin)/reports/composables/useReportExport'
+import { useBusinessReports } from '@/composables/useBusinessReports'
 import TabAndExportButtons from '@/views/(admin)/reports/components/TabAndExportButtons.vue'
 import ReportTable from '@/views/(admin)/reports/components/ReportTable.vue'
 
 const adminMapStore = useAdminMapStore()
-const { value, tabs, loading, error, currentTab, canExport, handleTabChange } = useReports()
-const { exportToPdf, exportToCsv, exportToText, exportToWord } = useReportExport()
-
-function handleExportFormat(format: 'pdf' | 'word' | 'text' | 'csv'): void {
-  const tab = currentTab.value
-  if (!canExport.value || !tab) {
-    return
-  }
-
-  if (format === 'pdf') {
-    exportToPdf(tab, tab.label)
-  } else if (format === 'word') {
-    exportToWord(tab, tab.label)
-  } else if (format === 'text') {
-    exportToText(tab, tab.label)
-  } else {
-    exportToCsv(tab, tab.label)
-  }
-}
+const { tabs, value, currentTab, canExport, handleTabChange, handleExportFormat } =
+  useBusinessReports()
 
 function close(): void {
   adminMapStore.activePanel = null
@@ -74,14 +56,7 @@ function close(): void {
       </CardHeader>
 
       <CardContent class="flex-1 overflow-hidden p-0">
-        <TypographyMuted v-if="loading" as="p" class="px-4 pt-3 text-xs">
-          Loading reports…
-        </TypographyMuted>
-        <TypographySmall v-else-if="error" as="p" class="px-4 pt-3 text-xs text-destructive">
-          {{ error }}
-        </TypographySmall>
-
-        <div v-else class="flex h-full flex-col">
+        <div class="flex h-full flex-col">
           <TabAndExportButtons
             :tabs="tabs"
             :value="value"
