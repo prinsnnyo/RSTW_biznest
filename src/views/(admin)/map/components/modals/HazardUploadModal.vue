@@ -10,6 +10,7 @@ import {
 import { parseHazardGeoJsonFile } from '@/utils/hazard/hazardGeoJson.utils'
 import { useAdminMapStore } from '@/stores/admin.map.store'
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { FileDropZone } from '@/components/ui/file-drop-zone'
@@ -60,6 +61,15 @@ const form = reactive({
   region: '',
 })
 
+// hazard_date is a free-text column: either an actual observed date or a
+// prediction like "25 years from now". This toggle just swaps the input
+// between a native date picker and a plain text field — same form field.
+const isHazardPrediction = ref(false)
+
+watch(isHazardPrediction, () => {
+  form.hazard_date = ''
+})
+
 const parsedGeometry = ref<{ geometry: HazardGeometry; geometryType: HazardGeometryType } | null>(
   null,
 )
@@ -94,6 +104,7 @@ function resetForm(): void {
   form.status = 'reported'
   form.description = ''
   form.hazard_date = ''
+  isHazardPrediction.value = false
   form.location_name = ''
   form.address = ''
   form.barangay = ''
@@ -216,7 +227,9 @@ function submit(): void {
           Upload Hazard
         </DialogTitle>
         <DialogDescription>
-          Upload a GeoJSON file to define the hazard's geometry, then fill in its details.
+          Upload a GeoJSON file to define the hazard's geometry, then fill in its details. If the
+          GeoJSON is too large for Supabase to insert directly, skip it and upload a PMTiles file
+          instead — the map will render from that.
         </DialogDescription>
       </DialogHeader>
 
@@ -258,8 +271,17 @@ function submit(): void {
         </div>
 
         <div class="space-y-1">
-          <label class="text-xs font-medium">Hazard Date</label>
-          <Input type="date" v-model="form.hazard_date" />
+          <label class="text-xs font-medium">{{ isHazardPrediction ? 'Predicted Date' : 'Hazard Date' }}</label>
+          <Input
+            v-if="isHazardPrediction"
+            v-model="form.hazard_date"
+            placeholder="e.g. 25 years from now"
+          />
+          <Input v-else type="date" v-model="form.hazard_date" />
+          <label class="flex items-center gap-2 pt-0.5">
+            <Checkbox v-model="isHazardPrediction" />
+            <span class="text-xs text-muted-foreground">This is a prediction, not an observed date</span>
+          </label>
         </div>
 
         <div class="space-y-1">
@@ -287,7 +309,7 @@ function submit(): void {
           />
           <p class="text-xs text-muted-foreground">
             Optional. Feature, FeatureCollection, or bare geometry are all accepted. Only the
-            first feature is used. Skip this to add geometry later.
+            first feature is used. Too large to insert? Skip this and upload PMTiles below instead.
           </p>
           <p v-if="geojsonParseError" class="text-xs text-destructive">
             {{ geojsonParseError }}
@@ -349,7 +371,8 @@ function submit(): void {
             @update:results="onPmtilesResults"
           />
           <p class="text-xs text-muted-foreground">
-            Used to render this hazard on the map; geometry stays available for queries.
+            Used to render this hazard on the map. Use this instead of GeoJSON when the source
+            file is too large to upload directly — geometry is optional.
           </p>
         </div>
 

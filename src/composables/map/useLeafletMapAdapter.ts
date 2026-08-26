@@ -387,6 +387,9 @@ export function useLeafletMapAdapter(options: LeafletAdapterOptions) {
 
       const toLatLng = (point: [number, number]) => [point[1], point[0]] as [number, number]
       const geometry = hazard.geometry
+      if (!geometry) {
+        return
+      }
 
       const addMarker = (point: [number, number]): void => {
         L.circleMarker(toLatLng(point), {

@@ -3,6 +3,7 @@ import { computed, reactive, ref, watch } from 'vue'
 import { listHazardCategories } from '@/services/hazard/hazard.service'
 import { useAdminMapStore } from '@/stores/admin.map.store'
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import {
   Select,
@@ -12,13 +13,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from '@/components/ui/sheet'
-import type {
-  HazardCategory,
-  HazardGeometry,
-  HazardGeometryType,
-  HazardSeverity,
-  HazardStatus,
-} from '@/types/hazard.types'
+import type { HazardCategory, HazardSeverity, HazardStatus } from '@/types/hazard.types'
 
 const severityOptions: HazardSeverity[] = ['low', 'moderate', 'high', 'critical']
 const statusOptions: HazardStatus[] = [
@@ -28,7 +23,6 @@ const statusOptions: HazardStatus[] = [
   'mitigated',
   'resolved',
 ]
-const geometryOptions: HazardGeometryType[] = ['point', 'linestring', 'polygon']
 const placementLabels: Record<string, string> = {
   point: 'Pin',
   linestring: 'Draw Line',
@@ -49,11 +43,22 @@ const form = reactive({
   status: 'reported' as HazardStatus,
   location_name: '',
   description: '',
-  geometry_type: 'point' as HazardGeometryType,
-  coordinatesText: '',
+  hazard_date: '',
 })
 
-const parseError = ref('')
+// hazard_date is free text — either an actual observed date or a prediction
+// like "25 years from now". This toggle just swaps the input between a
+// native date picker and a plain text field; both write the same form field.
+const isHazardPrediction = ref(false)
+const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/
+
+// A plain watch(isHazardPrediction) would also fire — and clear hazard_date
+// — when editingHazard sets both values together while loading an existing
+// hazard. Only the user flipping the checkbox should clear the field.
+function setHazardPrediction(value: boolean): void {
+  isHazardPrediction.value = value
+  form.hazard_date = ''
+}
 
 const fetchedCategories = ref<HazardCategory[]>([])
 const isLoadingCategories = ref(false)
@@ -97,8 +102,6 @@ watch(
 watch(
   () => adminMapStore.editingHazard,
   (hazard) => {
-    parseError.value = ''
-
     if (hazard) {
       form.name = hazard.name
       form.category_id = hazard.category_id
@@ -106,8 +109,10 @@ watch(
       form.status = hazard.status
       form.location_name = hazard.location_name ?? ''
       form.description = hazard.description ?? ''
-      form.geometry_type = hazard.geometry_type
-      form.coordinatesText = JSON.stringify(hazard.geometry.coordinates)
+      form.hazard_date = hazard.hazard_date ?? ''
+      isHazardPrediction.value = Boolean(
+        hazard.hazard_date && !ISO_DATE_PATTERN.test(hazard.hazard_date),
+      )
       return
     }
 
@@ -117,59 +122,11 @@ watch(
     form.status = 'reported'
     form.location_name = ''
     form.description = ''
-    form.geometry_type = 'point'
-    form.coordinatesText = ''
+    form.hazard_date = ''
+    isHazardPrediction.value = false
   },
   { immediate: true },
 )
-
-function isCoordinatePair(value: unknown): value is [number, number] {
-  return (
-    Array.isArray(value) &&
-    value.length === 2 &&
-    value.every((entry) => typeof entry === 'number' && Number.isFinite(entry))
-  )
-}
-
-function isLinearRing(value: unknown): value is [number, number][] {
-  return Array.isArray(value) && value.length >= 4 && value.every(isCoordinatePair)
-}
-
-function buildGeometry(): HazardGeometry | null {
-  parseError.value = ''
-
-  try {
-    const raw = JSON.parse(form.coordinatesText)
-
-    if (form.geometry_type === 'point') {
-      if (!isCoordinatePair(raw)) {
-        parseError.value = 'Point coordinates must be [lng, lat].'
-        return null
-      }
-
-      return { type: 'Point', coordinates: raw }
-    }
-
-    if (form.geometry_type === 'linestring') {
-      if (!Array.isArray(raw) || raw.length < 2 || !raw.every(isCoordinatePair)) {
-        parseError.value = 'LineString coordinates must be [[lng, lat], ...].'
-        return null
-      }
-
-      return { type: 'LineString', coordinates: raw }
-    }
-
-    if (!Array.isArray(raw) || raw.length === 0 || !raw.every(isLinearRing)) {
-      parseError.value = 'Polygon coordinates must be [[[lng, lat], ...]].'
-      return null
-    }
-
-    return { type: 'Polygon', coordinates: raw }
-  } catch {
-    parseError.value = 'Coordinates must be valid JSON.'
-    return null
-  }
-}
 
 function close(): void {
   if (isEditing.value) {
@@ -191,6 +148,7 @@ function submit(): void {
     status: form.status,
     location_name: form.location_name.trim() || null,
     description: form.description.trim() || null,
+    hazard_date: form.hazard_date || null,
   }
 
   if (isEditing.value) {
@@ -199,14 +157,11 @@ function submit(): void {
       return
     }
 
-    const geometry = buildGeometry()
-    if (!geometry) {
-      return
-    }
-
+    // Geometry isn't editable here — leaving it out of the payload keeps
+    // the hazard's existing geometry untouched (a partial DB update).
     void adminMapStore.handleUpdateHazard({
       hazardId: hazard.id,
-      input: { ...basePayload, geometry, geometry_type: form.geometry_type },
+      input: basePayload,
     })
     return
   }
@@ -289,6 +244,23 @@ function submit(): void {
             </Select>
           </div>
 
+          <div class="space-y-1">
+            <label class="text-xs font-medium">{{ isHazardPrediction ? 'Predicted Date' : 'Hazard Date' }}</label>
+            <Input
+              v-if="isHazardPrediction"
+              v-model="form.hazard_date"
+              placeholder="e.g. 25 years from now"
+            />
+            <Input v-else type="date" v-model="form.hazard_date" />
+            <label class="flex items-center gap-2 pt-0.5">
+              <Checkbox
+                :model-value="isHazardPrediction"
+                @update:model-value="(value) => setHazardPrediction(!!value)"
+              />
+              <span class="text-xs text-muted-foreground">This is a prediction, not an observed date</span>
+            </label>
+          </div>
+
           <div v-if="!isEditing" class="col-span-2 rounded-md border bg-muted/30 p-3">
             <div class="space-y-1">
               <label class="text-xs font-medium">Placement Type</label>
@@ -315,18 +287,10 @@ function submit(): void {
             </div>
           </div>
 
-          <div v-else class="space-y-1">
-            <label class="text-xs font-medium">Geometry Type</label>
-            <Select v-model="form.geometry_type">
-              <SelectTrigger>
-                <SelectValue placeholder="Select geometry" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem v-for="geometry in geometryOptions" :key="geometry" :value="geometry">
-                  {{ placementLabels[geometry] }}
-                </SelectItem>
-              </SelectContent>
-            </Select>
+          <div v-if="isEditing" class="col-span-2 rounded-md border bg-muted/30 p-3">
+            <p class="text-xs text-muted-foreground">
+              Geometry isn't editable here — delete and re-upload the hazard to change its shape.
+            </p>
           </div>
 
           <div class="col-span-2 space-y-1">
@@ -337,25 +301,6 @@ function submit(): void {
               class="border-input focus-visible:border-ring focus-visible:ring-ring/50 w-full rounded-md border bg-transparent px-3 py-2 text-sm outline-none focus-visible:ring-[3px]"
               placeholder="Describe hazard details"
             />
-          </div>
-
-          <div v-if="isEditing" class="col-span-2 space-y-1">
-            <label class="text-xs font-medium">Coordinates (JSON)</label>
-            <textarea
-              v-model="form.coordinatesText"
-              rows="4"
-              class="border-input focus-visible:border-ring focus-visible:ring-ring/50 font-mono w-full rounded-md border bg-transparent px-3 py-2 text-xs outline-none focus-visible:ring-[3px]"
-              :placeholder="
-                form.geometry_type === 'point'
-                  ? '[125.5406, 8.9475]'
-                  : form.geometry_type === 'linestring'
-                    ? '[[125.54, 8.94], [125.55, 8.95]]'
-                    : '[[[125.54, 8.94], [125.55, 8.94], [125.55, 8.95], [125.54, 8.94]]]'
-              "
-            />
-            <p v-if="parseError" class="text-xs text-destructive">
-              {{ parseError }}
-            </p>
           </div>
         </div>
       </div>

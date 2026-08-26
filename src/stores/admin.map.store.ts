@@ -285,6 +285,7 @@ export const useAdminMapStore = defineStore('adminMap', () => {
   const hazardError = ref('')
   const selectedHazardId = ref<HazardId | null>(null)
   const hiddenCategoryIds = ref<string[]>([])
+  const hiddenHazardIds = ref<HazardId[]>([])
   const hasLoadedHazards = ref(false)
   const hazardPlacementType = ref<HazardGeometryType | null>(null)
   const showHazardFormModal = ref(false)
@@ -334,9 +335,12 @@ export const useAdminMapStore = defineStore('adminMap', () => {
   })
 
   const hiddenCategoryIdSet = computed(() => new Set(hiddenCategoryIds.value))
+  const hiddenHazardIdSet = computed(() => new Set(hiddenHazardIds.value))
 
   const visibleHazards = computed(() =>
-    hazards.value.filter((h) => !hiddenCategoryIdSet.value.has(h.category_id)),
+    hazards.value.filter(
+      (h) => !hiddenCategoryIdSet.value.has(h.category_id) && !hiddenHazardIdSet.value.has(h.id),
+    ),
   )
 
   const isHazardPlacementActive = computed(() => hazardPlacementType.value !== null)
@@ -796,6 +800,14 @@ export const useAdminMapStore = defineStore('adminMap', () => {
     }
   }
 
+  function handleToggleHazardVisibility(hazardId: HazardId): void {
+    if (hiddenHazardIdSet.value.has(hazardId)) {
+      hiddenHazardIds.value = hiddenHazardIds.value.filter((id) => id !== hazardId)
+    } else {
+      hiddenHazardIds.value = [...hiddenHazardIds.value, hazardId]
+    }
+  }
+
   function startHazardPlacement(placementType: HazardGeometryType): void {
     if (isDrawMode.value) {
       cancelDrawZoneMode()
@@ -1089,6 +1101,9 @@ export const useAdminMapStore = defineStore('adminMap', () => {
   // Map ref helpers
   function getHazardFocusPoints(hazard: Hazard): MapDrawPoint[] {
     const geometry = hazard.geometry
+    if (!geometry) {
+      return []
+    }
     const toPoint = (point: [number, number]): MapDrawPoint => ({ lat: point[1], lng: point[0] })
 
     if (geometry.type === 'Point') {
@@ -1495,6 +1510,7 @@ export const useAdminMapStore = defineStore('adminMap', () => {
     hazardCategories,
     hazards,
     hiddenCategoryIds,
+    hiddenHazardIds,
     isLoadingHazards,
     isSavingHazard,
     hazardError,
@@ -1506,6 +1522,7 @@ export const useAdminMapStore = defineStore('adminMap', () => {
     loadHazards,
     handleSaveHazard,
     handleToggleCategoryVisibility,
+    handleToggleHazardVisibility,
     handleStartCreateHazard,
     handleSelectHazard,
     handleUpdateHazard,
