@@ -914,6 +914,7 @@ export const useAdminMapStore = defineStore('adminMap', () => {
         city: payload.city || null,
         province: payload.province || null,
         region: payload.region || null,
+        hazard_date: payload.hazard_date || null,
         reported_by: authStore.user?.id ?? null,
         city_id: cityId.value ?? '',
         geometry: payload.geometry,
