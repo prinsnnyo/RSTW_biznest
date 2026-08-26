@@ -23,6 +23,7 @@ import UsersView from '@/views/(admin)/users/UsersView.vue'
 import ReportsView from '@/views/(admin)/reports/ReportsView.vue'
 import RolesView from '@/views/(admin)/roles/RolesView.vue'
 import ApplicationsView from '@/views/(admin)/applications/ApplicationsView.vue'
+import AnalyticsView from '@/views/(admin)/analytics/AnalyticsView.vue'
 
 // Entrepreneur app (also used by supplier until it gets its own shell)
 import EntrepreneurHomeView from '@/views/(entrepreneur)/home/EntrepreneurHomeView.vue'
@@ -190,6 +191,12 @@ const router = createRouter({
           path: 'reports',
           name: 'reports',
           component: ReportsView,
+          meta: { requiresAuth: true },
+        },
+        {
+          path: 'analytics',
+          name: 'admin-analytics',
+          component: AnalyticsView,
           meta: { requiresAuth: true },
         },
         {
