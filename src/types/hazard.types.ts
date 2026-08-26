@@ -1,5 +1,6 @@
 export type HazardId = string
 export type IsoDateTimeString = string
+export type IsoDateString = string
 export type Uuid = string
 
 export type HazardSeverity = 'low' | 'moderate' | 'high' | 'critical' | (string & {})
@@ -100,6 +101,7 @@ export interface Hazard {
   images: string[] | null
   attachments: string[] | null
   pmtiles_url: string | null
+  hazard_date: IsoDateString | null
   occurred_at: IsoDateTimeString | null
   expires_at: IsoDateTimeString | null
   created_at: IsoDateTimeString
@@ -122,6 +124,7 @@ export interface CreateHazardInput {
   province?: string | null
   region?: string | null
   reported_by?: Uuid | null
+  hazard_date?: IsoDateString | null
   occurred_at?: IsoDateTimeString | null
   expires_at?: IsoDateTimeString | null
   images?: string[]
@@ -141,6 +144,7 @@ export interface UploadHazardFormInput {
   city?: string | null
   province?: string | null
   region?: string | null
+  hazard_date?: IsoDateString | null
   geometry?: HazardGeometry
   geometry_type?: HazardGeometryType
   images: string[]

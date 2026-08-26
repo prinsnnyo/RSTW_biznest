@@ -51,6 +51,7 @@ const form = reactive({
   severity: 'low' as HazardSeverity,
   status: 'reported' as HazardStatus,
   description: '',
+  hazard_date: '',
   location_name: '',
   address: '',
   barangay: '',
@@ -92,6 +93,7 @@ function resetForm(): void {
   form.severity = 'low'
   form.status = 'reported'
   form.description = ''
+  form.hazard_date = ''
   form.location_name = ''
   form.address = ''
   form.barangay = ''
@@ -182,6 +184,7 @@ function submit(): void {
     severity: form.severity,
     status: form.status,
     description: form.description.trim() || null,
+    hazard_date: form.hazard_date || null,
     location_name: form.location_name.trim() || null,
     address: form.address.trim() || null,
     barangay: form.barangay.trim() || null,
@@ -252,6 +255,11 @@ function submit(): void {
               </SelectItem>
             </SelectContent>
           </Select>
+        </div>
+
+        <div class="space-y-1">
+          <label class="text-xs font-medium">Hazard Date</label>
+          <Input type="date" v-model="form.hazard_date" />
         </div>
 
         <div class="space-y-1">
