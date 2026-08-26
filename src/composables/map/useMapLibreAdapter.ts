@@ -1,6 +1,7 @@
 import type { Ref } from 'vue'
 import type { GeoJSONSourceSpecification, LayerSpecification, Marker } from 'maplibre-gl'
-import { Popup as MapLibrePopup } from 'maplibre-gl'
+import { addProtocol, Popup as MapLibrePopup } from 'maplibre-gl'
+import { PMTiles, Protocol as PmtilesProtocol } from 'pmtiles'
 import type {
   BarangayFeatureCollection,
   MapLayerCategory,
@@ -60,6 +61,20 @@ const HAZARDS_POLYGON_OUTLINE_LAYER_ID = 'ml-hazards-polygon-outline'
 const HAZARDS_LINE_LAYER_ID = 'ml-hazards-line'
 const HAZARDS_POINT_LAYER_ID = 'ml-hazards-point'
 const HAZARDS_POPUP_ID = 'ml-hazards-popup'
+
+const HAZARD_PMTILES_SOURCE_PREFIX = 'ml-hazard-pmtiles-src-'
+const HAZARD_PMTILES_FILL_LAYER_PREFIX = 'ml-hazard-pmtiles-fill-'
+const HAZARD_PMTILES_OUTLINE_LAYER_PREFIX = 'ml-hazard-pmtiles-outline-'
+const HAZARD_PMTILES_LINE_LAYER_PREFIX = 'ml-hazard-pmtiles-line-'
+const HAZARD_PMTILES_POINT_LAYER_PREFIX = 'ml-hazard-pmtiles-point-'
+// Most GeoJSON→PMTiles conversion tools default to this layer name when the
+// archive's own metadata can't be read (e.g. tippecanoe with no -l flag).
+const HAZARD_PMTILES_FALLBACK_LAYER_NAME = 'layer0'
+
+// The MapLibre PMTiles protocol is a global registration, done once per page
+// load regardless of how many map instances mount.
+const pmtilesProtocol = new PmtilesProtocol()
+addProtocol('pmtiles', pmtilesProtocol.tile)
 
 const DRAW_PREVIEW_SOURCE_ID = 'ml-draw-preview'
 const DRAW_PREVIEW_FILL_LAYER_ID = 'ml-draw-preview-fill'
@@ -141,6 +156,21 @@ function buildHtmlFromNode(build: (container: HTMLDivElement) => void): string {
   return container.outerHTML
 }
 
+function buildHazardPopupHtml(name: string, severity: string, hazardDate: string): string {
+  return buildHtmlFromNode((container) => {
+    const strong = document.createElement('strong')
+    strong.textContent = name
+    const meta = document.createElement('div')
+    meta.textContent = severity
+    container.append(strong, meta)
+    if (hazardDate) {
+      const date = document.createElement('div')
+      date.textContent = hazardDate
+      container.append(date)
+    }
+  })
+}
+
 export function useMapLibreAdapter(options: MapLibreAdapterOptions) {
   let engine: MapLibreEngine | null = null
   let mapClickHandler: MapClickHandler | null = null
@@ -157,6 +187,9 @@ export function useMapLibreAdapter(options: MapLibreAdapterOptions) {
   let barangayLeaveCleanup: (() => void) | null = null
   let mappedZonesClickCleanup: (() => void) | null = null
   let hazardsClickCleanup: (() => void) | null = null
+  let hazardPmtilesSourceIds: string[] = []
+  let hazardPmtilesLayerIds: string[] = []
+  let hazardPmtilesClickCleanups: Array<() => void> = []
   let drawPreviewVertexIds: string[] = []
   let pinMarkerIds: string[] = []
   const pinMarkers = new Map<string, Marker>()
@@ -453,6 +486,133 @@ export function useMapLibreAdapter(options: MapLibreAdapterOptions) {
     engine?.removeLayer(HAZARDS_LINE_LAYER_ID)
     engine?.removeLayer(HAZARDS_POINT_LAYER_ID)
     engine?.removeSource(HAZARDS_SOURCE_ID)
+    removeHazardPmtilesLayers()
+  }
+
+  function removeHazardPmtilesLayers(): void {
+    hazardPmtilesClickCleanups.forEach((cleanup) => cleanup())
+    hazardPmtilesClickCleanups = []
+    hazardPmtilesLayerIds.forEach((id) => engine?.removeLayer(id))
+    hazardPmtilesLayerIds = []
+    hazardPmtilesSourceIds.forEach((id) => engine?.removeSource(id))
+    hazardPmtilesSourceIds = []
+  }
+
+  async function renderHazardPmtiles(hazards: Hazard[]): Promise<void> {
+    const withPmtiles = hazards.filter(
+      (hazard): hazard is Hazard & { pmtiles_url: string } =>
+        !hazard.geometry && Boolean(hazard.pmtiles_url),
+    )
+
+    if (!engine || withPmtiles.length === 0) {
+      return
+    }
+
+    await Promise.all(
+      withPmtiles.map(async (hazard) => {
+        if (!engine) {
+          return
+        }
+
+        const pmtilesUrl = hazard.pmtiles_url
+        const sourceId = `${HAZARD_PMTILES_SOURCE_PREFIX}${hazard.id}`
+
+        if (engine.hasSource(sourceId)) {
+          return
+        }
+
+        let layerNames: string[] = []
+        try {
+          const archive = new PMTiles(pmtilesUrl)
+          const metadata = (await archive.getMetadata()) as { vector_layers?: { id: string }[] }
+          if (Array.isArray(metadata?.vector_layers) && metadata.vector_layers.length > 0) {
+            layerNames = metadata.vector_layers.map((layer) => layer.id)
+          }
+        } catch {
+          // Metadata section may be missing/unreadable — fall through to the
+          // default layer name guess below.
+        }
+
+        if (layerNames.length === 0) {
+          layerNames = [HAZARD_PMTILES_FALLBACK_LAYER_NAME]
+        }
+
+        if (!engine || engine.hasSource(sourceId)) {
+          return
+        }
+
+        engine.addSource(sourceId, { type: 'vector', url: `pmtiles://${pmtilesUrl}` })
+        hazardPmtilesSourceIds.push(sourceId)
+
+        const clickableLayerIds: string[] = []
+
+        layerNames.forEach((layerName, index) => {
+          const fillLayerId = `${HAZARD_PMTILES_FILL_LAYER_PREFIX}${hazard.id}-${index}`
+          const outlineLayerId = `${HAZARD_PMTILES_OUTLINE_LAYER_PREFIX}${hazard.id}-${index}`
+          const lineLayerId = `${HAZARD_PMTILES_LINE_LAYER_PREFIX}${hazard.id}-${index}`
+          const pointLayerId = `${HAZARD_PMTILES_POINT_LAYER_PREFIX}${hazard.id}-${index}`
+
+          engine!.addLayer({
+            id: fillLayerId,
+            type: 'fill',
+            source: sourceId,
+            'source-layer': layerName,
+            filter: ['==', ['geometry-type'], 'Polygon'],
+            paint: { 'fill-color': '#ef4444', 'fill-opacity': 0.2 },
+          } as LayerSpecification)
+
+          engine!.addLayer({
+            id: outlineLayerId,
+            type: 'line',
+            source: sourceId,
+            'source-layer': layerName,
+            filter: ['==', ['geometry-type'], 'Polygon'],
+            paint: { 'line-color': '#ef4444', 'line-width': 2 },
+          } as LayerSpecification)
+
+          engine!.addLayer({
+            id: lineLayerId,
+            type: 'line',
+            source: sourceId,
+            'source-layer': layerName,
+            filter: ['==', ['geometry-type'], 'LineString'],
+            paint: { 'line-color': '#f97316', 'line-width': 3 },
+          } as LayerSpecification)
+
+          engine!.addLayer({
+            id: pointLayerId,
+            type: 'circle',
+            source: sourceId,
+            'source-layer': layerName,
+            filter: ['==', ['geometry-type'], 'Point'],
+            paint: {
+              'circle-radius': 7,
+              'circle-color': '#ef4444',
+              'circle-opacity': 0.35,
+              'circle-stroke-color': '#ef4444',
+              'circle-stroke-width': 2,
+            },
+          } as LayerSpecification)
+
+          hazardPmtilesLayerIds.push(fillLayerId, outlineLayerId, lineLayerId, pointLayerId)
+          clickableLayerIds.push(fillLayerId, lineLayerId, pointLayerId)
+        })
+
+        const cleanup = engine.on('click', clickableLayerIds, (event) => {
+          if (!engine) {
+            return
+          }
+
+          engine.openPopup(
+            HAZARDS_POPUP_ID,
+            event.lngLat,
+            buildHazardPopupHtml(hazard.name, hazard.severity, hazard.hazard_date ?? ''),
+          )
+        })
+
+        hazardPmtilesClickCleanups.push(cleanup)
+      }),
+    )
   }
 
   function removeDrawPreviewLayers(): void {
@@ -699,11 +859,21 @@ export function useMapLibreAdapter(options: MapLibreAdapterOptions) {
 
     const featureCollection = {
       type: 'FeatureCollection',
-      features: hazards.map((hazard) => ({
-        type: 'Feature',
-        properties: { id: hazard.id, name: hazard.name, severity: hazard.severity },
-        geometry: hazard.geometry,
-      })),
+      // Hazards can be geometry-less (PMTiles-only, added when the source
+      // GeoJSON is too large to insert) — GeoJSON features require a
+      // geometry, so those are skipped here.
+      features: hazards
+        .filter((hazard) => hazard.geometry !== null)
+        .map((hazard) => ({
+          type: 'Feature',
+          properties: {
+            id: hazard.id,
+            name: hazard.name,
+            severity: hazard.severity,
+            hazard_date: hazard.hazard_date ?? '',
+          },
+          geometry: hazard.geometry,
+        })),
     }
 
     engine.addGeoJsonSource(
@@ -760,20 +930,17 @@ export function useMapLibreAdapter(options: MapLibreAdapterOptions) {
 
         const name = String(feature.properties?.name ?? '')
         const severity = String(feature.properties?.severity ?? '')
+        const hazardDate = String(feature.properties?.hazard_date ?? '')
 
         engine.openPopup(
           HAZARDS_POPUP_ID,
           event.lngLat,
-          buildHtmlFromNode((container) => {
-            const strong = document.createElement('strong')
-            strong.textContent = name
-            const meta = document.createElement('div')
-            meta.textContent = severity
-            container.append(strong, meta)
-          }),
+          buildHazardPopupHtml(name, severity, hazardDate),
         )
       },
     )
+
+    await renderHazardPmtiles(hazards)
   }
 
   async function renderDrawPreview(drawPoints: MapDrawPoint[]): Promise<void> {

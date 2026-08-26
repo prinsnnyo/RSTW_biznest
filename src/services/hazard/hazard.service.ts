@@ -145,7 +145,11 @@ type RawGeometryType = (typeof GEOMETRY_TYPES)[number]
 const isGeometryType = (value: unknown): value is RawGeometryType =>
   GEOMETRY_TYPES.includes(value as RawGeometryType)
 
-const parseGeometry = (raw: unknown): HazardGeometry => {
+const parseGeometry = (raw: unknown): HazardGeometry | null => {
+  if (raw === null || raw === undefined) {
+    return null
+  }
+
   const candidate: unknown = typeof raw === 'string' ? JSON.parse(raw) : raw
 
   if (
@@ -191,8 +195,8 @@ const normalizePageSize = (pageSize?: number): number => {
 }
 
 type HazardWritePayload = Record<string, unknown> & {
-  geometry?: string | HazardGeometry
-  geometry_type?: string
+  geometry?: string | HazardGeometry | null
+  geometry_type?: string | null
 }
 
 // ── Category functions ──────────────────────────────────────────────────────

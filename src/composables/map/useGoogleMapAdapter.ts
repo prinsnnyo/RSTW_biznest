@@ -615,6 +615,9 @@ export function useGoogleMapAdapter(options: GoogleAdapterOptions) {
 
     hazards.forEach((hazard) => {
       const geometry = hazard.geometry
+      if (!geometry) {
+        return
+      }
 
       if (geometry.type === 'Point') {
         addMarker(geometry.coordinates, hazard.name)

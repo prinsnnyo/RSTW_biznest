@@ -17,7 +17,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { TypographyMuted, TypographyP, TypographySmall } from '@/components/typography'
 import { useAdminMapStore } from '@/stores/admin.map.store'
 import ZoningLayerDeleteDialog from '@/views/(admin)/map/components/modals/ZoningLayerDeleteDialog.vue'
-import type { Hazard, HazardCategory, HazardId } from '@/types/hazard.types'
+import type { Hazard, HazardCategory, HazardId, HazardSeverity } from '@/types/hazard.types'
 
 interface HazardGroup {
   categoryId: string
@@ -31,6 +31,82 @@ const adminMapStore = useAdminMapStore()
 const deletingHazardId = ref<HazardId | null>(null)
 const expandedCategoryIds = ref<Set<string>>(new Set())
 
+// ── Filters (category / severity / hazard_date) ─────────────────────────────
+const activeCategoryFilters = ref<Set<string>>(new Set())
+const activeSeverityFilters = ref<Set<HazardSeverity>>(new Set())
+const activeDateFilters = ref<Set<string>>(new Set())
+
+const availableCategoryChips = computed(() =>
+  adminMapStore.hazardCategories.filter((cat) =>
+    adminMapStore.hazards.some((hazard) => hazard.category_id === cat.id),
+  ),
+)
+
+const availableSeverityChips = computed(() => [
+  ...new Set(adminMapStore.hazards.map((hazard) => hazard.severity)),
+])
+
+const availableDateChips = computed(() => [
+  ...new Set(
+    adminMapStore.hazards
+      .map((hazard) => hazard.hazard_date)
+      .filter((date): date is string => Boolean(date && date.trim())),
+  ),
+])
+
+const hasActiveFilters = computed(
+  () =>
+    activeCategoryFilters.value.size > 0 ||
+    activeSeverityFilters.value.size > 0 ||
+    activeDateFilters.value.size > 0,
+)
+
+function toggleSetValue<T>(set: Set<T>, value: T): Set<T> {
+  const next = new Set(set)
+  if (next.has(value)) {
+    next.delete(value)
+  } else {
+    next.add(value)
+  }
+  return next
+}
+
+function toggleCategoryFilter(categoryId: string): void {
+  activeCategoryFilters.value = toggleSetValue(activeCategoryFilters.value, categoryId)
+}
+
+function toggleSeverityFilter(severity: HazardSeverity): void {
+  activeSeverityFilters.value = toggleSetValue(activeSeverityFilters.value, severity)
+}
+
+function toggleDateFilter(date: string): void {
+  activeDateFilters.value = toggleSetValue(activeDateFilters.value, date)
+}
+
+function clearFilters(): void {
+  activeCategoryFilters.value = new Set()
+  activeSeverityFilters.value = new Set()
+  activeDateFilters.value = new Set()
+}
+
+function matchesFilters(hazard: Hazard): boolean {
+  if (activeCategoryFilters.value.size > 0 && !activeCategoryFilters.value.has(hazard.category_id)) {
+    return false
+  }
+  if (activeSeverityFilters.value.size > 0 && !activeSeverityFilters.value.has(hazard.severity)) {
+    return false
+  }
+  if (
+    activeDateFilters.value.size > 0 &&
+    !(hazard.hazard_date && activeDateFilters.value.has(hazard.hazard_date))
+  ) {
+    return false
+  }
+  return true
+}
+
+const filteredHazards = computed(() => adminMapStore.hazards.filter(matchesFilters))
+
 const groupedHazards = computed((): HazardGroup[] => {
   const categoryMap = new Map<string, HazardCategory>(
     adminMapStore.hazardCategories.map((cat) => [cat.id, cat]),
@@ -38,7 +114,7 @@ const groupedHazards = computed((): HazardGroup[] => {
 
   const groupMap = new Map<string, HazardGroup>()
 
-  for (const hazard of adminMapStore.hazards) {
+  for (const hazard of filteredHazards.value) {
     const cat = categoryMap.get(hazard.category_id)
     if (!groupMap.has(hazard.category_id)) {
       groupMap.set(hazard.category_id, {
@@ -61,12 +137,23 @@ const groupedHazards = computed((): HazardGroup[] => {
 })
 
 const hiddenSet = computed(() => new Set(adminMapStore.hiddenCategoryIds))
+const hiddenHazardSet = computed(() => new Set(adminMapStore.hiddenHazardIds))
 
 function isCategoryHidden(categoryId: string): boolean {
   return hiddenSet.value.has(categoryId)
 }
 
+function isHazardHidden(hazardId: HazardId): boolean {
+  return hiddenHazardSet.value.has(hazardId)
+}
+
 function isExpanded(categoryId: string): boolean {
+  // Filtering narrows the list down to what the admin is looking for —
+  // auto-expand so results show without an extra click. Manual expand state
+  // takes back over once filters are cleared.
+  if (hasActiveFilters.value) {
+    return true
+  }
   return expandedCategoryIds.value.has(categoryId)
 }
 
@@ -145,6 +232,67 @@ function close(): void {
         </CardTitle>
       </CardHeader>
 
+      <!-- Filters (horizontal scroll) -->
+      <div
+        v-if="availableCategoryChips.length || availableSeverityChips.length || availableDateChips.length"
+        class="flex shrink-0 items-center gap-1.5 overflow-x-auto border-b px-2 py-2"
+      >
+        <button
+          v-for="cat in availableCategoryChips"
+          :key="`cat-${cat.id}`"
+          type="button"
+          class="flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-1 text-xs transition-colors"
+          :class="
+            activeCategoryFilters.has(cat.id)
+              ? 'border-primary bg-primary text-primary-foreground'
+              : 'border-border text-muted-foreground hover:bg-muted/60'
+          "
+          @click="toggleCategoryFilter(cat.id)"
+        >
+          <span class="h-2 w-2 shrink-0 rounded-full" :style="{ backgroundColor: cat.color }" />
+          {{ cat.label }}
+        </button>
+
+        <button
+          v-for="severity in availableSeverityChips"
+          :key="`sev-${severity}`"
+          type="button"
+          class="shrink-0 whitespace-nowrap rounded-full border px-2.5 py-1 text-xs uppercase transition-colors"
+          :class="
+            activeSeverityFilters.has(severity)
+              ? 'border-primary bg-primary text-primary-foreground'
+              : 'border-border text-muted-foreground hover:bg-muted/60'
+          "
+          @click="toggleSeverityFilter(severity)"
+        >
+          {{ severity }}
+        </button>
+
+        <button
+          v-for="date in availableDateChips"
+          :key="`date-${date}`"
+          type="button"
+          class="shrink-0 whitespace-nowrap rounded-full border px-2.5 py-1 text-xs transition-colors"
+          :class="
+            activeDateFilters.has(date)
+              ? 'border-primary bg-primary text-primary-foreground'
+              : 'border-border text-muted-foreground hover:bg-muted/60'
+          "
+          @click="toggleDateFilter(date)"
+        >
+          {{ date }}
+        </button>
+
+        <button
+          v-if="hasActiveFilters"
+          type="button"
+          class="shrink-0 whitespace-nowrap rounded-full border border-dashed px-2.5 py-1 text-xs text-muted-foreground hover:bg-muted/60"
+          @click="clearFilters"
+        >
+          Clear filters
+        </button>
+      </div>
+
       <!-- Content -->
       <CardContent class="flex-1 overflow-y-auto p-0">
         <!-- Status messages -->
@@ -161,7 +309,7 @@ function close(): void {
         <div v-if="groupedHazards.length === 0 && !adminMapStore.isLoadingHazards" class="px-4 pt-4">
           <div class="rounded-md border p-3">
             <TypographySmall as="p" class="text-xs text-muted-foreground">
-              No hazards found.
+              {{ hasActiveFilters ? 'No hazards match the selected filters.' : 'No hazards found.' }}
             </TypographySmall>
           </div>
         </div>
@@ -228,7 +376,11 @@ function close(): void {
                   @click="adminMapStore.handleSelectHazard(hazard.id)"
                 >
                   <div class="flex items-center gap-2">
-                    <TypographySmall as="span" class="flex-1 truncate text-sm font-medium">
+                    <TypographySmall
+                      as="span"
+                      class="flex-1 truncate text-sm font-medium"
+                      :class="isHazardHidden(hazard.id) ? 'text-muted-foreground line-through' : ''"
+                    >
                       {{ hazard.name }}
                     </TypographySmall>
                     <Badge variant="outline" class="shrink-0 text-[10px] uppercase">
@@ -245,9 +397,25 @@ function close(): void {
                   >
                     {{ hazard.location_name }}
                   </TypographyMuted>
+                  <TypographyMuted
+                    v-if="hazard.hazard_date"
+                    as="p"
+                    class="mt-0.5 truncate text-xs text-muted-foreground"
+                  >
+                    {{ hazard.hazard_date }}
+                  </TypographyMuted>
                 </button>
 
                 <div class="mt-1.5 flex justify-end gap-1">
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    :title="isHazardHidden(hazard.id) ? 'Show hazard' : 'Hide hazard'"
+                    @click="adminMapStore.handleToggleHazardVisibility(hazard.id)"
+                  >
+                    <Eye v-if="!isHazardHidden(hazard.id)" class="h-4 w-4" />
+                    <EyeOff v-else class="h-4 w-4 text-muted-foreground" />
+                  </Button>
                   <Button
                     variant="ghost"
                     size="icon-sm"

@@ -48,6 +48,70 @@ const selectedZoningYearValue = computed<string>({
   },
 })
 
+// ── Filters (layer / status — horizontal scroll) ────────────────────────────
+type LayerStatusFilter = 'active' | 'hidden'
+
+const activeLayerFilters = ref<Set<string>>(new Set())
+const activeStatusFilters = ref<Set<LayerStatusFilter>>(new Set())
+
+const availableLayerChips = computed(() =>
+  adminMapStore.visibleZoningLayers.map((layer) => ({
+    id: layer.id,
+    title: layer.title,
+    color: layer.color,
+  })),
+)
+
+const availableStatusChips = computed(() => [
+  ...new Set<LayerStatusFilter>(
+    adminMapStore.visibleZoningLayers.map((layer) => (layer.is_active ? 'active' : 'hidden')),
+  ),
+])
+
+const hasActiveFilters = computed(
+  () => activeLayerFilters.value.size > 0 || activeStatusFilters.value.size > 0,
+)
+
+function toggleSetValue<T>(set: Set<T>, value: T): Set<T> {
+  const next = new Set(set)
+  if (next.has(value)) {
+    next.delete(value)
+  } else {
+    next.add(value)
+  }
+  return next
+}
+
+function toggleLayerFilter(layerId: string): void {
+  activeLayerFilters.value = toggleSetValue(activeLayerFilters.value, layerId)
+}
+
+function toggleStatusFilter(status: LayerStatusFilter): void {
+  activeStatusFilters.value = toggleSetValue(activeStatusFilters.value, status)
+}
+
+function clearFilters(): void {
+  activeLayerFilters.value = new Set()
+  activeStatusFilters.value = new Set()
+}
+
+function matchesFilters(layer: ZoningLayer): boolean {
+  if (activeLayerFilters.value.size > 0 && !activeLayerFilters.value.has(layer.id)) {
+    return false
+  }
+  if (activeStatusFilters.value.size > 0) {
+    const status: LayerStatusFilter = layer.is_active ? 'active' : 'hidden'
+    if (!activeStatusFilters.value.has(status)) {
+      return false
+    }
+  }
+  return true
+}
+
+const filteredZoningLayers = computed(() =>
+  adminMapStore.visibleZoningLayers.filter(matchesFilters),
+)
+
 const expandedLayerIds = ref<Set<string>>(new Set())
 const showAddLayerModal = ref(false)
 const showEditLayerModal = ref(false)
@@ -237,10 +301,56 @@ function close(): void {
         </Select>
       </CardHeader>
 
+      <!-- Filters (horizontal scroll) -->
+      <div
+        v-if="availableLayerChips.length || availableStatusChips.length"
+        class="flex shrink-0 items-center gap-1.5 overflow-x-auto border-b px-2 py-2"
+      >
+        <button
+          v-for="layer in availableLayerChips"
+          :key="`layer-${layer.id}`"
+          type="button"
+          class="flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-1 text-xs transition-colors"
+          :class="
+            activeLayerFilters.has(layer.id)
+              ? 'border-primary bg-primary text-primary-foreground'
+              : 'border-border text-muted-foreground hover:bg-muted/60'
+          "
+          @click="toggleLayerFilter(layer.id)"
+        >
+          <span class="h-2 w-2 shrink-0 rounded-full" :style="{ backgroundColor: layer.color }" />
+          {{ layer.title }}
+        </button>
+
+        <button
+          v-for="status in availableStatusChips"
+          :key="`status-${status}`"
+          type="button"
+          class="shrink-0 whitespace-nowrap rounded-full border px-2.5 py-1 text-xs capitalize transition-colors"
+          :class="
+            activeStatusFilters.has(status)
+              ? 'border-primary bg-primary text-primary-foreground'
+              : 'border-border text-muted-foreground hover:bg-muted/60'
+          "
+          @click="toggleStatusFilter(status)"
+        >
+          {{ status }}
+        </button>
+
+        <button
+          v-if="hasActiveFilters"
+          type="button"
+          class="shrink-0 whitespace-nowrap rounded-full border border-dashed px-2.5 py-1 text-xs text-muted-foreground hover:bg-muted/60"
+          @click="clearFilters"
+        >
+          Clear filters
+        </button>
+      </div>
+
       <CardContent class="flex-1 space-y-4 overflow-y-auto p-4">
         <section class="space-y-2">
           <div class="space-y-2">
-            <div v-for="layer in adminMapStore.visibleZoningLayers" :key="layer.id" class="rounded-md">
+            <div v-for="layer in filteredZoningLayers" :key="layer.id" class="rounded-md">
               <div class="w-full">
                 <div class="w-full h-px bg-border/80" />
                 <div
@@ -316,11 +426,15 @@ function close(): void {
               />
             </div>
             <TypographySmall
-              v-if="adminMapStore.visibleZoningLayers.length === 0"
+              v-if="filteredZoningLayers.length === 0"
               as="p"
               class="text-xs text-muted-foreground"
             >
-              No zoning layers for this year yet. Click Add Zoning Layer.
+              {{
+                hasActiveFilters
+                  ? 'No zoning layers match the selected filters.'
+                  : 'No zoning layers for this year yet. Click Add Zoning Layer.'
+              }}
             </TypographySmall>
           </div>
         </section>
