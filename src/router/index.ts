@@ -28,6 +28,7 @@ import AnalyticsView from '@/views/(admin)/analytics/AnalyticsView.vue'
 // Entrepreneur app (also used by supplier until it gets its own shell)
 import EntrepreneurHomeView from '@/views/(entrepreneur)/home/EntrepreneurHomeView.vue'
 import EntrepreneurMapView from '@/views/(entrepreneur)/map/EntrepreneurMapView.vue'
+import SuitabilityAnalysisView from '@/views/(entrepreneur)/suitability/SuitabilityAnalysisView.vue'
 import SiteBuilderView from '@/views/(entrepreneur)/site-builder/SiteBuilderView.vue'
 import MessagesView from '@/views/(entrepreneur)/messages/MessagesView.vue'
 import SiteView from '@/views/sites/SiteView.vue'
@@ -105,6 +106,12 @@ const router = createRouter({
           path: 'map',
           name: 'entrepreneur-map',
           component: EntrepreneurMapView,
+          meta: { requiresAuth: true, requiresBusinessShell: true },
+        },
+        {
+          path: 'suitability-analysis',
+          name: 'entrepreneur-suitability-analysis',
+          component: SuitabilityAnalysisView,
           meta: { requiresAuth: true, requiresBusinessShell: true },
         },
         {
