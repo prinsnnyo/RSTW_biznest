@@ -1,11 +1,10 @@
 <script setup lang="ts">
-import { Building2, FileText, Globe, Layers, MapPin, Settings, TriangleAlert } from 'lucide-vue-next'
+import { Building2, Globe, Layers, MapPin, Settings, TriangleAlert } from 'lucide-vue-next'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { useAdminMapStore } from '@/stores/admin.map.store'
 import ZoningPanel from '@/views/(admin)/map/components/panels/ZoningPanel.vue'
 import HazardPanel from '@/views/(admin)/map/components/panels/HazardPanel.vue'
 import LocalBusinessPanel from '@/views/(admin)/map/components/panels/LocalBusinessPanel.vue'
-import ReportsPanel from '@/views/(admin)/map/components/panels/ReportsPanel.vue'
 import LayerPanel from '@/views/(admin)/map/components/panels/LayerPanel.vue'
 import MapSettingsPanel from '@/views/(admin)/map/components/panels/MapSettingsPanel.vue'
 
@@ -23,7 +22,6 @@ const adminMapStore = useAdminMapStore()
       <ZoningPanel v-if="adminMapStore.activePanel === 'zoning'" />
       <HazardPanel v-else-if="adminMapStore.activePanel === 'hazard'" />
       <LocalBusinessPanel v-else-if="adminMapStore.activePanel === 'local-business'" />
-      <ReportsPanel v-else-if="adminMapStore.activePanel === 'reports'" />
       <LayerPanel v-else-if="adminMapStore.activePanel === 'poi'" />
       <MapSettingsPanel v-else-if="adminMapStore.activePanel === 'map-settings'" />
     </div>
@@ -92,27 +90,6 @@ const adminMapStore = useAdminMapStore()
             </button>
           </TooltipTrigger>
           <TooltipContent side="left">Local Business</TooltipContent>
-        </Tooltip>
-
-        <div class="h-px bg-border" />
-
-        <!-- Reports -->
-        <Tooltip>
-          <TooltipTrigger as-child>
-            <button
-              type="button"
-              class="flex h-11 w-full items-center justify-center transition-colors hover:bg-muted"
-              :class="
-                adminMapStore.activePanel === 'reports'
-                  ? 'bg-muted text-sky-500'
-                  : 'text-muted-foreground'
-              "
-              @click="adminMapStore.togglePanel('reports')"
-            >
-              <FileText class="h-4 w-4" />
-            </button>
-          </TooltipTrigger>
-          <TooltipContent side="left">Reports</TooltipContent>
         </Tooltip>
 
         <div class="h-px bg-border" />

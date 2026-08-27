@@ -19,10 +19,16 @@ import type {
 } from '@/types/smart-analysis.types'
 import { useAreaDrawing, type UseAreaDrawingReturn } from '@/views/(user)/map/composables/useAreaDrawing'
 
+// Report building is instant (client-side only), but a bare instant flip to
+// the report feels like the click did nothing — hold the "running analysis"
+// state for a beat so the spinner actually registers.
+const ANALYSIS_DELAY_MS = 5000
+
 export interface UseSmartAnalysisReturn {
   drawing: UseAreaDrawingReturn
   step: Ref<SmartAnalysisStep>
   isActive: ComputedRef<boolean>
+  isAnalyzing: Ref<boolean>
   selectedOption: Ref<AnalysisOptionKey | null>
   report: Ref<SuitabilityReport | null>
   topBusinessesReport: Ref<TopBusinessesReport | null>
@@ -55,6 +61,8 @@ export function useSmartAnalysis(): UseSmartAnalysisReturn {
   const drawing = useAreaDrawing()
 
   const step = ref<SmartAnalysisStep>('idle')
+  const isAnalyzing = ref(false)
+  let analyzingTimeoutId: number | null = null
   const selectedOption = ref<AnalysisOptionKey | null>(null)
   const report = ref<SuitabilityReport | null>(null)
   const topBusinessesReport = ref<TopBusinessesReport | null>(null)
@@ -88,7 +96,32 @@ export function useSmartAnalysis(): UseSmartAnalysisReturn {
     () => step.value === 'report' && spacesReport.value !== null,
   )
 
+  function cancelAnalyzing(): void {
+    if (analyzingTimeoutId !== null) {
+      window.clearTimeout(analyzingTimeoutId)
+      analyzingTimeoutId = null
+    }
+    isAnalyzing.value = false
+  }
+
+  /** Runs `build` after a short "analyzing" delay, then flips to the report step. */
+  function runAnalysis(build: () => void): void {
+    if (isAnalyzing.value) {
+      return
+    }
+
+    clearReports()
+    isAnalyzing.value = true
+    analyzingTimeoutId = window.setTimeout(() => {
+      analyzingTimeoutId = null
+      build()
+      step.value = 'report'
+      isAnalyzing.value = false
+    }, ANALYSIS_DELAY_MS)
+  }
+
   function beginDrawing(): void {
+    cancelAnalyzing()
     clearReports()
     selectedOption.value = null
     drawing.clearArea()
@@ -116,16 +149,19 @@ export function useSmartAnalysis(): UseSmartAnalysisReturn {
   }
 
   function backToOptions(): void {
+    cancelAnalyzing()
     selectedOption.value = null
     step.value = 'choosing'
   }
 
   /** Dismiss the current panel but keep the drawn area on the map. */
   function closeFlow(): void {
+    cancelAnalyzing()
     step.value = drawing.hasArea.value ? 'drawn' : 'idle'
   }
 
   function resetAll(): void {
+    cancelAnalyzing()
     drawing.clearArea()
     selectedOption.value = null
     clearReports()
@@ -153,55 +189,56 @@ export function useSmartAnalysis(): UseSmartAnalysisReturn {
   }
 
   function runBusinessSuitability(input: BusinessSuitabilityInput): void {
-    clearReports()
-    report.value = buildSuitabilityReport(
-      input,
-      areaSummary.value,
-      new Date().toLocaleString('en-PH'),
-      crypto.randomUUID().slice(0, 8),
-    )
-    step.value = 'report'
+    runAnalysis(() => {
+      report.value = buildSuitabilityReport(
+        input,
+        areaSummary.value,
+        new Date().toLocaleString('en-PH'),
+        crypto.randomUUID().slice(0, 8),
+      )
+    })
   }
 
   function runTopBusinesses(input: TopBusinessesInput): void {
-    clearReports()
-    topBusinessesReport.value = buildTopBusinessesReport(
-      input,
-      areaSummary.value,
-      new Date().toLocaleString('en-PH'),
-      crypto.randomUUID().slice(0, 8),
-    )
-    step.value = 'report'
+    runAnalysis(() => {
+      topBusinessesReport.value = buildTopBusinessesReport(
+        input,
+        areaSummary.value,
+        new Date().toLocaleString('en-PH'),
+        crypto.randomUUID().slice(0, 8),
+      )
+    })
   }
 
   function runNearestSuppliers(input: NearestSuppliersInput): void {
-    clearReports()
-    suppliersReport.value = buildNearestSuppliersReport(
-      input,
-      drawing.points.value,
-      areaSummary.value,
-      new Date().toLocaleString('en-PH'),
-      crypto.randomUUID().slice(0, 8),
-    )
-    step.value = 'report'
+    runAnalysis(() => {
+      suppliersReport.value = buildNearestSuppliersReport(
+        input,
+        drawing.points.value,
+        areaSummary.value,
+        new Date().toLocaleString('en-PH'),
+        crypto.randomUUID().slice(0, 8),
+      )
+    })
   }
 
   function runNearestSpaces(input: NearestSpacesInput): void {
-    clearReports()
-    spacesReport.value = buildNearestSpacesReport(
-      input,
-      drawing.points.value,
-      areaSummary.value,
-      new Date().toLocaleString('en-PH'),
-      crypto.randomUUID().slice(0, 8),
-    )
-    step.value = 'report'
+    runAnalysis(() => {
+      spacesReport.value = buildNearestSpacesReport(
+        input,
+        drawing.points.value,
+        areaSummary.value,
+        new Date().toLocaleString('en-PH'),
+        crypto.randomUUID().slice(0, 8),
+      )
+    })
   }
 
   return {
     drawing,
     step,
     isActive,
+    isAnalyzing,
     selectedOption,
     report,
     topBusinessesReport,
