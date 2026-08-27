@@ -7,7 +7,10 @@ import ChatbotWidget from '@/views/(admin)/chatbot/components/ChatbotWidget.vue'
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
 
 const route = useRoute()
-const isFullScreenMap = computed(() => route.name === 'entrepreneur-map')
+const isFullScreenMap = computed(
+  () =>
+    route.name === 'entrepreneur-map' || route.name === 'entrepreneur-suitability-analysis',
+)
 </script>
 
 <template>
