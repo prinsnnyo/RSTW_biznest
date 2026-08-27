@@ -29,9 +29,16 @@ defineOptions({
 const props = withDefaults(
   defineProps<{
     center?: { lat: number; lng: number }
+    // Admin-only overlays (hazards, zoning/mapped zones, barangay borders,
+    // local-business pins) only draw when true. The base map, draw tools,
+    // and smart-analysis focus markers stay functional either way — set
+    // false for analysis-only surfaces (e.g. entrepreneur suitability map)
+    // so the store's admin watchers don't clutter it with admin layers.
+    isAdmin?: boolean
   }>(),
   {
     center: () => ({ lat: 8.9475, lng: 125.5406 }),
+    isAdmin: true,
   },
 )
 
@@ -224,14 +231,23 @@ async function renderBarangayBorders(
   show: boolean,
   borders: BarangayFeatureCollection | null,
 ): Promise<void> {
+  if (!props.isAdmin) {
+    return
+  }
   await mapLibreAdapter.renderBarangayBorders(show, borders)
 }
 
 async function renderMappedZones(zones: MappedZone[]): Promise<void> {
+  if (!props.isAdmin) {
+    return
+  }
   await mapLibreAdapter.renderMappedZones(zones)
 }
 
 async function renderHazards(show: boolean, hazards: Hazard[]): Promise<void> {
+  if (!props.isAdmin) {
+    return
+  }
   await mapLibreAdapter.renderHazards(show, hazards)
 }
 
@@ -321,6 +337,9 @@ async function renderPinnedLocations(
   pins: MapPinMarker[],
   onPinClick?: ((pinId: string) => void) | null,
 ): Promise<void> {
+  if (!props.isAdmin) {
+    return
+  }
   await mapLibreAdapter.renderPinnedLocations(pins, onPinClick)
 }
 

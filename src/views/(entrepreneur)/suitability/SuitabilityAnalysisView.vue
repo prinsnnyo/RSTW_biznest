@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref } from 'vue'
-import { PencilRuler } from 'lucide-vue-next'
+import { Loader2, PencilRuler } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { TypographyMuted, TypographySmall } from '@/components/typography'
 import Maplibre from '@/views/(admin)/map/components/Maplibre.vue'
@@ -78,6 +78,7 @@ onBeforeUnmount(() => {
       <Maplibre
         :ref="bindMapRef"
         :center="adminMapStore.mapCenter"
+        :is-admin="false"
         @ready="handleMapReady"
         @camera-idle="handleCameraIdle"
       />
@@ -98,6 +99,18 @@ onBeforeUnmount(() => {
         >
           {{ adminMapStore.errorMessage }}
         </span>
+      </div>
+
+      <div
+        v-if="analysis.isAnalyzing.value"
+        class="absolute inset-0 z-10010 flex items-center justify-center bg-background/40 backdrop-blur-sm"
+      >
+        <div class="flex items-center gap-2.5 rounded-md border bg-card/95 px-4 py-3 shadow-lg">
+          <Loader2 class="h-4 w-4 animate-spin text-primary" />
+          <TypographySmall as="span" class="text-sm font-medium">
+            Running analysis, please wait…
+          </TypographySmall>
+        </div>
       </div>
 
       <div

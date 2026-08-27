@@ -103,7 +103,7 @@ function handleOpenChange(isOpen: boolean): void {
   <Dialog :open="props.open" @update:open="handleOpenChange">
     <DialogContent
       v-if="props.report"
-      class="flex max-h-[92vh] w-[96vw] max-w-[96vw] flex-col gap-0 p-0 xl:max-w-[1200px]"
+      class="flex max-h-[92vh] w-[96vw] max-w-[96vw] flex-col gap-0 p-0 sm:max-w-[96vw] xl:max-w-[1200px]"
     >
       <!-- ── Header band ────────────────────────────────────────────────── -->
       <DialogHeader class="border-border shrink-0 border-b px-6 py-4 text-left">
