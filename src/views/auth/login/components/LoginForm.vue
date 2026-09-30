@@ -1,29 +1,77 @@
 <script setup lang="ts">
 import { ref, type HTMLAttributes } from 'vue'
-import { useRouter, RouterLink } from 'vue-router'
+import { useRouter } from 'vue-router'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
-import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui/field'
-import { Input } from '@/components/ui/input'
+import { FieldDescription, FieldGroup } from '@/components/ui/field'
 import { useAlertContext } from '@/composables/useAlert'
-import { AuthServiceError, signInWithEmail } from '@/services/auth.service'
-import { useAuthStore } from '@/stores/auth.store'
-import { Eye, EyeOff } from 'lucide-vue-next'
+import { useAuthStore, type DemoLoginRole } from '@/stores/auth.store'
+import {
+  Building2,
+  Package,
+  Shield,
+  ShieldCheck,
+  Store,
+  UserRound,
+} from 'lucide-vue-next'
 import AuthSplitCard from '@/views/auth/components/AuthSplitCard.vue'
 import AuthLoginMapPreview from '@/views/auth/components/AuthLoginMapPreview.vue'
-
-const AUTH_INPUT = 'h-11 rounded-xl bg-background/50 px-3.5'
 
 const props = defineProps<{
   class?: HTMLAttributes['class']
 }>()
 
 const router = useRouter()
+const authStore = useAuthStore()
 const { showAlert, showSuccess } = useAlertContext()
-const showPassword = ref(false)
-const email = ref('')
-const password = ref('')
 const isSubmitting = ref(false)
+const pendingRole = ref<DemoLoginRole | null>(null)
+
+type RoleOption = {
+  role: DemoLoginRole
+  label: string
+  description: string
+  icon: typeof UserRound
+}
+
+const roleOptions: RoleOption[] = [
+  {
+    role: 'user',
+    label: 'Normal User',
+    description: 'Browse maps and run basic analysis.',
+    icon: UserRound,
+  },
+  {
+    role: 'entrepreneur',
+    label: 'Entrepreneur',
+    description: 'Partner tools, site builder, and messages.',
+    icon: Store,
+  },
+  {
+    role: 'space_owner',
+    label: 'Space Owner',
+    description: 'List and manage spaces on the map.',
+    icon: Building2,
+  },
+  {
+    role: 'supplier',
+    label: 'Supplier',
+    description: 'Supplier partner workspace.',
+    icon: Package,
+  },
+  {
+    role: 'admin',
+    label: 'Admin',
+    description: 'Admin map and operations console.',
+    icon: Shield,
+  },
+  {
+    role: 'superadmin',
+    label: 'Super Admin',
+    description: 'Full admin access including applications.',
+    icon: ShieldCheck,
+  },
+]
 
 const showErrorAlert = (description: string, title = 'Login failed'): void => {
   showAlert({
@@ -33,31 +81,20 @@ const showErrorAlert = (description: string, title = 'Login failed'): void => {
   })
 }
 
-const handleSubmit = async (): Promise<void> => {
-  if (!email.value || !password.value) {
-    showErrorAlert('Please enter your email and password.', 'Missing credentials')
-    return
-  }
-
+const handleRoleLogin = async (role: DemoLoginRole): Promise<void> => {
   isSubmitting.value = true
+  pendingRole.value = role
 
   try {
-    await signInWithEmail({
-      email: email.value,
-      password: password.value,
-    })
+    await authStore.loginAsRole(role)
 
-    showSuccess('You are now signed in to your BizNest account.', {
+    const label = roleOptions.find((option) => option.role === role)?.label ?? role
+    showSuccess(`Signed in as ${label}.`, {
       title: 'Login successful',
     })
 
-    await router.push({ name: useAuthStore().homeRouteName })
+    await router.push({ name: authStore.homeRouteName })
   } catch (error) {
-    if (error instanceof AuthServiceError) {
-      showErrorAlert(error.message)
-      return
-    }
-
     if (error instanceof Error) {
       showErrorAlert(error.message)
       return
@@ -66,6 +103,7 @@ const handleSubmit = async (): Promise<void> => {
     showErrorAlert('Unable to sign in right now.')
   } finally {
     isSubmitting.value = false
+    pendingRole.value = null
   }
 }
 </script>
@@ -74,88 +112,52 @@ const handleSubmit = async (): Promise<void> => {
   <div :class="cn('flex flex-col gap-6', props.class)">
     <AuthSplitCard>
       <template #form>
-        <form @submit.prevent="handleSubmit">
-          <FieldGroup>
-            <div class="mb-2 space-y-2">
-              <p class="text-primary text-xs font-semibold tracking-[0.22em] uppercase">Welcome</p>
-              <h1 class="text-foreground text-3xl font-semibold tracking-tight">Welcome back</h1>
-              <p class="text-muted-foreground text-sm text-pretty">
-                Sign in to pick up your map, pins, and partner tools.
-              </p>
-            </div>
-            <Field>
-              <FieldLabel for="email">Email</FieldLabel>
-              <Input
-                id="email"
-                v-model="email"
-                type="email"
-                placeholder="you@biznest.app"
-                autocomplete="email"
-                :class="AUTH_INPUT"
-                required
-              />
-            </Field>
-            <Field>
-              <div class="flex items-center">
-                <FieldLabel for="password">Password</FieldLabel>
-                <a
-                  href="#"
-                  class="text-primary ml-auto text-sm font-medium underline-offset-4 hover:underline"
-                >
-                  Forgot password?
-                </a>
-              </div>
-              <div class="relative">
-                <Input
-                  id="password"
-                  v-model="password"
-                  :type="showPassword ? 'text' : 'password'"
-                  :class="cn(AUTH_INPUT, 'pr-11')"
-                  autocomplete="current-password"
-                  required
-                />
-                <button
-                  type="button"
-                  class="text-muted-foreground hover:text-foreground absolute inset-y-0 right-0 inline-flex w-11 items-center justify-center"
-                  :aria-label="showPassword ? 'Hide password' : 'Show password'"
-                  @click="showPassword = !showPassword"
-                >
-                  <EyeOff v-if="showPassword" class="size-4" />
-                  <Eye v-else class="size-4" />
-                </button>
-              </div>
-            </Field>
-            <Field>
-              <Button
-                type="submit"
-                :disabled="isSubmitting"
-                class="h-12 w-full rounded-full text-base font-semibold shadow-lg shadow-accent/25 transition hover:scale-[1.015]"
-              >
-                {{ isSubmitting ? 'Signing you in…' : 'Sign in' }}
-              </Button>
-            </Field>
+        <FieldGroup>
+          <div class="mb-2 space-y-2">
+            <p class="text-primary text-xs font-semibold tracking-[0.22em] uppercase">Welcome</p>
+            <h1 class="text-foreground text-3xl font-semibold tracking-tight">Continue as</h1>
+            <p class="text-muted-foreground text-sm text-pretty">
+              Some of the features are not available due to the database being out of free tokens
+            </p>
+          </div>
 
-            <FieldDescription class="text-center">
-              New to BizNest?
-              <RouterLink
-                :to="{ name: 'register' }"
-                class="text-primary font-medium underline-offset-4 hover:underline"
+          <div class="grid gap-2.5">
+            <Button
+              v-for="option in roleOptions"
+              :key="option.role"
+              type="button"
+              variant="outline"
+              :disabled="isSubmitting"
+              class="h-auto w-full justify-start gap-3 rounded-xl px-3.5 py-3 text-left shadow-none"
+              @click="handleRoleLogin(option.role)"
+            >
+              <span
+                class="bg-primary/10 text-primary inline-flex size-10 shrink-0 items-center justify-center rounded-lg"
               >
-                Create an account
-              </RouterLink>
-            </FieldDescription>
-          </FieldGroup>
-        </form>
+                <component :is="option.icon" class="size-4" />
+              </span>
+              <span class="min-w-0 flex-1">
+                <span class="text-foreground block text-sm font-semibold">
+                  {{
+                    pendingRole === option.role && isSubmitting
+                      ? 'Signing you in…'
+                      : option.label
+                  }}
+                </span>
+                <span class="text-muted-foreground block text-xs text-pretty">
+                  {{ option.description }}
+                </span>
+              </span>
+            </Button>
+          </div>
+        </FieldGroup>
       </template>
       <template #visual>
         <AuthLoginMapPreview />
       </template>
     </AuthSplitCard>
     <FieldDescription class="px-2 text-center">
-      By continuing you agree to our
-      <a href="#" class="text-foreground font-medium underline-offset-4 hover:underline">Terms</a>
-      and
-      <a href="#" class="text-foreground font-medium underline-offset-4 hover:underline">Privacy Policy</a>.
+      Demo login only — choose a role above to explore each workspace.
     </FieldDescription>
   </div>
 </template>

@@ -1,10 +1,68 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { User, Session } from '@supabase/supabase-js'
-import { getSupabaseClient } from '@/services/supabase.client'
 import type { BusinessRole } from '@/types/pinned-location.types'
 
 const BUSINESS_ROLES: BusinessRole[] = ['space_owner', 'entrepreneur', 'supplier']
+const DEMO_AUTH_STORAGE_KEY = 'biznest_demo_auth'
+
+export type DemoLoginRole =
+  | 'user'
+  | 'entrepreneur'
+  | 'space_owner'
+  | 'supplier'
+  | 'admin'
+  | 'superadmin'
+
+type DemoAuthSnapshot = {
+  role: DemoLoginRole
+}
+
+type DemoPersona = {
+  role: string
+  businessRole: BusinessRole | null
+  username: string
+  email: string
+}
+
+const DEMO_PERSONAS: Record<DemoLoginRole, DemoPersona> = {
+  user: {
+    role: 'user',
+    businessRole: null,
+    username: 'Demo User',
+    email: 'user@biznest.demo',
+  },
+  entrepreneur: {
+    role: 'user',
+    businessRole: 'entrepreneur',
+    username: 'Demo Entrepreneur',
+    email: 'entrepreneur@biznest.demo',
+  },
+  space_owner: {
+    role: 'user',
+    businessRole: 'space_owner',
+    username: 'Demo Space Owner',
+    email: 'space-owner@biznest.demo',
+  },
+  supplier: {
+    role: 'user',
+    businessRole: 'supplier',
+    username: 'Demo Supplier',
+    email: 'supplier@biznest.demo',
+  },
+  admin: {
+    role: 'admin',
+    businessRole: null,
+    username: 'Demo Admin',
+    email: 'admin@biznest.demo',
+  },
+  superadmin: {
+    role: 'superadmin',
+    businessRole: null,
+    username: 'Demo Super Admin',
+    email: 'superadmin@biznest.demo',
+  },
+}
 
 // Role titles are authored by hand in the `roles` table, so "Space Owner",
 // "space-owner" and "space_owner" all have to resolve to the same key.
@@ -23,11 +81,81 @@ const parseBusinessRole = (value: unknown): BusinessRole | null => {
   return BUSINESS_ROLES.includes(key as BusinessRole) ? (key as BusinessRole) : null
 }
 
+const createDemoUser = (loginRole: DemoLoginRole): User => {
+  const persona = DEMO_PERSONAS[loginRole]
+  const now = new Date().toISOString()
+
+  return {
+    id: `demo-${loginRole}`,
+    aud: 'authenticated',
+    role: 'authenticated',
+    email: persona.email,
+    email_confirmed_at: now,
+    phone: '',
+    confirmed_at: now,
+    last_sign_in_at: now,
+    app_metadata: { provider: 'demo', providers: ['demo'] },
+    user_metadata: {
+      role: persona.role,
+      business_role: persona.businessRole ?? '',
+      username: persona.username,
+      city_name: 'Butuan City',
+      city_id: 'demo-city',
+    },
+    identities: [],
+    created_at: now,
+    updated_at: now,
+    is_anonymous: false,
+  } as User
+}
+
+const createDemoSession = (loginRole: DemoLoginRole): Session => {
+  const demoUser = createDemoUser(loginRole)
+
+  return {
+    access_token: `demo-access-${loginRole}`,
+    refresh_token: `demo-refresh-${loginRole}`,
+    expires_in: 60 * 60 * 24 * 365,
+    expires_at: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 365,
+    token_type: 'bearer',
+    user: demoUser,
+  } as Session
+}
+
+const readStoredDemoRole = (): DemoLoginRole | null => {
+  try {
+    const raw = localStorage.getItem(DEMO_AUTH_STORAGE_KEY)
+    if (!raw) {
+      return null
+    }
+
+    const parsed = JSON.parse(raw) as DemoAuthSnapshot
+    if (parsed.role && parsed.role in DEMO_PERSONAS) {
+      return parsed.role
+    }
+  } catch {
+    // Ignore corrupt local storage and fall back to a logged-out state.
+  }
+
+  return null
+}
+
+const persistDemoRole = (role: DemoLoginRole | null): void => {
+  if (!role) {
+    localStorage.removeItem(DEMO_AUTH_STORAGE_KEY)
+    return
+  }
+
+  const snapshot: DemoAuthSnapshot = { role }
+  localStorage.setItem(DEMO_AUTH_STORAGE_KEY, JSON.stringify(snapshot))
+}
+
 export const useAuthStore = defineStore('auth', () => {
   // 1. State
   const user = ref<User | null>(null)
   const session = ref<Session | null>(null)
   const isInitialized = ref(false) // Helps prevent flashing unprotected routes on load
+  const activeDemoRole = ref<DemoLoginRole | null>(null)
 
   // 2. Getters
   const isLoggedIn = computed(() => !!session.value)
@@ -52,40 +180,44 @@ export const useAuthStore = defineStore('auth', () => {
   const usesBusinessShell = computed(() => isLoggedIn.value && !isAdmin.value)
   const homeRouteName = computed(() => (isAdmin.value ? 'admin-map' : 'entrepreneur-map'))
 
+  const applyDemoSession = (role: DemoLoginRole): void => {
+    const nextSession = createDemoSession(role)
+    session.value = nextSession
+    user.value = nextSession.user
+    activeDemoRole.value = role
+    persistDemoRole(role)
+  }
+
   // 3. Actions
   const initializeAuthListener = () => {
-    const supabase = getSupabaseClient()
+    // Local demo auth only — skip Supabase so login works while the project is paused.
+    const storedRole = readStoredDemoRole()
+    if (storedRole) {
+      applyDemoSession(storedRole)
+    } else {
+      session.value = null
+      user.value = null
+      activeDemoRole.value = null
+    }
+    isInitialized.value = true
+  }
 
-    // Fetch the initial session (crucial for when the user hard-refreshes the page)
-    // Refresh so an approved business_role in user metadata is picked up
-    // after a super admin review (JWTs otherwise keep the old claims).
-    supabase.auth.refreshSession().finally(() => {
-      supabase.auth.getSession().then(({ data }) => {
-        session.value = data.session
-        user.value = data.session?.user ?? null
-        isInitialized.value = true
-      })
-    })
-
-    // Listen for all future auth events (login, logout, token refresh)
-    supabase.auth.onAuthStateChange((event, newSession) => {
-      console.log('Supabase Auth Event:', event)
-      session.value = newSession
-      user.value = newSession?.user ?? null
-    })
+  const loginAsRole = async (role: DemoLoginRole): Promise<void> => {
+    applyDemoSession(role)
   }
 
   const logout = async () => {
-    const supabase = getSupabaseClient()
-    await supabase.auth.signOut()
-    // Note: We don't need to manually clear 'user' or 'session' here
-    // because the onAuthStateChange listener above will catch the 'SIGNED_OUT' event and clear them automatically!
+    session.value = null
+    user.value = null
+    activeDemoRole.value = null
+    persistDemoRole(null)
   }
 
   return {
     user,
     session,
     isInitialized,
+    activeDemoRole,
     isLoggedIn,
     isSuperAdmin,
     isAdmin,
@@ -95,6 +227,7 @@ export const useAuthStore = defineStore('auth', () => {
     usesBusinessShell,
     homeRouteName,
     initializeAuthListener,
+    loginAsRole,
     logout,
   }
 })
